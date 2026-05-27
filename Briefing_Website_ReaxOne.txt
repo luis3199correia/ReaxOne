@@ -1,0 +1,86 @@
+─────────────────────────────
+1. OBJETIVOS DO WEBSITE
+─────────────────────────────
+
+1.1 Qual é o principal objetivo do website?
+
+✅Vender produtos online (e-commerce)
+✅Apresentar a marca / portfólio
+✅Gerar leads e contactos
+☐ Blog / conteúdo editorial
+☐ Reservar serviços ou consultas
+☐ Outro:
+
+1.2 Quais são os 3 resultados mais importantes que quer ver no primeiro ano?
+(ex: aumentar vendas online 30%, crescer base de newsletter, etc.)
+
+R: ter vendas e criar uma base de “fans” da marca sólido 
+
+
+─────────────────────────────
+2. PRODUTOS E SERVIÇOS
+─────────────────────────────
+
+2.1 Quais as categorias de produtos / serviços que o website deve incluir?
+(ex: equipamento de treino, coaching personalizado, acessórios, meias desportivas, etc.)
+
+R: equipamento de treino, roupa (meias) há a hipótese de ter mais coisas
+
+2.2 Precisa de gestão de stock / inventário integrada no website?
+
+☐ Sim
+☐ Não
+✅ Não sei ainda (mas acho que sim)
+
+2.3 Quais os métodos de pagamento que pretende oferecer?
+
+☐ Cartão crédito / débito
+✅MB Way
+☐ PayPal
+✅Transferência bancária
+☐ Multibanco (referências)
+☐ Outro:
+
+
+─────────────────────────────
+3. FUNCIONALIDADES
+─────────────────────────────
+
+3.1 Selecione as funcionalidades essenciais para o website:
+
+✅Loja online (e-commerce)
+☐ Blog / artigos
+✅Formulário de contacto
+✅Área de cliente / login
+☐ Programa de fidelidade / pontos
+✅Chat de apoio ao cliente
+☐ Newsletter / email marketing
+✅Integração com redes sociais
+☐ Agendamento online
+☐ Calculador / ferramenta interativa
+✅Multi-idioma
+☐ App móvel (iOS / Android)
+
+3.2 Tem preferência por alguma plataforma tecnológica?
+
+☐ Shopify
+☐ WooCommerce (WordPress)
+☐ Squarespace / Wix
+☐ Desenvolvimento à medida
+✅Sem preferência
+☐ Outro:
+
+3.3 Existe algum sistema externo a integrar?
+(ex: ERP, CRM, plataforma de marketing, transportadoras...)
+
+R: a questão das transportadoras preciso da tua ajuda 
+
+
+
+─────────────────────────────
+4. INFORMAÇÃO ADICIONAL
+─────────────────────────────
+
+4.1 Existe algum requisito, preocupação ou informação adicional que queira partilhar?
+
+R:
