@@ -5,7 +5,7 @@ import { locales, defaultLocale } from './i18n/config';
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'always', // / → /pt, /en → /en
+  localePrefix: 'always',
 });
 
 const protectedRoutes = ['/conta', '/admin'];
@@ -13,12 +13,44 @@ const protectedRoutes = ['/conta', '/admin'];
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Remove o prefixo de locale para verificar a rota protegida
-  const pathnameWithoutLocale = pathname.replace(/^\/(pt|en)/, '');
+  // ─────────────────────────────────────────────────────────────
+  // COMING SOON
+  // Ativo quando NEXT_PUBLIC_COMING_SOON=true no .env
+  // Bypass automático: admin logado (role=ADMIN no JWT)
+  // Bypass manual: cookie reaxone_preview=1
+  //   → definido em /{locale}/auth após login admin
+  //   → ou visitando /pt/admin (redireciona para auth se não logado)
+  // ─────────────────────────────────────────────────────────────
+  const comingSoon = process.env.NEXT_PUBLIC_COMING_SOON === 'true';
 
-  const isProtected = protectedRoutes.some((route) =>
-    pathnameWithoutLocale.startsWith(route)
-  );
+  if (comingSoon) {
+    const isComingSoonPage = pathname === '/coming-soon';
+    const isAdminRoute     = /^\/(pt|en)\/admin/.test(pathname);
+    const isAuthRoute      = /^\/(pt|en)\/auth/.test(pathname);
+    const isStatic         = pathname.startsWith('/_next') || pathname.startsWith('/images') || pathname === '/favicon.ico';
+    const hasPreview       = request.cookies.get('reaxone_preview')?.value === '1';
+
+    const hasAdminToken = (() => {
+      const token = request.cookies.get('reaxone_token')?.value;
+      if (!token) return false;
+      try {
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+        return payload.role === 'ADMIN';
+      } catch { return false; }
+    })();
+
+    const bypass = isComingSoonPage || isAdminRoute || isAuthRoute || isStatic || hasPreview || hasAdminToken;
+
+    if (!bypass) {
+      return NextResponse.redirect(new URL('/coming-soon', request.url));
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // Rotas protegidas por autenticação
+  // ─────────────────────────────────────────────────────────────
+  const pathnameWithoutLocale = pathname.replace(/^\/(pt|en)/, '');
+  const isProtected = protectedRoutes.some((r) => pathnameWithoutLocale.startsWith(r));
 
   if (isProtected) {
     const token = request.cookies.get('reaxone_token')?.value;
@@ -30,9 +62,7 @@ export default function middleware(request: NextRequest) {
 
     if (pathnameWithoutLocale.startsWith('/admin')) {
       try {
-        const payload = JSON.parse(
-          Buffer.from(token.split('.')[1], 'base64').toString()
-        );
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
         if (payload.role !== 'ADMIN') {
           return NextResponse.redirect(new URL(`/${locale}/conta`, request.url));
         }

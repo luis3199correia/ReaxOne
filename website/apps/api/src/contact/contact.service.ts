@@ -14,9 +14,9 @@ export class ContactService {
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host:   process.env.SMTP_HOST   || 'smtp.zoho.com',
-      port:   Number(process.env.SMTP_PORT)  || 465,
-      secure: process.env.SMTP_SECURE !== 'false', // true por padrão (465)
+      host:   process.env.SMTP_HOST   || 'smtp.gmail.com',
+      port:   Number(process.env.SMTP_PORT)  || 587,
+      secure: process.env.SMTP_SECURE === 'true', // false por padrão (587 + STARTTLS)
       auth: {
         user: process.env.SMTP_USER || '',
         pass: process.env.SMTP_PASS || '',
