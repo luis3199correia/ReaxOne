@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export default function Footer() {
   const locale = useLocale();
-  const prefix = locale === 'en' ? '/en' : '';
+  const prefix = `/${locale}`;
 
   return (
     <footer className="bg-brand-dark text-gray-400">

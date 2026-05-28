@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Package,
+  Tag,
   ShoppingBag,
   Users,
   Settings,
@@ -17,10 +18,11 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   const links = [
-    { href: `/${locale}/admin`, label: t('dashboard'), icon: LayoutDashboard },
-    { href: `/${locale}/admin/produtos`, label: t('products'), icon: Package },
-    { href: `/${locale}/admin/encomendas`, label: t('orders'), icon: ShoppingBag },
-    { href: `/${locale}/admin/clientes`, label: t('customers'), icon: Users },
+    { href: `/${locale}/admin`,             label: t('dashboard'), icon: LayoutDashboard },
+    { href: `/${locale}/admin/produtos`,    label: t('products'),  icon: Package },
+    { href: `/${locale}/admin/categorias`,  label: 'Categorias',   icon: Tag },
+    { href: `/${locale}/admin/encomendas`,  label: t('orders'),    icon: ShoppingBag },
+    { href: `/${locale}/admin/clientes`,    label: t('customers'), icon: Users },
     { href: `/${locale}/admin/configuracoes`, label: t('settings'), icon: Settings },
   ];
 

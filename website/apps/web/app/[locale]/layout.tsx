@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import WhatsAppBubble from '@/components/layout/WhatsAppBubble';
 import '../globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -38,6 +39,7 @@ export default async function LocaleLayout({
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
+            <WhatsAppBubble />
           </div>
         </NextIntlClientProvider>
       </body>

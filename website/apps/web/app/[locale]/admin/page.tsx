@@ -1,8 +1,8 @@
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { Package, ShoppingBag, Users, TrendingUp } from 'lucide-react';
 
-export default function AdminDashboard() {
-  const t = useTranslations('admin');
+export default async function AdminDashboard() {
+  const t = await getTranslations('admin');
 
   const stats = [
     { label: t('total_sales'), value: '€0', icon: TrendingUp, color: 'text-brand-green' },

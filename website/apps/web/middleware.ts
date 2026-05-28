@@ -5,7 +5,7 @@ import { locales, defaultLocale } from './i18n/config';
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'as-needed', // PT não tem prefixo, EN tem /en
+  localePrefix: 'always', // / → /pt, /en → /en
 });
 
 const protectedRoutes = ['/conta', '/admin'];
@@ -13,8 +13,8 @@ const protectedRoutes = ['/conta', '/admin'];
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Remove o eventual prefixo de locale para verificar a rota
-  const pathnameWithoutLocale = pathname.replace(/^\/(en)/, '');
+  // Remove o prefixo de locale para verificar a rota protegida
+  const pathnameWithoutLocale = pathname.replace(/^\/(pt|en)/, '');
 
   const isProtected = protectedRoutes.some((route) =>
     pathnameWithoutLocale.startsWith(route)
@@ -22,9 +22,10 @@ export default function middleware(request: NextRequest) {
 
   if (isProtected) {
     const token = request.cookies.get('reaxone_token')?.value;
+    const locale = pathname.split('/')[1] || defaultLocale;
 
     if (!token) {
-      return NextResponse.redirect(new URL('/auth', request.url));
+      return NextResponse.redirect(new URL(`/${locale}/auth`, request.url));
     }
 
     if (pathnameWithoutLocale.startsWith('/admin')) {
@@ -33,10 +34,10 @@ export default function middleware(request: NextRequest) {
           Buffer.from(token.split('.')[1], 'base64').toString()
         );
         if (payload.role !== 'ADMIN') {
-          return NextResponse.redirect(new URL('/conta', request.url));
+          return NextResponse.redirect(new URL(`/${locale}/conta`, request.url));
         }
       } catch {
-        return NextResponse.redirect(new URL('/auth', request.url));
+        return NextResponse.redirect(new URL(`/${locale}/auth`, request.url));
       }
     }
   }

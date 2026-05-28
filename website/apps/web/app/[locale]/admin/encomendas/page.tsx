@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
@@ -8,8 +8,8 @@ const STATUS_COLORS: Record<string, string> = {
   CANCELLED: 'bg-red-100 text-red-800',
 };
 
-export default function AdminOrdersPage() {
-  const t = useTranslations('admin');
+export default async function AdminOrdersPage() {
+  const t = await getTranslations('admin');
 
   return (
     <div>

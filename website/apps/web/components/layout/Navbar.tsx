@@ -13,7 +13,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { items } = useCartStore();
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
-  const prefix = locale === 'en' ? '/en' : '';
+  const prefix = `/${locale}`;
 
   return (
     <header className="bg-brand-dark text-white sticky top-0 z-50 shadow-lg">
@@ -48,7 +48,7 @@ export default function Navbar() {
         <div className="flex items-center gap-5">
           {/* Language switcher */}
           <Link
-            href={locale === 'pt' ? '/en' : '/'}
+            href={locale === 'pt' ? '/en' : '/pt'}
             className="text-xs text-gray-500 hover:text-white uppercase tracking-widest transition-colors"
           >
             {locale === 'pt' ? 'EN' : 'PT'}

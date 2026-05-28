@@ -1,4 +1,4 @@
-import { useTranslations, useLocale } from 'next-intl';
+import { getTranslations, getLocale } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -33,10 +33,10 @@ const featuredProducts = [
   },
 ];
 
-export default function HomePage() {
-  const t = useTranslations('home');
-  const locale = useLocale();
-  const prefix = locale === 'en' ? '/en' : '';
+export default async function HomePage() {
+  const t = await getTranslations('home');
+  const locale = await getLocale();
+  const prefix = `/${locale}`;
 
   return (
     <div>

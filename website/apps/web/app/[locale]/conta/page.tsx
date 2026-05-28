@@ -1,9 +1,8 @@
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
 
-export default function AccountPage() {
-  const t = useTranslations('account');
+export default async function AccountPage() {
+  const t = await getTranslations('account');
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">
