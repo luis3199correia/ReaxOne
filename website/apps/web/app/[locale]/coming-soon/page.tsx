@@ -60,8 +60,8 @@ export default function ComingSoonPage() {
                 WhatsApp
               </a>
               <span className="text-gray-700">·</span>
-              <a href="mailto:contatos@reaxone.com" className="text-sm text-gray-400 hover:text-brand-green transition-colors">
-                contatos@reaxone.com
+              <a href="mailto:contact@reaxone.com" className="text-sm text-gray-400 hover:text-brand-green transition-colors">
+                contact@reaxone.com
               </a>
             </div>
           </div>
