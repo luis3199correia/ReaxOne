@@ -7,19 +7,16 @@ COPY . .
 # Instala dependências
 RUN npm ci
 
-# Vai para a pasta da API e faz build diretamente
-WORKDIR /app/apps/api
-RUN npx nest build
+# Build da API (a partir da pasta da API)
+RUN cd apps/api && ./node_modules/.bin/nest build || npx --prefix apps/api nest build || npx nest build --config apps/api/nest-cli.json
 
-# Gera Prisma Client
-RUN npx prisma generate
-
-# Verifica que o dist existe
-RUN ls -la dist/
+# Debug — confirma que o dist foi gerado
+RUN find /app -name "main.js" -path "*/dist/*" 2>/dev/null && echo "--- dist found ---"
 
 ENV NODE_ENV=production
 ENV PORT=3001
 
 EXPOSE 3001
 
+WORKDIR /app/apps/api
 CMD ["node", "dist/main"]
