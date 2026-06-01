@@ -24,7 +24,7 @@ export default function middleware(request: NextRequest) {
   const comingSoon = process.env.NEXT_PUBLIC_COMING_SOON === 'true';
 
   if (comingSoon) {
-    const isComingSoonPage = pathname === '/coming-soon';
+    const isComingSoonPage = /^\/(pt|en)\/coming-soon/.test(pathname);
     const isAdminRoute     = /^\/(pt|en)\/admin/.test(pathname);
     const isAuthRoute      = /^\/(pt|en)\/auth/.test(pathname);
     const isStatic         = pathname.startsWith('/_next') || pathname.startsWith('/images') || pathname === '/favicon.ico';
@@ -42,7 +42,9 @@ export default function middleware(request: NextRequest) {
     const bypass = isComingSoonPage || isAdminRoute || isAuthRoute || isStatic || hasPreview || hasAdminToken;
 
     if (!bypass) {
-      return NextResponse.redirect(new URL('/coming-soon', request.url));
+      const locale = pathname.split('/')[1] || defaultLocale;
+      const validLocale = locales.includes(locale as any) ? locale : defaultLocale;
+      return NextResponse.redirect(new URL(`/${validLocale}/coming-soon`, request.url));
     }
   }
 
