@@ -223,10 +223,6 @@ export default function ProductPage({ params: paramsPromise }: Props) {
                 <Shield className="w-4 h-4 text-brand-green flex-shrink-0" />
                 <span>Pagamento seguro via MB Way ou transferência</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <Check className="w-4 h-4 text-brand-green flex-shrink-0" />
-                <span>Devoluções gratuitas em 30 dias</span>
-              </div>
             </div>
           </div>
         </div>

@@ -6,30 +6,30 @@ const featuredProducts = [
   {
     id: 'bola-reacao-verde',
     name: 'Bola de Reação Verde',
-    price: 24.99,
+    price: 14.99,
     image: '/images/produtos/bola-reacao-verde-splash.jpg',
     tag: 'Bestseller',
   },
   {
     id: 'bola-reacao-branca',
     name: 'Bola de Reação Branca',
-    price: 24.99,
+    price: 14.99,
     image: '/images/produtos/bola-reacao-branca-splash.jpg',
     tag: 'Novo',
   },
   {
     id: 'bola-reacao-verde-padel',
-    name: 'Bola de Reação — Edição Padel',
-    price: 24.99,
+    name: 'Bola de Reação — Padel',
+    price: 14.99,
     image: '/images/produtos/bola-reacao-verde-padel.jpg',
     tag: null,
   },
   {
-    id: 'bola-reacao-branca-mao',
-    name: 'Bola de Reação Premium',
-    price: 29.99,
+    id: 'bola-reacao-branca-pack',
+    name: 'Pack Duplo Branco',
+    price: 24.99,
     image: '/images/produtos/bola-reacao-branca-mao.jpg',
-    tag: 'Premium',
+    tag: 'Pack',
   },
 ];
 
@@ -40,6 +40,7 @@ export default async function HomePage() {
 
   return (
     <div>
+
       {/* ── HERO ── */}
       <section className="relative h-[90vh] min-h-[600px] flex items-center overflow-hidden">
         <Image
@@ -49,17 +50,24 @@ export default async function HomePage() {
           priority
           className="object-cover object-top"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 w-full">
-          <div className="max-w-xl">
-            <span className="inline-block bg-brand-green text-brand-dark text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full mb-6">
-              React First
-            </span>
+          <div className="max-w-2xl">
+            {/* Slogan SVG */}
+            <div className="mb-6">
+              <Image
+                src="/images/identidade/precision.svg"
+                alt="Precision starts before the match"
+                width={480}
+                height={60}
+                className="object-contain"
+              />
+            </div>
             <h1 className="text-5xl md:text-7xl font-black text-white leading-none mb-6">
               {t('hero_title')}
             </h1>
-            <p className="text-lg text-gray-300 mb-10 leading-relaxed">
+            <p className="text-lg text-gray-300 mb-10 leading-relaxed max-w-lg">
               {t('hero_subtitle')}
             </p>
             <div className="flex gap-4 flex-wrap">
@@ -72,6 +80,17 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* Tubarão decorativo */}
+        <div className="absolute bottom-0 right-0 w-64 md:w-96 opacity-10 pointer-events-none select-none">
+          <Image
+            src="/images/identidade/tubarao-branco.svg"
+            alt=""
+            width={600}
+            height={450}
+            className="object-contain"
+          />
+        </div>
       </section>
 
       {/* ── STRIP DE CONFIANÇA ── */}
@@ -79,8 +98,8 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-8 text-sm font-bold uppercase tracking-wider">
           <span>⚡ Envio em 24h</span>
           <span>🦈 Tecnologia exclusiva</span>
-          <span>🔄 30 dias de troca</span>
           <span>🇵🇹 Feito para atletas</span>
+          <span>🎯 React First. Win More.</span>
         </div>
       </section>
 
@@ -134,7 +153,26 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── LIFESTYLE SPLIT SECTION ── */}
+      {/* ── ATTACK THE MOMENT ── */}
+      <section className="bg-brand-dark py-20 px-6 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-5 pointer-events-none">
+          <Image src="/images/identidade/tubarao-branco.svg" alt="" fill className="object-contain object-right" />
+        </div>
+        <div className="max-w-5xl mx-auto text-center relative z-10">
+          <Image
+            src="/images/identidade/attack-branco.svg"
+            alt="Attack the moment"
+            width={700}
+            height={120}
+            className="object-contain mx-auto mb-8"
+          />
+          <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">
+            A reação define o jogo antes do contacto com a bola. Treina o imprevisível. Domina o momento.
+          </p>
+        </div>
+      </section>
+
+      {/* ── LIFESTYLE SPLIT ── */}
       <section className="grid md:grid-cols-2 min-h-[500px]">
         <div className="relative min-h-[400px]">
           <Image
@@ -144,16 +182,19 @@ export default async function HomePage() {
             className="object-cover"
           />
         </div>
-        <div className="bg-brand-dark text-white flex items-center p-12 md:p-16">
+        <div className="bg-brand-gray text-white flex items-center p-12 md:p-16">
           <div>
-            <p className="text-brand-green font-bold uppercase tracking-widest text-sm mb-4">
-              Never Performed
-            </p>
-            <h2 className="text-4xl font-black mb-6 leading-tight">
-              Treina a tua<br />reação. Domina<br />o jogo.
-            </h2>
+            <div className="mb-6">
+              <Image
+                src="/images/identidade/react.svg"
+                alt="React first. Win more."
+                width={360}
+                height={80}
+                className="object-contain"
+              />
+            </div>
             <p className="text-gray-400 mb-8 leading-relaxed">
-              As reaction balls ReaxOne foram desenvolvidas para treinar velocidade de reação, agilidade e coordenação. Usadas por atletas profissionais e personal trainers.
+              As reaction balls ReaxOne foram desenvolvidas para treinar velocidade de reação, agilidade e coordenação. Usadas por atletas profissionais e personal trainers em padel, futebol, ténis e formação desportiva.
             </p>
             <Link href={`${prefix}/sobre`} className="btn-green inline-block">
               Conhecer a marca
@@ -192,6 +233,7 @@ export default async function HomePage() {
           ))}
         </div>
       </section>
+
     </div>
   );
 }

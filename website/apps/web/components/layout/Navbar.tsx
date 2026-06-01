@@ -22,7 +22,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href={`${prefix}/`} className="flex items-center">
           <Image
-            src="/images/marca/logo.png"
+            src="/images/identidade/texto-branco.svg"
             alt="ReaxOne"
             width={130}
             height={37}

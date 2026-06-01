@@ -13,7 +13,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           <div className="col-span-2 md:col-span-1">
             <Image
-              src="/images/marca/logo.png"
+              src="/images/identidade/texto-branco.svg"
               alt="ReaxOne"
               width={120}
               height={34}
