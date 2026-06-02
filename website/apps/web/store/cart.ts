@@ -12,18 +12,21 @@ export interface CartItem {
 
 interface CartStore {
   items: CartItem[];
+  total: number;
+  lastAdded: CartItem | null;
   addItem: (item: CartItem) => void;
   removeItem: (id: string, size?: string) => void;
   updateQuantity: (id: string, size: string | undefined, quantity: number) => void;
   clearCart: () => void;
-  total: number;
+  clearLastAdded: () => void;
 }
 
 export const useCartStore = create<CartStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       items: [],
       total: 0,
+      lastAdded: null,
 
       addItem: (item) => {
         set((state) => {
@@ -43,6 +46,7 @@ export const useCartStore = create<CartStore>()(
           return {
             items: newItems,
             total: newItems.reduce((acc, i) => acc + i.price * i.quantity, 0),
+            lastAdded: item,
           };
         });
       },
@@ -75,9 +79,11 @@ export const useCartStore = create<CartStore>()(
       },
 
       clearCart: () => set({ items: [], total: 0 }),
+      clearLastAdded: () => set({ lastAdded: null }),
     }),
     {
       name: 'reaxone-cart',
+      partialize: (state) => ({ items: state.items, total: state.total }),
     }
   )
 );

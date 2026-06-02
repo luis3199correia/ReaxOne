@@ -88,7 +88,8 @@
     "register_button": "Create account",
     "no_account": "Don't have an account?",
     "has_account": "Already have an account?",
-    "forgot_password": "Forgot your password?"
+    "forgot_password": "Forgot your password?",
+    "error": "Invalid email or password"
   },
   "admin": {
     "title": "Backoffice",

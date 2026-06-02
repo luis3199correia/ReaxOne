@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import WhatsAppBubble from './WhatsAppBubble';
+import CartToast from '@/components/shop/CartToast';
 
 export default function ConditionalShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -19,6 +20,7 @@ export default function ConditionalShell({ children }: { children: React.ReactNo
       <main className="flex-1">{children}</main>
       <Footer />
       <WhatsAppBubble />
+      <CartToast />
     </div>
   );
 }

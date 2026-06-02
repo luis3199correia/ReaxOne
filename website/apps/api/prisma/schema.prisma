@@ -114,6 +114,11 @@ model Order {
   nif          String?
   companyName  String?
 
+  // Batch Logistics
+  batchOrderNumber String?
+  shippingMethod   String?
+  shippingCost     Float    @default(0)
+
   user       User?         @relation(fields: [userId], references: [id])
   items      OrderItem[]
   payment    Payment?

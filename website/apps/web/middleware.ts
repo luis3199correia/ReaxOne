@@ -30,16 +30,18 @@ export default function middleware(request: NextRequest) {
     const isStatic         = pathname.startsWith('/_next') || pathname.startsWith('/images') || pathname === '/favicon.ico';
     const hasPreview       = request.cookies.get('reaxone_preview')?.value === '1';
 
-    const hasAdminToken = (() => {
+    // Qualquer utilizador com sessão válida bypassa a landing
+    const isLoggedIn = (() => {
       const token = request.cookies.get('reaxone_token')?.value;
       if (!token) return false;
       try {
         const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-        return payload.role === 'ADMIN';
+        // Verifica se o token não expirou
+        return payload.exp ? payload.exp * 1000 > Date.now() : true;
       } catch { return false; }
     })();
 
-    const bypass = isComingSoonPage || isAdminRoute || isAuthRoute || isStatic || hasPreview || hasAdminToken;
+    const bypass = isComingSoonPage || isAdminRoute || isAuthRoute || isStatic || hasPreview || isLoggedIn;
 
     if (!bypass) {
       const locale = pathname.split('/')[1] || defaultLocale;

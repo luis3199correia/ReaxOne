@@ -7,6 +7,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ContactModule } from './contact/contact.module';
 import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
+import { BatchModule } from './batch/batch.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -20,6 +21,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ContactModule,
     OrdersModule,
     PaymentsModule,
+    BatchModule,
   ],
 })
 export class AppModule {}
