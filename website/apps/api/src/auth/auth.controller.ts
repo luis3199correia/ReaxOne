@@ -54,10 +54,12 @@ export class AuthController {
   }
 
   private setTokenCookie(res: Response, token: string) {
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('reaxone_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      domain: isProd ? '.reaxone.com' : undefined,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     });
   }
