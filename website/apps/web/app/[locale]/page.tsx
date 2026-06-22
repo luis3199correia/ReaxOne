@@ -44,7 +44,7 @@ export default async function HomePage() {
       {/* ── HERO ── */}
       <section className="relative h-[90vh] min-h-[600px] flex items-center overflow-hidden">
         <Image
-          src="/images/hero/joao-hoodie-react-first-indoor.jpg"
+          src="/images/hero/joao-bola-verde-closeup-mao.jpg"
           alt="ReaxOne — Treino de reação"
           fill
           priority
@@ -176,7 +176,7 @@ export default async function HomePage() {
       <section className="grid md:grid-cols-2 min-h-[500px]">
         <div className="relative min-h-[400px]">
           <Image
-            src="/images/hero/joao-treino-bola-branca-court.jpg"
+            src="/images/hero/joao-corrida-exterior-bola-verde.jpg"
             alt="Treino exterior com ReaxOne"
             fill
             className="object-cover"
@@ -215,11 +215,11 @@ export default async function HomePage() {
         </div>
         <div className="grid grid-cols-3 gap-2">
           {[
-            '/images/lifestyle/joao-treino-reacao-indoor-agachamento.jpg',
-            '/images/lifestyle/joao-treino-reacao-indoor-bola.jpg',
-            '/images/lifestyle/joao-treino-reacao-indoor-posicao.jpg',
-            '/images/lifestyle/joao-treino-exterior-corrida.jpg',
-            '/images/lifestyle/joao-treino-exterior-ressalto.jpg',
+            '/images/lifestyle/joao-reacao-exterior-bola-ressalto-pes.jpg',
+            '/images/lifestyle/joao-reacao-exterior-bola-ar-frente.jpg',
+            '/images/lifestyle/joao-reacao-exterior-agachar-bola.jpg',
+            '/images/lifestyle/joao-reacao-exterior-posicao-lateral.jpg',
+            '/images/lifestyle/joao-reacao-exterior-bola-cair.jpg',
             '/images/produtos/bola-reacao-verde-padel.jpg',
           ].map((src, i) => (
             <div key={i} className="relative aspect-square overflow-hidden rounded-lg">
