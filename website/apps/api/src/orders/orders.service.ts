@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BatchService } from '../batch/batch.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     private prisma: PrismaService,
     private batchService: BatchService,
+    private mailService: MailService,
   ) {}
 
   async create(data: {
@@ -73,21 +75,39 @@ export class OrdersService {
       include: { items: true, payment: true },
     });
 
-    // Cria encomenda na Batch em background (não bloqueia a resposta)
+    // Criar encomenda na Batch em background — apenas para produtos físicos
     this.createBatchOrder(order).catch(() => {});
 
     return order;
   }
 
   private async createBatchOrder(order: any) {
+    // Buscar os produtos para verificar quais são ebooks (digitais)
+    const productIds: string[] = order.items.map((i: any) => i.productId);
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, ebookFile: true },
+    });
+    const ebookIds = new Set(
+      products.filter((p) => p.ebookFile).map((p) => p.id),
+    );
+
+    // Filtrar apenas os itens físicos para a Batch
+    const physicalItems = order.items.filter(
+      (i: any) => !ebookIds.has(i.productId),
+    );
+
+    // Se todos os itens são ebooks, não há envio físico
+    if (physicalItems.length === 0) return;
+
     const cart: Record<string, number> = {};
-    for (const item of order.items) {
+    for (const item of physicalItems) {
       const key = item.size ? `${item.name} // ${item.size}` : item.name;
       cart[key] = item.quantity;
     }
 
-    const weightGrams = order.items.reduce(
-      (acc: number, i: any) => acc + i.quantity * 300, // ~300g por unidade
+    const weightGrams = physicalItems.reduce(
+      (acc: number, i: any) => acc + i.quantity * 300,
       0
     );
 
@@ -101,7 +121,7 @@ export class OrdersService {
       country:     'Portugal',
       external_id: order.id,
       weight:      weightGrams,
-      volumes:     order.items.reduce((acc: number, i: any) => acc + i.quantity, 0),
+      volumes:     physicalItems.reduce((acc: number, i: any) => acc + i.quantity, 0),
       total:       order.totalAmount,
       cart,
     });
@@ -146,7 +166,7 @@ export class OrdersService {
   }
 
   async confirmPayment(orderId: string) {
-    return this.prisma.$transaction([
+    const [payment, order] = await this.prisma.$transaction([
       this.prisma.payment.update({
         where: { orderId },
         data:  { status: 'CONFIRMED', confirmedAt: new Date() },
@@ -156,5 +176,37 @@ export class OrdersService {
         data:  { status: 'PAID' },
       }),
     ]);
+
+    // Enviar ebooks por email em background (não bloqueia a resposta)
+    this.deliverEbooks(orderId, order.email, order.firstName).catch(() => {});
+
+    return [payment, order];
+  }
+
+  private async deliverEbooks(
+    orderId: string,
+    email: string,
+    firstName: string,
+  ): Promise<void> {
+    // Buscar itens da encomenda com os respetivos produtos
+    const items = await this.prisma.orderItem.findMany({
+      where: { orderId },
+      include: {
+        product: {
+          select: { id: true, name: true, ebookFile: true },
+        },
+      },
+    });
+
+    // Filtrar itens que têm ficheiro de ebook
+    const ebookItems = items.filter((i) => i.product?.ebookFile);
+    if (ebookItems.length === 0) return;
+
+    const ebooks = ebookItems.map((i) => ({
+      title:    i.product.name,
+      filePath: i.product.ebookFile as string,
+    }));
+
+    await this.mailService.sendEbookDelivery(email, firstName, orderId, ebooks);
   }
 }

@@ -9,6 +9,7 @@ interface CreateProductDto {
   images?: string[];
   stock?: number;
   categoryId?: string;
+  ebookFile?: string; // caminho para o PDF (apenas para ebooks)
 }
 
 @Injectable()
