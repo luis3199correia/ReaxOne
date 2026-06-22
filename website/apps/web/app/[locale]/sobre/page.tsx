@@ -12,7 +12,7 @@ export default async function SobrePage() {
       {/* ── HERO ── */}
       <section className="relative h-[80vh] min-h-[560px] flex items-end overflow-hidden">
         <Image
-          src="/images/lifestyle/joao-reacao-exterior-lanca-bola.jpg"
+          src="/images/lifestyle/joao-treino-reacao-indoor-agachamento.jpg"
           alt="ReaxOne — Performance Primeiro"
           fill
           priority
@@ -68,7 +68,7 @@ export default async function SobrePage() {
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div className="relative aspect-square rounded-2xl overflow-hidden shadow-xl">
               <Image
-                src="/images/lifestyle/joao-reacao-exterior-curvado-bola.jpg"
+                src="/images/lifestyle/joao-treino-reacao-indoor-posicao.jpg"
                 alt="Velocidade de reação"
                 fill
                 className="object-cover"
