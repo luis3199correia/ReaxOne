@@ -37,7 +37,7 @@ export class MailService {
     const from = process.env.SMTP_USER || 'noreply@reaxone.com';
 
     // Construir attachments — apenas para ficheiros que existam no disco
-    const attachments: nodemailer.Attachment[] = [];
+    const attachments: nodemailer.SendMailOptions['attachments'] = [];
     for (const ebook of ebooks) {
       const absPath = path.isAbsolute(ebook.filePath)
         ? ebook.filePath
