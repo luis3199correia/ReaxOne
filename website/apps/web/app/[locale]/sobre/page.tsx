@@ -12,7 +12,7 @@ export default async function SobrePage() {
       {/* ── HERO ── */}
       <section className="relative h-[80vh] min-h-[560px] flex items-end overflow-hidden">
         <Image
-          src="/images/lifestyle/lifestyle-agility-indoor-01.jpg"
+          src="/images/lifestyle/joao-treino-reacao-indoor-agachamento.jpg"
           alt="ReaxOne — Performance Primeiro"
           fill
           priority
@@ -53,7 +53,7 @@ export default async function SobrePage() {
           </div>
           <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
             <Image
-              src="/images/lifestyle/lifestyle-catch-indoor.jpg"
+              src="/images/lifestyle/joao-treino-reacao-indoor-bola.jpg"
               alt="Treino de reação"
               fill
               className="object-cover"
@@ -68,7 +68,7 @@ export default async function SobrePage() {
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div className="relative aspect-square rounded-2xl overflow-hidden shadow-xl">
               <Image
-                src="/images/lifestyle/lifestyle-agility-indoor-02.jpg"
+                src="/images/lifestyle/joao-treino-reacao-indoor-posicao.jpg"
                 alt="Velocidade de reação"
                 fill
                 className="object-cover"
@@ -258,7 +258,7 @@ export default async function SobrePage() {
       {/* ── CTA FINAL ── */}
       <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
         <Image
-          src="/images/hero/hero-treino-exterior.jpg"
+          src="/images/hero/joao-treino-bola-branca-court.jpg"
           alt="ReaxOne em ação"
           fill
           className="object-cover object-top"
