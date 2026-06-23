@@ -1,10 +1,38 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { getLocale } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 export default async function SobrePage() {
   const locale = await getLocale();
   const prefix = `/${locale}`;
+  const t = await getTranslations('about');
+
+  const reactionItems = [
+    { label: t('neural_speed'),       desc: t('neural_speed_desc') },
+    { label: t('decision_pressure'),  desc: t('decision_pressure_desc') },
+    { label: t('stimulus_reading'),   desc: t('stimulus_reading_desc') },
+    { label: t('first_step'),         desc: t('first_step_desc') },
+  ];
+
+  const modalities = [
+    { num: '01', title: t('m01_title'), desc: t('m01_desc') },
+    { num: '02', title: t('m02_title'), desc: t('m02_desc') },
+    { num: '03', title: t('m03_title'), desc: t('m03_desc') },
+    { num: '04', title: t('m04_title'), desc: t('m04_desc') },
+    { num: '05', title: t('m05_title'), desc: t('m05_desc') },
+    { num: '06', title: t('m06_title'), desc: t('m06_desc') },
+  ];
+
+  const trainingSteps = [
+    { num: '01', title: t('t01_title'), desc: t('t01_desc'), icon: '↓' },
+    { num: '02', title: t('t02_title'), desc: t('t02_desc'), icon: '↔' },
+    { num: '03', title: t('t03_title'), desc: t('t03_desc'), icon: '⚡' },
+    { num: '04', title: t('t04_title'), desc: t('t04_desc'), icon: '🎯' },
+  ];
+
+  const features = [
+    t('feature1'), t('feature2'), t('feature3'), t('feature4'),
+  ];
 
   return (
     <div>
@@ -21,15 +49,18 @@ export default async function SobrePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/50 to-transparent" />
         <div className="relative z-10 max-w-7xl mx-auto px-6 pb-16 w-full">
           <span className="inline-block bg-brand-green text-brand-dark text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-6">
-            A marca
+            {t('badge')}
           </span>
           <h1 className="text-5xl md:text-7xl font-black text-white leading-none mb-6">
-            Performance<br />
-            <span className="text-brand-green">Primeiro.</span><br />
-            Sempre.
+            {t('hero_title').split('\n').map((line, i) => (
+              <span key={i}>
+                {i === 1 ? <span className="text-brand-green">{line}</span> : line}
+                {i < 2 && <br />}
+              </span>
+            ))}
           </h1>
           <p className="text-gray-300 text-lg md:text-xl max-w-xl leading-relaxed">
-            A ReaxOne nasce da preparação física aplicada ao jogo real.
+            {t('hero_subtitle')}
           </p>
         </div>
       </section>
@@ -39,22 +70,20 @@ export default async function SobrePage() {
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
           <div>
             <p className="text-brand-primary font-bold uppercase tracking-widest text-sm mb-4">
-              A nossa filosofia
+              {t('philosophy_label')}
             </p>
             <h2 className="text-4xl font-black text-brand-dark mb-6 leading-tight">
-              Não é repetição.<br />É adaptação.
+              {t('philosophy_title').split('\n').map((line, i) => (
+                <span key={i}>{line}{i === 0 && <br />}</span>
+              ))}
             </h2>
-            <p className="text-gray-600 leading-relaxed mb-5">
-              Cada produto é desenhado para desenvolver reação, tomada de decisão e transferência direta para a competição — não apenas repetição mecânica.
-            </p>
-            <p className="text-gray-600 leading-relaxed">
-              Trabalhamos com atletas, treinadores e clubes que exigem método, precisão e propósito em cada estímulo.
-            </p>
+            <p className="text-gray-600 leading-relaxed mb-5">{t('philosophy_p1')}</p>
+            <p className="text-gray-600 leading-relaxed">{t('philosophy_p2')}</p>
           </div>
           <div className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
             <Image
               src="/images/lifestyle/joao-reacao-exterior-apanhar-chao.jpg"
-              alt="Treino de reação"
+              alt={t('philosophy_label')}
               fill
               className="object-cover"
             />
@@ -69,28 +98,27 @@ export default async function SobrePage() {
             <div className="relative aspect-square rounded-2xl overflow-hidden shadow-xl">
               <Image
                 src="/images/lifestyle/joao-treino-reacao-indoor-posicao.jpg"
-                alt="Velocidade de reação"
+                alt={t('reaction_label')}
                 fill
                 className="object-cover"
               />
             </div>
             <div>
               <p className="text-brand-primary font-bold uppercase tracking-widest text-sm mb-4">
-                Porque a reação define o jogo
+                {t('reaction_label')}
               </p>
               <h2 className="text-4xl font-black text-brand-dark mb-6 leading-tight">
-                Quem reage primeiro,<br />decide melhor.
+                {t('reaction_title').split('\n').map((line, i) => (
+                  <span key={i}>{line}{i === 0 && <br />}</span>
+                ))}
               </h2>
               <p className="text-gray-600 leading-relaxed mb-8">
-                A maioria das ações decisivas acontece <strong>antes do contacto com a bola</strong>. A reação determina a performance antes de a ação acontecer.
+                {t('reaction_p_before')}
+                <strong>{t('reaction_p_bold')}</strong>
+                {t('reaction_p_after')}
               </p>
               <div className="space-y-4">
-                {[
-                  { label: 'Velocidade neural', desc: 'Treina o sistema nervoso para responder mais rápido.' },
-                  { label: 'Tomada de decisão sob pressão', desc: 'Simula cenários reais de competição.' },
-                  { label: 'Leitura do estímulo real', desc: 'Não reages ao que esperas — reages ao que acontece.' },
-                  { label: 'Eficiência do primeiro passo', desc: 'O passo certo no momento certo faz toda a diferença.' },
-                ].map((item) => (
+                {reactionItems.map((item) => (
                   <div key={item.label} className="flex items-start gap-3">
                     <span className="w-2 h-2 rounded-full bg-brand-green mt-2 flex-shrink-0" />
                     <div>
@@ -109,47 +137,16 @@ export default async function SobrePage() {
       <section className="bg-brand-dark text-white py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <p className="text-brand-green font-bold uppercase tracking-widest text-sm mb-4 text-center">
-            Modalidades
+            {t('modalities_label')}
           </p>
           <h2 className="text-4xl font-black text-center mb-4">
-            Onde a ReaxOne atua
+            {t('modalities_title')}
           </h2>
           <p className="text-gray-400 text-center max-w-xl mx-auto mb-14">
-            A bola de reação adapta-se a qualquer modalidade que exija velocidade, leitura e decisão.
+            {t('modalities_subtitle')}
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {[
-              {
-                num: '01',
-                title: 'Padel',
-                desc: 'Reação, posicionamento e eficiência do split-step em rallies imprevisíveis.',
-              },
-              {
-                num: '02',
-                title: 'Ténis',
-                desc: 'Ler o ressalto. Reagir antes do golpe do adversário.',
-              },
-              {
-                num: '03',
-                title: 'Futebol',
-                desc: 'Primeiro passo, perceção e tomada de decisão sob pressão.',
-              },
-              {
-                num: '04',
-                title: 'Formação',
-                desc: 'Construir bases neurais para hábitos fortes desde cedo.',
-              },
-              {
-                num: '05',
-                title: 'Crianças',
-                desc: 'Desenvolver coordenação, atenção e reflexos desde as primeiras idades de forma lúdica.',
-              },
-              {
-                num: '06',
-                title: 'Animais',
-                desc: 'Estimulação cognitiva e física para cães — treino de foco, agilidade e instinto de reação.',
-              },
-            ].map((m) => (
+            {modalities.map((m) => (
               <div key={m.num} className="border border-white/10 rounded-xl p-6 hover:border-brand-green transition-colors">
                 <p className="text-brand-green text-xs font-black tracking-widest mb-3">{m.num}</p>
                 <h3 className="text-xl font-black mb-3">{m.title}</h3>
@@ -164,42 +161,19 @@ export default async function SobrePage() {
       <section className="py-20 px-6">
         <div className="max-w-5xl mx-auto">
           <p className="text-brand-primary font-bold uppercase tracking-widest text-sm mb-4 text-center">
-            Guia de treino
+            {t('training_label')}
           </p>
           <h2 className="text-4xl font-black text-brand-dark text-center mb-4">
-            Como treinar com a<br />bola de reação
+            {t('training_title').split('\n').map((line, i) => (
+              <span key={i}>{line}{i === 0 && <br />}</span>
+            ))}
           </h2>
           <p className="text-gray-500 text-center max-w-xl mx-auto mb-14">
-            Quatro formas de integrar a ReaxOne no teu treino e extrair o máximo da tua velocidade de resposta.
+            {t('training_subtitle')}
           </p>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {[
-              {
-                num: '01',
-                title: 'Queda imprevisível',
-                desc: 'Larga a bola a diferentes alturas e reage ao primeiro ressalto. Começa devagar e aumenta a velocidade progressivamente.',
-                icon: '↓',
-              },
-              {
-                num: '02',
-                title: 'Reação com parceiro',
-                desc: 'Um parceiro lança a bola sem aviso. Foco na leitura e no primeiro passo. Nível de dificuldade máximo.',
-                icon: '↔',
-              },
-              {
-                num: '03',
-                title: 'Decisão sob pressão',
-                desc: 'Adiciona um estímulo visual ou verbal antes da queda. Treina o processamento de informação sob stress competitivo.',
-                icon: '⚡',
-              },
-              {
-                num: '04',
-                title: 'Transferência para o jogo',
-                desc: 'Integra no aquecimento técnico — padel, ténis, futebol. Ligação direta entre o estímulo de treino e o gesto desportivo real.',
-                icon: '🎯',
-              },
-            ].map((step) => (
+            {trainingSteps.map((step) => (
               <div
                 key={step.num}
                 className="flex gap-5 p-6 rounded-xl border border-gray-100 bg-white shadow-sm hover:shadow-md transition-shadow"
@@ -223,21 +197,16 @@ export default async function SobrePage() {
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
           <div>
             <p className="text-brand-primary font-bold uppercase tracking-widest text-sm mb-4">
-              Os nossos produtos
+              {t('products_label')}
             </p>
             <h2 className="text-4xl font-black text-brand-dark mb-6 leading-tight">
-              A reaction ball que<br />muda o treino
+              {t('products_title').split('\n').map((line, i) => (
+                <span key={i}>{line}{i === 0 && <br />}</span>
+              ))}
             </h2>
-            <p className="text-gray-600 leading-relaxed mb-6">
-              Geometria irregular única que torna cada ressalto completamente imprevisível. Usada por atletas e treinadores de alta competição em padel, futebol, ténis e formação desportiva.
-            </p>
+            <p className="text-gray-600 leading-relaxed mb-6">{t('products_p')}</p>
             <ul className="space-y-3 mb-8">
-              {[
-                'Ressalto imprevisível — treina reflexos reais',
-                'Borracha premium de alta durabilidade',
-                'Indoor e outdoor',
-                'Ideal para todas as modalidades',
-              ].map((item) => (
+              {features.map((item) => (
                 <li key={item} className="flex items-start gap-3 text-gray-700 text-sm">
                   <span className="text-brand-green font-black mt-0.5 text-base">✓</span>
                   {item}
@@ -245,21 +214,21 @@ export default async function SobrePage() {
               ))}
             </ul>
             <Link href={`${prefix}/loja`} className="btn-primary inline-block">
-              Ver produtos
+              {t('view_products')}
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="relative aspect-square rounded-xl overflow-hidden">
-              <Image src="/images/produtos/bola-reacao-verde-splash.jpg" alt="Bola de reação verde" fill className="object-cover" />
+              <Image src="/images/produtos/bola-reacao-verde-splash.jpg" alt="" fill className="object-cover" />
             </div>
             <div className="relative aspect-square rounded-xl overflow-hidden mt-8">
-              <Image src="/images/produtos/bola-reacao-branca-splash.jpg" alt="Bola de reação branca" fill className="object-cover" />
+              <Image src="/images/produtos/bola-reacao-branca-splash.jpg" alt="" fill className="object-cover" />
             </div>
             <div className="relative aspect-square rounded-xl overflow-hidden">
-              <Image src="/images/produtos/bola-reacao-verde-padel.jpg" alt="Padel" fill className="object-cover" />
+              <Image src="/images/produtos/bola-reacao-verde-padel.jpg" alt="" fill className="object-cover" />
             </div>
             <div className="relative aspect-square rounded-xl overflow-hidden mt-8">
-              <Image src="/images/produtos/bola-reacao-branca-mao.jpg" alt="Bola branca em mão" fill className="object-cover" />
+              <Image src="/images/produtos/bola-reacao-branca-mao.jpg" alt="" fill className="object-cover" />
             </div>
           </div>
         </div>
@@ -269,7 +238,7 @@ export default async function SobrePage() {
       <section className="relative h-[60vh] min-h-[400px] overflow-hidden">
         <Image
           src="/images/hero/joao-corrida-lateral-bola-verde.jpg"
-          alt="ReaxOne em ação"
+          alt="ReaxOne"
           fill
           className="object-cover object-top"
         />
@@ -277,13 +246,15 @@ export default async function SobrePage() {
         <div className="absolute inset-0 flex items-center justify-center text-center px-6">
           <div>
             <p className="text-brand-green font-black uppercase tracking-widest text-sm mb-4">
-              Performance primeiro. Sempre.
+              {t('cta_label')}
             </p>
             <h2 className="text-4xl md:text-5xl font-black text-white mb-8 leading-tight">
-              Pronto para reagir<br />mais rápido?
+              {t('cta_title').split('\n').map((line, i) => (
+                <span key={i}>{line}{i === 0 && <br />}</span>
+              ))}
             </h2>
             <Link href={`${prefix}/loja`} className="btn-green text-lg px-10 py-4 inline-block">
-              Comprar agora
+              {t('cta_btn')}
             </Link>
           </div>
         </div>

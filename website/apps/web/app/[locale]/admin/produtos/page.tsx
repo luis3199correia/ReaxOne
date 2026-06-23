@@ -86,6 +86,8 @@ export default function AdminProductsPage() {
   function closeModal() {
     setModal(null);
     setEditing(null);
+    setSaving(false);
+    setSaved(false);
   }
 
   function handleField(key: keyof typeof EMPTY_FORM, value: string | boolean) {

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Mail, Phone, MapPin, Check, Loader2, MessageCircle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 
 interface ContactForm {
@@ -12,18 +13,19 @@ interface ContactForm {
   message: string;
 }
 
-const SUBJECTS = [
-  'Encomenda / Pagamento',
-  'Dúvida sobre produto',
-  'Parceria / Clube',
-  'Imprensa',
-  'Outro',
-];
-
 export default function ContactPage() {
+  const t = useTranslations('contact');
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ContactForm>();
   const [sent, setSent] = useState(false);
   const [serverError, setServerError] = useState('');
+
+  const subjects = [
+    t('subject_order'),
+    t('subject_product'),
+    t('subject_partnership'),
+    t('subject_press'),
+    t('subject_other'),
+  ];
 
   async function onSubmit(data: ContactForm) {
     setServerError('');
@@ -33,10 +35,10 @@ export default function ContactPage() {
         setSent(true);
         reset();
       } else {
-        setServerError(res.data.error ?? 'Erro ao enviar mensagem.');
+        setServerError(res.data.error ?? t('submit'));
       }
     } catch {
-      setServerError('Não foi possível enviar. Tenta novamente ou contacta-nos pelo WhatsApp.');
+      setServerError(t('whatsapp_cta_subtitle'));
     }
   }
 
@@ -47,12 +49,10 @@ export default function ContactPage() {
       <div className="bg-brand-dark text-white py-16 px-6">
         <div className="max-w-5xl mx-auto">
           <span className="inline-block bg-brand-green text-brand-dark text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full mb-4">
-            Contacto
+            {t('badge')}
           </span>
-          <h1 className="text-4xl md:text-5xl font-black mb-3">Fala connosco</h1>
-          <p className="text-gray-400 text-lg max-w-lg">
-            Tens uma dúvida, encomenda ou proposta? Estamos aqui para ajudar.
-          </p>
+          <h1 className="text-4xl md:text-5xl font-black mb-3">{t('title')}</h1>
+          <p className="text-gray-400 text-lg max-w-lg">{t('subtitle')}</p>
         </div>
       </div>
 
@@ -62,7 +62,7 @@ export default function ContactPage() {
           {/* Info lateral */}
           <aside className="md:col-span-2 space-y-8">
             <div>
-              <h2 className="text-lg font-bold text-brand-dark mb-5">Informações</h2>
+              <h2 className="text-lg font-bold text-brand-dark mb-5">{t('info_heading')}</h2>
               <div className="space-y-4">
                 <div className="flex items-start gap-3 text-sm text-gray-600">
                   <Mail className="w-4 h-4 text-brand-primary mt-0.5 flex-shrink-0" />
@@ -90,7 +90,7 @@ export default function ContactPage() {
                 <div className="flex items-start gap-3 text-sm text-gray-600">
                   <MapPin className="w-4 h-4 text-brand-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-brand-dark">Localização</p>
+                    <p className="font-semibold text-brand-dark">{t('location_label')}</p>
                     <p>Portugal 🇵🇹</p>
                   </div>
                 </div>
@@ -99,21 +99,21 @@ export default function ContactPage() {
 
             {/* WhatsApp CTA */}
             <a
-              href="https://wa.me/351911084422?text=Olá%2C%20gostaria%20de%20saber%20mais%20sobre%20os%20produtos%20ReaxOne."
+              href="https://wa.me/351911084422?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20os%20produtos%20ReaxOne."
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 bg-[#25D366] text-white px-5 py-4 rounded-xl font-semibold hover:bg-[#1ebe5c] transition-colors"
             >
               <MessageCircle className="w-5 h-5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-bold">Resposta mais rápida?</p>
-                <p className="text-xs opacity-90">Fala diretamente pelo WhatsApp</p>
+                <p className="text-sm font-bold">{t('whatsapp_cta_title')}</p>
+                <p className="text-xs opacity-90">{t('whatsapp_cta_subtitle')}</p>
               </div>
             </a>
 
             <div className="bg-brand-light rounded-xl p-4 text-sm text-gray-600">
-              <p className="font-semibold text-brand-dark mb-1">Horário de resposta</p>
-              <p>Respondemos em até 24h em dias úteis.</p>
+              <p className="font-semibold text-brand-dark mb-1">{t('response_time_heading')}</p>
+              <p>{t('response_time_text')}</p>
             </div>
           </aside>
 
@@ -124,16 +124,12 @@ export default function ContactPage() {
                 <div className="w-16 h-16 rounded-full bg-brand-green flex items-center justify-center mb-4">
                   <Check className="w-8 h-8 text-brand-dark" />
                 </div>
-                <h3 className="text-2xl font-black text-brand-dark mb-2">Mensagem enviada!</h3>
+                <h3 className="text-2xl font-black text-brand-dark mb-2">{t('success_title')}</h3>
                 <p className="text-gray-500 mb-6">
-                  Recebemos o teu contacto e iremos responder em breve.<br />
-                  Verifica também a tua caixa de entrada — enviámos uma confirmação.
+                  {t('success_p1')}<br />{t('success_p2')}
                 </p>
-                <button
-                  onClick={() => setSent(false)}
-                  className="btn-secondary"
-                >
-                  Enviar outra mensagem
+                <button onClick={() => setSent(false)} className="btn-secondary">
+                  {t('send_another')}
                 </button>
               </div>
             ) : (
@@ -146,27 +142,22 @@ export default function ContactPage() {
 
                 <div className="grid sm:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nome *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('name_label')} *</label>
                     <input
                       type="text"
-                      {...register('name', { required: 'Campo obrigatório' })}
+                      {...register('name', { required: t('required') })}
                       className={`input ${errors.name ? 'border-red-400 focus:ring-red-400' : ''}`}
-                      placeholder="O teu nome"
+                      placeholder={t('name_placeholder')}
                     />
                     {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('email_label')} *</label>
                     <input
                       type="email"
                       {...register('email', {
-                        required: 'Campo obrigatório',
-                        pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email inválido' },
+                        required: t('required'),
+                        pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: t('email_invalid') },
                       })}
                       className={`input ${errors.email ? 'border-red-400 focus:ring-red-400' : ''}`}
                       placeholder="email@exemplo.com"
@@ -176,26 +167,27 @@ export default function ContactPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Assunto *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('subject_label')} *</label>
                   <select
-                    {...register('subject', { required: 'Campo obrigatório' })}
+                    {...register('subject', { required: t('required') })}
                     className={`input ${errors.subject ? 'border-red-400' : ''}`}
                   >
-                    <option value="">Seleciona um assunto...</option>
-                    {SUBJECTS.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
+                    <option value="">{t('subject_placeholder')}</option>
+                    {subjects.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                   {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mensagem *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('message_label')} *</label>
                   <textarea
                     rows={6}
-                    {...register('message', { required: 'Campo obrigatório', minLength: { value: 10, message: 'Mensagem muito curta' } })}
+                    {...register('message', {
+                      required: t('required'),
+                      minLength: { value: 10, message: t('message_too_short') },
+                    })}
                     className={`input resize-none ${errors.message ? 'border-red-400 focus:ring-red-400' : ''}`}
-                    placeholder="Descreve o teu pedido ou questão..."
+                    placeholder={t('message_placeholder')}
                   />
                   {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message.message}</p>}
                 </div>
@@ -206,8 +198,8 @@ export default function ContactPage() {
                   className="btn-primary w-full flex items-center justify-center gap-2"
                 >
                   {isSubmitting
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> A enviar...</>
-                    : 'Enviar mensagem'
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('submitting')}</>
+                    : t('submit')
                   }
                 </button>
               </form>

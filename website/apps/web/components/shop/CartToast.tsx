@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ShoppingCart, X, Check } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 
 export default function CartToast() {
   const locale = useLocale();
+  const t = useTranslations('cart');
   const { lastAdded, clearLastAdded, items } = useCartStore();
   const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -44,7 +45,7 @@ export default function CartToast() {
       <div className="flex items-center justify-between bg-brand-green px-4 py-2.5">
         <div className="flex items-center gap-2 text-brand-dark font-semibold text-sm">
           <Check className="w-4 h-4" />
-          Adicionado ao carrinho!
+          {t('added_header')}
         </div>
         <button
           onClick={() => { setLeaving(true); setTimeout(() => { setVisible(false); clearLastAdded(); }, 300); }}
@@ -65,7 +66,7 @@ export default function CartToast() {
         )}
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-brand-dark text-sm leading-snug truncate">{lastAdded.name}</p>
-          {lastAdded.size && <p className="text-xs text-gray-400 mt-0.5">Tamanho: {lastAdded.size}</p>}
+          {lastAdded.size && <p className="text-xs text-gray-400 mt-0.5">{t('size_label')}: {lastAdded.size}</p>}
           <p className="text-brand-primary font-bold text-sm mt-1">€{lastAdded.price.toFixed(2)}</p>
         </div>
       </div>
@@ -76,7 +77,7 @@ export default function CartToast() {
           onClick={() => { setLeaving(true); setTimeout(() => { setVisible(false); clearLastAdded(); }, 300); }}
           className="flex-1 btn-secondary py-2 text-sm"
         >
-          Continuar
+          {t('continue')}
         </button>
         <Link
           href={`/${locale}/carrinho`}
@@ -84,7 +85,7 @@ export default function CartToast() {
           className="flex-1 btn-primary py-2 text-sm flex items-center justify-center gap-1.5"
         >
           <ShoppingCart className="w-4 h-4" />
-          Ver carrinho ({cartCount})
+          {t('view_cart')} ({cartCount})
         </Link>
       </div>
     </div>

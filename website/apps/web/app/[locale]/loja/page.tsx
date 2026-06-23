@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useMessages } from 'next-intl';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -26,9 +26,10 @@ export default function ShopPage() {
   const searchParams = useSearchParams();
   const initialCatSlug = searchParams.get('categoria') ?? '';
 
+  const messages = useMessages() as any;
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('Todos');
+  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>('__all__');
   const [sort, setSort] = useState<SortKey>('newest');
   const [loading, setLoading] = useState(true);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -41,25 +42,31 @@ export default function ShopPage() {
     ]).then(([prodRes, catRes]) => {
       setProducts(prodRes.data.map(toProduct));
 
-      const catNames: string[] = catRes.data.map((c: any) => c.name);
-      setCategories(catNames);
+      setCategories(catRes.data.map((c: any) => ({ name: c.name, slug: c.slug })));
 
       // Resolve a categoria inicial da querystring
       if (initialCatSlug) {
         const match = catRes.data.find(
           (c: any) => c.slug === initialCatSlug || c.slug.includes(initialCatSlug)
         );
-        if (match) setActiveCategory(match.name);
+        if (match) setActiveCategory(match.slug);
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [initialCatSlug]);
 
-  const allCategories = [t('all_categories'), ...categories];
+  const ALL_KEY = '__all__';
+
+  function translateCategory(name: string, slug: string): string {
+    return messages?.category_names?.[slug] ?? name;
+  }
+
+  const allCategories = [ALL_KEY, ...categories.map((c) => c.slug)];
 
   const filtered = useMemo(() => {
     let list = products;
-    if (activeCategory !== t('all_categories')) {
-      list = list.filter((p) => p.category === activeCategory);
+    if (activeCategory !== ALL_KEY) {
+      const catObj = categories.find((c) => c.slug === activeCategory);
+      if (catObj) list = list.filter((p) => p.category === catObj.name);
     }
     if (sort === 'price_asc') list = [...list].sort((a, b) => a.price - b.price);
     if (sort === 'price_desc') list = [...list].sort((a, b) => b.price - a.price);
@@ -85,20 +92,24 @@ export default function ShopPage() {
               {t('category_label')}
             </h2>
             <ul className="space-y-1">
-              {allCategories.map((cat) => (
-                <li key={cat}>
-                  <button
-                    onClick={() => setActiveCategory(cat)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                      activeCategory === cat
-                        ? 'bg-brand-primary text-white font-semibold'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                </li>
-              ))}
+              {allCategories.map((slug) => {
+                const catObj = categories.find((c) => c.slug === slug);
+                const label = catObj ? translateCategory(catObj.name, catObj.slug) : t('all_categories');
+                return (
+                  <li key={slug}>
+                    <button
+                      onClick={() => setActiveCategory(slug)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        activeCategory === slug
+                          ? 'bg-brand-primary text-white font-semibold'
+                          : 'text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </aside>
@@ -138,19 +149,23 @@ export default function ShopPage() {
           {/* Mobile filters */}
           {mobileFiltersOpen && (
             <div className="md:hidden flex flex-wrap gap-2 mb-6">
-              {allCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => { setActiveCategory(cat); setMobileFiltersOpen(false); }}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    activeCategory === cat
-                      ? 'bg-brand-primary text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+              {allCategories.map((slug) => {
+                const catObj = categories.find((c) => c.slug === slug);
+                const label = catObj ? translateCategory(catObj.name, catObj.slug) : t('all_categories');
+                return (
+                  <button
+                    key={slug}
+                    onClick={() => { setActiveCategory(slug); setMobileFiltersOpen(false); }}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      activeCategory === slug
+                        ? 'bg-brand-primary text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           )}
 
