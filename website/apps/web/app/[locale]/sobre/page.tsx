@@ -117,7 +117,7 @@ export default async function SobrePage() {
           <p className="text-gray-400 text-center max-w-xl mx-auto mb-14">
             A bola de reação adapta-se a qualquer modalidade que exija velocidade, leitura e decisão.
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {[
               {
                 num: '01',
@@ -138,6 +138,16 @@ export default async function SobrePage() {
                 num: '04',
                 title: 'Formação',
                 desc: 'Construir bases neurais para hábitos fortes desde cedo.',
+              },
+              {
+                num: '05',
+                title: 'Crianças',
+                desc: 'Desenvolver coordenação, atenção e reflexos desde as primeiras idades de forma lúdica.',
+              },
+              {
+                num: '06',
+                title: 'Animais',
+                desc: 'Estimulação cognitiva e física para cães — treino de foco, agilidade e instinto de reação.',
               },
             ].map((m) => (
               <div key={m.num} className="border border-white/10 rounded-xl p-6 hover:border-brand-green transition-colors">

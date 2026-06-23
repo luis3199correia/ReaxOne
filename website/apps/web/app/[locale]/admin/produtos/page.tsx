@@ -17,7 +17,11 @@ interface Product {
   active: boolean;
 }
 
-const CATEGORIES = ['Acessórios', 'Roupa'];
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 const EMPTY_FORM = {
   name: '',
@@ -25,13 +29,14 @@ const EMPTY_FORM = {
   description: '',
   price: '',
   stock: '',
-  category: 'Acessórios',
+  categoryId: '',
   images: '',
   active: true,
 };
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -43,8 +48,14 @@ export default function AdminProductsPage() {
 
   function fetchProducts() {
     setLoading(true);
-    api.get('/products?all=true')
-      .then((res) => setProducts(res.data))
+    Promise.all([
+      api.get('/products?all=true'),
+      api.get('/categories?all=true'),
+    ])
+      .then(([prodRes, catRes]) => {
+        setProducts(prodRes.data);
+        setCategories(catRes.data);
+      })
       .catch(() => setError('Erro ao carregar produtos.'))
       .finally(() => setLoading(false));
   }
@@ -65,7 +76,7 @@ export default function AdminProductsPage() {
       description: p.description ?? '',
       price: String(p.price),
       stock: String(p.stock),
-      category: p.category?.name ?? 'Acessórios',
+      categoryId: p.category?.id ?? '',
       images: p.images.join(', '),
       active: p.active,
     });
@@ -107,6 +118,7 @@ export default function AdminProductsPage() {
       stock,
       images,
       active: form.active,
+      ...(form.categoryId ? { categoryId: form.categoryId } : {}),
     };
 
     setSaving(true);
@@ -288,11 +300,14 @@ export default function AdminProductsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
                   <select
-                    value={form.category}
-                    onChange={(e) => handleField('category', e.target.value)}
+                    value={form.categoryId}
+                    onChange={(e) => handleField('categoryId', e.target.value)}
                     className="input"
                   >
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <option value="">— Sem categoria —</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div>

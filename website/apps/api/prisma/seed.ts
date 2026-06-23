@@ -34,9 +34,9 @@ async function main() {
   // Categories
   // -------------------------------------------------------------------------
   const catBolas = await prisma.category.upsert({
-    where: { slug: 'acessorios' },
+    where: { slug: 'material-desportivo' },
     update: {},
-    create: { name: 'Acessórios', slug: 'acessorios' },
+    create: { name: 'Material Desportivo', slug: 'material-desportivo' },
   });
 
   // Ebooks: produtos digitais entregues por email após pagamento

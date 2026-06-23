@@ -13,29 +13,31 @@ export default async function AdminOrdersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-brand-dark mb-8">{t('orders')}</h1>
+      <h1 className="text-2xl font-bold text-brand-dark mb-6 md:mb-8">{t('orders')}</h1>
 
       <div className="card overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="text-left px-4 py-3 text-sm font-medium">#</th>
-              <th className="text-left px-4 py-3 text-sm font-medium">Cliente</th>
-              <th className="text-left px-4 py-3 text-sm font-medium">Data</th>
-              <th className="text-left px-4 py-3 text-sm font-medium">Pagamento</th>
-              <th className="text-left px-4 py-3 text-sm font-medium">Estado</th>
-              <th className="text-right px-4 py-3 text-sm font-medium">Total</th>
-              <th className="px-4 py-3" />
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">
-                Sem encomendas ainda.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px]">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">#</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cliente</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Data</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Pagamento</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
+                <th className="px-4 py-3" />
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-gray-500 text-sm">
+                  Sem encomendas ainda.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
