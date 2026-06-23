@@ -20,7 +20,17 @@
     "trust_shipping": "Envio em 24h",
     "trust_tech": "Tecnologia exclusiva",
     "trust_athletes": "Feito para atletas",
-    "trust_motto": "React First. Win More."
+    "trust_motto": "React First. Win More.",
+    "equipment_label": "Equipamento",
+    "see_all": "Ver todos →",
+    "tag_new": "Novo",
+    "tag_pack": "Pack",
+    "tag_bestseller": "Bestseller",
+    "attack_desc": "A reação define o jogo antes do contacto com a bola. Treina o imprevisível. Domina o momento.",
+    "lifestyle_desc": "As reaction balls ReaxOne foram desenvolvidas para treinar velocidade de reação, agilidade e coordenação. Usadas por atletas profissionais e personal trainers em padel, futebol, ténis e formação desportiva.",
+    "know_brand": "Conhecer a marca",
+    "community_label": "Comunidade",
+    "lifestyle_alt": "ReaxOne lifestyle"
   },
   "shop": {
     "title": "Loja",
@@ -142,6 +152,26 @@
     "description": "Descrição",
     "image": "Imagem",
     "stock": "Stock"
+  },
+  "footer": {
+    "tagline": "Equipamento desportivo para quem leva o treino a sério.",
+    "shop_heading": "Loja",
+    "all_products": "Todos os produtos",
+    "equipment": "Equipamento",
+    "ebooks": "Ebooks",
+    "company_heading": "Empresa",
+    "about": "Sobre nós",
+    "contact": "Contacto",
+    "support_heading": "Apoio",
+    "shipping_returns": "Envios e devoluções",
+    "privacy": "Privacidade",
+    "terms": "Termos",
+    "rights": "Todos os direitos reservados.",
+    "made_in": "Feito em Portugal"
+  },
+  "whatsapp": {
+    "tooltip": "Precisas de ajuda? Fala connosco!",
+    "message": "Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20os%20produtos%20ReaxOne."
   },
   "products": {
     "bola-reacao-verde": {

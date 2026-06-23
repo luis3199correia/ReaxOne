@@ -2,41 +2,42 @@ import { getTranslations, getLocale } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const featuredProducts = [
-  {
-    id: 'bola-reacao-verde',
-    name: 'Bola de Reação Verde',
-    price: 14.99,
-    image: '/images/produtos/bola-reacao-verde-splash.jpg',
-    tag: 'Bestseller',
-  },
-  {
-    id: 'bola-reacao-branca',
-    name: 'Bola de Reação Branca',
-    price: 14.99,
-    image: '/images/produtos/bola-reacao-branca-splash.jpg',
-    tag: 'Novo',
-  },
-  {
-    id: 'bola-reacao-verde-padel',
-    name: 'Bola de Reação — Padel',
-    price: 14.99,
-    image: '/images/produtos/bola-reacao-verde-padel.jpg',
-    tag: null,
-  },
-  {
-    id: 'bola-reacao-branca-pack',
-    name: 'Pack Duplo Branco',
-    price: 24.99,
-    image: '/images/produtos/bola-reacao-branca-mao.jpg',
-    tag: 'Pack',
-  },
-];
-
 export default async function HomePage() {
   const t = await getTranslations('home');
+  const tp = await getTranslations('products');
   const locale = await getLocale();
   const prefix = `/${locale}`;
+
+  const featuredProducts = [
+    {
+      id: 'bola-reacao-verde',
+      name: tp('bola-reacao-verde.name'),
+      price: 14.99,
+      image: '/images/produtos/bola-reacao-verde-splash.jpg',
+      tag: t('tag_bestseller'),
+    },
+    {
+      id: 'bola-reacao-branca',
+      name: tp('bola-reacao-branca.name'),
+      price: 14.99,
+      image: '/images/produtos/bola-reacao-branca-splash.jpg',
+      tag: t('tag_new'),
+    },
+    {
+      id: 'bola-reacao-verde-padel',
+      name: tp('bola-reacao-verde-padel.name'),
+      price: 14.99,
+      image: '/images/produtos/bola-reacao-verde-padel.jpg',
+      tag: null,
+    },
+    {
+      id: 'bola-reacao-branca-pack',
+      name: tp('bola-reacao-branca-pack.name'),
+      price: 24.99,
+      image: '/images/produtos/bola-reacao-branca-mao.jpg',
+      tag: t('tag_pack'),
+    },
+  ];
 
   return (
     <div>
@@ -108,7 +109,7 @@ export default async function HomePage() {
         <div className="flex items-end justify-between mb-12">
           <div>
             <p className="text-brand-primary font-bold uppercase tracking-widest text-sm mb-2">
-              Equipamento
+              {t('equipment_label')}
             </p>
             <h2 className="text-4xl font-black text-brand-dark">
               {t('featured_products')}
@@ -118,7 +119,7 @@ export default async function HomePage() {
             href={`${prefix}/loja`}
             className="text-sm font-semibold text-brand-primary hover:underline hidden md:block"
           >
-            Ver todos →
+            {t('see_all')}
           </Link>
         </div>
 
@@ -167,7 +168,7 @@ export default async function HomePage() {
             className="object-contain mx-auto mb-8"
           />
           <p className="text-gray-400 text-lg max-w-xl mx-auto leading-relaxed">
-            A reação define o jogo antes do contacto com a bola. Treina o imprevisível. Domina o momento.
+            {t('attack_desc')}
           </p>
         </div>
       </section>
@@ -194,10 +195,10 @@ export default async function HomePage() {
               />
             </div>
             <p className="text-gray-400 mb-8 leading-relaxed">
-              As reaction balls ReaxOne foram desenvolvidas para treinar velocidade de reação, agilidade e coordenação. Usadas por atletas profissionais e personal trainers em padel, futebol, ténis e formação desportiva.
+              {t('lifestyle_desc')}
             </p>
             <Link href={`${prefix}/sobre`} className="btn-green inline-block">
-              Conhecer a marca
+              {t('know_brand')}
             </Link>
           </div>
         </div>
@@ -207,7 +208,7 @@ export default async function HomePage() {
       <section className="py-20 px-6 max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <p className="text-brand-primary font-bold uppercase tracking-widest text-sm mb-2">
-            Comunidade
+            {t('community_label')}
           </p>
           <h2 className="text-4xl font-black text-brand-dark">
             React First. Always.
@@ -225,7 +226,7 @@ export default async function HomePage() {
             <div key={i} className="relative aspect-square overflow-hidden rounded-lg">
               <Image
                 src={src}
-                alt="ReaxOne lifestyle"
+                alt={t('lifestyle_alt')}
                 fill
                 className="object-cover hover:scale-105 transition-transform duration-500"
               />

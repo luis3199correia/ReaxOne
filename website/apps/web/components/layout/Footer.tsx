@@ -1,4 +1,4 @@
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -6,6 +6,7 @@ import Image from 'next/image';
 export default function Footer() {
   const locale = useLocale();
   const prefix = `/${locale}`;
+  const t = useTranslations('footer');
 
   return (
     <footer className="bg-brand-dark text-gray-400">
@@ -20,41 +21,41 @@ export default function Footer() {
               className="object-contain mb-3"
             />
             <p className="text-sm leading-relaxed mb-4">
-              Equipamento desportivo para quem leva o treino a sério.
+              {t('tagline')}
             </p>
             <p className="text-xs text-gray-600 italic">React First. Never Performed.</p>
           </div>
 
           <div>
-            <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">Loja</h3>
+            <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">{t('shop_heading')}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href={`${prefix}/loja`} className="hover:text-brand-green transition-colors">Todos os produtos</Link></li>
-              <li><Link href={`${prefix}/loja?categoria=equipamento`} className="hover:text-brand-green transition-colors">Equipamento</Link></li>
-              <li><Link href={`${prefix}/loja?categoria=roupa`} className="hover:text-brand-green transition-colors">Roupa</Link></li>
+              <li><Link href={`${prefix}/loja`} className="hover:text-brand-green transition-colors">{t('all_products')}</Link></li>
+              <li><Link href={`${prefix}/loja?categoria=material-desportivo`} className="hover:text-brand-green transition-colors">{t('equipment')}</Link></li>
+              <li><Link href={`${prefix}/loja?categoria=ebooks`} className="hover:text-brand-green transition-colors">{t('ebooks')}</Link></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">Empresa</h3>
+            <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">{t('company_heading')}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href={`${prefix}/sobre`} className="hover:text-brand-green transition-colors">Sobre nós</Link></li>
-              <li><Link href={`${prefix}/contacto`} className="hover:text-brand-green transition-colors">Contacto</Link></li>
+              <li><Link href={`${prefix}/sobre`} className="hover:text-brand-green transition-colors">{t('about')}</Link></li>
+              <li><Link href={`${prefix}/contacto`} className="hover:text-brand-green transition-colors">{t('contact')}</Link></li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">Apoio</h3>
+            <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">{t('support_heading')}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href={`${prefix}/envios`} className="hover:text-brand-green transition-colors">Envios e devoluções</Link></li>
-              <li><Link href={`${prefix}/privacidade`} className="hover:text-brand-green transition-colors">Privacidade</Link></li>
-              <li><Link href={`${prefix}/termos`} className="hover:text-brand-green transition-colors">Termos</Link></li>
+              <li><Link href={`${prefix}/envios`} className="hover:text-brand-green transition-colors">{t('shipping_returns')}</Link></li>
+              <li><Link href={`${prefix}/privacidade`} className="hover:text-brand-green transition-colors">{t('privacy')}</Link></li>
+              <li><Link href={`${prefix}/termos`} className="hover:text-brand-green transition-colors">{t('terms')}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-600">
-          <p>© {new Date().getFullYear()} ReaxOne®. Todos os direitos reservados.</p>
-          <p>🇵🇹 Feito em Portugal</p>
+          <p>© {new Date().getFullYear()} ReaxOne®. {t('rights')}</p>
+          <p>🇵🇹 {t('made_in')}</p>
         </div>
       </div>
     </footer>
