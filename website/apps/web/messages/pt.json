@@ -15,20 +15,43 @@
     "hero_subtitle": "Equipamento e roupa desportiva para quem leva o treino a sério",
     "shop_now": "Ver loja",
     "featured_products": "Produtos em destaque",
-    "categories": "Categorias"
+    "categories": "Categorias",
+    "about_us": "Sobre nós",
+    "trust_shipping": "Envio em 24h",
+    "trust_tech": "Tecnologia exclusiva",
+    "trust_athletes": "Feito para atletas",
+    "trust_motto": "React First. Win More."
   },
   "shop": {
     "title": "Loja",
+    "subtitle": "Equipamento desportivo de alta performance",
     "filters": "Filtros",
     "sort": "Ordenar",
     "sort_newest": "Mais recentes",
     "sort_price_asc": "Preço: crescente",
     "sort_price_desc": "Preço: decrescente",
     "no_products": "Nenhum produto encontrado",
+    "no_products_category": "Nenhum produto encontrado nesta categoria.",
     "add_to_cart": "Adicionar ao carrinho",
+    "added_to_cart": "Adicionado ao carrinho!",
     "out_of_stock": "Esgotado",
     "size": "Tamanho",
-    "quantity": "Quantidade"
+    "quantity": "Quantidade",
+    "all_categories": "Todos",
+    "category_label": "Categoria",
+    "sort_by": "Ordenar por",
+    "loading_products": "A carregar produtos...",
+    "product_singular": "produto",
+    "product_plural": "produtos",
+    "in_stock": "Em stock",
+    "units": "unidades",
+    "shipping_free": "Envio grátis em encomendas acima de €50",
+    "secure_payment": "Pagamento seguro via MB Way ou transferência",
+    "related_products": "Também podes gostar",
+    "back_to_shop": "Loja",
+    "product_not_found": "Produto não encontrado.",
+    "see_all_shop": "Ver toda a loja",
+    "free": "Grátis"
   },
   "cart": {
     "title": "Carrinho",
@@ -119,5 +142,31 @@
     "description": "Descrição",
     "image": "Imagem",
     "stock": "Stock"
+  },
+  "products": {
+    "bola-reacao-verde": {
+      "name": "Bola de Reação Verde",
+      "description": "A Bola de Reação ReaxOne foi desenvolvida para treinar reflexos, coordenação e velocidade de resposta. O design irregular garante ressaltos imprevisíveis para um treino mais eficaz."
+    },
+    "bola-reacao-verde-padel": {
+      "name": "Bola de Reação Verde — Padel",
+      "description": "Desenvolvida especificamente para treinos de padel. Treina o teu tempo de reação e melhora a coordenação olho-mão dentro e fora da court."
+    },
+    "bola-reacao-branca": {
+      "name": "Bola de Reação Branca",
+      "description": "A versão branca da nossa bola de reação premium. Ideal para treinos indoor e outdoor, com o mesmo desempenho e durabilidade da linha verde."
+    },
+    "bola-reacao-branca-pack": {
+      "name": "Bola de Reação Branca — Pack Duplo",
+      "description": "Pack com duas bolas de reação brancas. Ideal para treinar com um parceiro ou ter sempre uma de reserva. Poupa 15% face à compra individual."
+    },
+    "padel-sem-lesoes": {
+      "name": "Padel Sem Lesões",
+      "description": "O teu corpo é o teu melhor equipamento. Treina em casa, joga sem medo. 8 semanas de treino físico criado por um Personal Trainer e Treinador de Padel para fortaleceres o corpo, prevenires as lesões mais comuns no padel e melhorares a tua resistência — sem sair de casa, sem material. Inclui treino de reação com ReaxOne® e referências científicas em cada capítulo."
+    },
+    "exercicios-para-beginners": {
+      "name": "Exercícios para Beginners",
+      "description": "O teu primeiro passo para uma vida mais ativa. Guia gratuito com exercícios básicos pensados para quem está a começar — sem material, sem experiência prévia. Inclui dicas de reação e coordenação com ReaxOne®."
+    }
   }
 }

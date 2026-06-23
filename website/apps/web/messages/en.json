@@ -15,20 +15,43 @@
     "hero_subtitle": "Sports equipment and clothing for those who take training seriously",
     "shop_now": "Shop now",
     "featured_products": "Featured products",
-    "categories": "Categories"
+    "categories": "Categories",
+    "about_us": "About us",
+    "trust_shipping": "Ships in 24h",
+    "trust_tech": "Exclusive technology",
+    "trust_athletes": "Made for athletes",
+    "trust_motto": "React First. Win More."
   },
   "shop": {
     "title": "Shop",
+    "subtitle": "High performance sports equipment",
     "filters": "Filters",
     "sort": "Sort",
     "sort_newest": "Newest",
     "sort_price_asc": "Price: low to high",
     "sort_price_desc": "Price: high to low",
     "no_products": "No products found",
+    "no_products_category": "No products found in this category.",
     "add_to_cart": "Add to cart",
+    "added_to_cart": "Added to cart!",
     "out_of_stock": "Out of stock",
     "size": "Size",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "all_categories": "All",
+    "category_label": "Category",
+    "sort_by": "Sort by",
+    "loading_products": "Loading products...",
+    "product_singular": "product",
+    "product_plural": "products",
+    "in_stock": "In stock",
+    "units": "units",
+    "shipping_free": "Free shipping on orders over €50",
+    "secure_payment": "Secure payment via MB Way or bank transfer",
+    "related_products": "You may also like",
+    "back_to_shop": "Shop",
+    "product_not_found": "Product not found.",
+    "see_all_shop": "View all products",
+    "free": "Free"
   },
   "cart": {
     "title": "Cart",
@@ -119,5 +142,31 @@
     "description": "Description",
     "image": "Image",
     "stock": "Stock"
+  },
+  "products": {
+    "bola-reacao-verde": {
+      "name": "Green Reaction Ball",
+      "description": "The ReaxOne Reaction Ball was developed to train reflexes, coordination and response speed. The irregular design guarantees unpredictable bounces for a more effective workout."
+    },
+    "bola-reacao-verde-padel": {
+      "name": "Green Reaction Ball — Padel",
+      "description": "Developed specifically for padel training. Train your reaction time and improve hand-eye coordination on and off the court."
+    },
+    "bola-reacao-branca": {
+      "name": "White Reaction Ball",
+      "description": "The white version of our premium reaction ball. Ideal for indoor and outdoor training, with the same performance and durability as the green line."
+    },
+    "bola-reacao-branca-pack": {
+      "name": "White Reaction Ball — Double Pack",
+      "description": "Pack with two white reaction balls. Ideal for training with a partner or always having one in reserve. Save 15% compared to individual purchase."
+    },
+    "padel-sem-lesoes": {
+      "name": "Padel Without Injuries",
+      "description": "Your body is your best equipment. Train at home, play without fear. 8 weeks of physical training created by a Personal Trainer and Padel Coach to strengthen your body, prevent the most common padel injuries and improve your endurance — no gym, no equipment needed. Includes reaction training with ReaxOne® and scientific references in each chapter."
+    },
+    "exercicios-para-beginners": {
+      "name": "Exercises for Beginners",
+      "description": "Your first step towards a more active life. Free guide with basic exercises for those just starting out — no equipment, no prior experience required. Includes reaction and coordination tips with ReaxOne®."
+    }
   }
 }

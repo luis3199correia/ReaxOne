@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useCartStore } from '@/store/cart';
 
 export interface Product {
@@ -23,6 +23,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const locale = useLocale();
+  const t = useTranslations('shop');
   const addItem = useCartStore((s) => s.addItem);
 
   const isOutOfStock = product.stock === 0;
@@ -62,7 +63,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             <span className="bg-white text-brand-dark text-sm font-semibold px-4 py-2 rounded-full">
-              Esgotado
+              {t('out_of_stock')}
             </span>
           </div>
         )}
@@ -89,7 +90,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             aria-label={`Adicionar ${product.name} ao carrinho`}
           >
             <ShoppingCart className="w-4 h-4" />
-            <span className="hidden sm:inline">Adicionar</span>
+            <span className="hidden sm:inline">{t('add_to_cart')}</span>
           </button>
         </div>
       </div>

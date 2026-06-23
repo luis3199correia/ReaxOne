@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations, useMessages } from 'next-intl';
 import { ShoppingCart, ChevronLeft, Check, Shield, Truck, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
@@ -13,7 +13,11 @@ interface Props {
   params: Promise<{ locale: string; slug: string }>;
 }
 
-function toProduct(p: any): Product {
+interface FullProduct extends Product {
+  description?: string;
+}
+
+function toProduct(p: any): FullProduct {
   return {
     id: p.id,
     name: p.name,
@@ -22,15 +26,18 @@ function toProduct(p: any): Product {
     images: p.images ?? [],
     category: p.category?.name ?? undefined,
     stock: p.stock,
+    description: p.description ?? '',
   };
 }
 
 export default function ProductPage({ params: paramsPromise }: Props) {
   const { slug } = use(paramsPromise);
   const locale = useLocale();
+  const t = useTranslations('shop');
+  const messages = useMessages() as any;
   const addItem = useCartStore((s) => s.addItem);
 
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] = useState<FullProduct | null>(null);
   const [related, setRelated] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -49,7 +56,6 @@ export default function ProductPage({ params: paramsPromise }: Props) {
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
 
-    // Busca produtos relacionados
     api.get('/products')
       .then((res) => {
         const all: Product[] = res.data.map(toProduct);
@@ -57,6 +63,16 @@ export default function ProductPage({ params: paramsPromise }: Props) {
       })
       .catch(() => {});
   }, [slug]);
+
+  function getTranslatedDescription(): string {
+    const productMessages = messages?.products as Record<string, { description?: string }> | undefined;
+    return productMessages?.[slug]?.description ?? product?.description ?? '';
+  }
+
+  function getTranslatedName(): string {
+    const productMessages = messages?.products as Record<string, { name?: string }> | undefined;
+    return productMessages?.[slug]?.name ?? product?.name ?? '';
+  }
 
   function handleAddToCart() {
     if (!product || product.stock === 0) return;
@@ -75,7 +91,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
     return (
       <div className="flex items-center justify-center min-h-[60vh] text-brand-muted">
         <Loader2 className="w-6 h-6 animate-spin mr-3" />
-        <span>A carregar produto...</span>
+        <span>{t('loading_products')}</span>
       </div>
     );
   }
@@ -83,9 +99,9 @@ export default function ProductPage({ params: paramsPromise }: Props) {
   if (notFound || !product) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-24 text-center">
-        <p className="text-xl text-gray-500 mb-6">Produto não encontrado.</p>
+        <p className="text-xl text-gray-500 mb-6">{t('product_not_found')}</p>
         <Link href={`/${locale}/loja`} className="btn-primary">
-          Ver toda a loja
+          {t('see_all_shop')}
         </Link>
       </div>
     );
@@ -100,10 +116,10 @@ export default function ProductPage({ params: paramsPromise }: Props) {
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-brand-muted mb-8">
           <Link href={`/${locale}/loja`} className="hover:text-brand-primary flex items-center gap-1 transition-colors">
-            <ChevronLeft className="w-4 h-4" /> Loja
+            <ChevronLeft className="w-4 h-4" /> {t('back_to_shop')}
           </Link>
           <span>/</span>
-          <span className="text-brand-dark font-medium">{product.name}</span>
+          <span className="text-brand-dark font-medium">{getTranslatedName()}</span>
         </nav>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16">
@@ -113,7 +129,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
             <div className="relative aspect-square rounded-2xl overflow-hidden bg-brand-light">
               <Image
                 src={product.images[activeImg] ?? '/images/produtos/bola-reacao-verde-splash.jpg'}
-                alt={product.name}
+                alt={getTranslatedName()}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -135,7 +151,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
                       activeImg === i ? 'border-brand-primary' : 'border-gray-200 hover:border-gray-400'
                     }`}
                   >
-                    <Image src={img} alt={`${product.name} ${i + 1}`} fill className="object-cover" sizes="80px" />
+                    <Image src={img} alt={`${getTranslatedName()} ${i + 1}`} fill className="object-cover" sizes="80px" />
                   </button>
                 ))}
               </div>
@@ -150,32 +166,32 @@ export default function ProductPage({ params: paramsPromise }: Props) {
               </span>
             )}
             <h1 className="text-3xl lg:text-4xl font-bold text-brand-dark mb-4 leading-tight">
-              {product.name}
+              {getTranslatedName()}
             </h1>
             <p className="text-3xl font-bold text-brand-primary mb-6">
-              €{product.price.toFixed(2)}
+              {product.price === 0 ? t('free') : `€${product.price.toFixed(2)}`}
             </p>
             <p className="text-gray-600 leading-relaxed mb-8">
-              A Bola de Reação ReaxOne foi desenvolvida para treinar reflexos, coordenação e velocidade de resposta.
-              Ideal para atletas de todas as modalidades — futebol, padel, ténis, boxe e muito mais.
-              O design irregular garante ressaltos imprevisíveis que desafiam o teu tempo de reação ao máximo.
+              {getTranslatedDescription()}
             </p>
 
             {/* Stock */}
             <div className="flex items-center gap-2 mb-6">
               {isOutOfStock ? (
-                <span className="text-sm text-red-500 font-medium">Esgotado</span>
+                <span className="text-sm text-red-500 font-medium">{t('out_of_stock')}</span>
               ) : (
                 <>
                   <div className="w-2 h-2 rounded-full bg-brand-green" />
-                  <span className="text-sm text-gray-600">Em stock ({product.stock} unidades)</span>
+                  <span className="text-sm text-gray-600">
+                    {t('in_stock')} ({product.stock} {t('units')})
+                  </span>
                 </>
               )}
             </div>
 
             {/* Quantidade */}
             <div className="mb-8">
-              <label className="block text-sm font-semibold text-brand-dark mb-3">Quantidade</label>
+              <label className="block text-sm font-semibold text-brand-dark mb-3">{t('quantity')}</label>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setQty(Math.max(1, qty - 1))}
@@ -208,8 +224,8 @@ export default function ProductPage({ params: paramsPromise }: Props) {
               }`}
             >
               {added
-                ? <><Check className="w-5 h-5" /> Adicionado ao carrinho!</>
-                : <><ShoppingCart className="w-5 h-5" /> Adicionar ao carrinho</>
+                ? <><Check className="w-5 h-5" /> {t('added_to_cart')}</>
+                : <><ShoppingCart className="w-5 h-5" /> {t('add_to_cart')}</>
               }
             </button>
 
@@ -217,11 +233,11 @@ export default function ProductPage({ params: paramsPromise }: Props) {
             <div className="flex flex-col gap-3 pt-6 border-t border-gray-100">
               <div className="flex items-center gap-3 text-sm text-gray-600">
                 <Truck className="w-4 h-4 text-brand-green flex-shrink-0" />
-                <span>Envio grátis em encomendas acima de €50</span>
+                <span>{t('shipping_free')}</span>
               </div>
               <div className="flex items-center gap-3 text-sm text-gray-600">
                 <Shield className="w-4 h-4 text-brand-green flex-shrink-0" />
-                <span>Pagamento seguro via MB Way ou transferência</span>
+                <span>{t('secure_payment')}</span>
               </div>
             </div>
           </div>
@@ -230,7 +246,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
         {/* Produtos relacionados */}
         {related.length > 0 && (
           <section className="mt-20">
-            <h2 className="text-2xl font-bold text-brand-dark mb-8">Também podes gostar</h2>
+            <h2 className="text-2xl font-bold text-brand-dark mb-8">{t('related_products')}</h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
               {related.map((p) => (
                 <ProductCard key={p.id} product={p} />

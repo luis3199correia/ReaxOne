@@ -75,7 +75,7 @@ export default async function HomePage() {
                 {t('shop_now')}
               </Link>
               <Link href={`${prefix}/sobre`} className="btn-secondary text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-brand-dark">
-                Sobre nós
+                {t('about_us')}
               </Link>
             </div>
           </div>
@@ -96,10 +96,10 @@ export default async function HomePage() {
       {/* ── STRIP DE CONFIANÇA ── */}
       <section className="bg-brand-green text-brand-dark py-4">
         <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-8 text-sm font-bold uppercase tracking-wider">
-          <span>⚡ Envio em 24h</span>
-          <span>🦈 Tecnologia exclusiva</span>
-          <span>🇵🇹 Feito para atletas</span>
-          <span>🎯 React First. Win More.</span>
+          <span>⚡ {t('trust_shipping')}</span>
+          <span>🦈 {t('trust_tech')}</span>
+          <span>🇵🇹 {t('trust_athletes')}</span>
+          <span>🎯 {t('trust_motto')}</span>
         </div>
       </section>
 

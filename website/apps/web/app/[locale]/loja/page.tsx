@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -21,6 +22,7 @@ function toProduct(p: any): Product {
 }
 
 export default function ShopPage() {
+  const t = useTranslations('shop');
   const searchParams = useSearchParams();
   const initialCatSlug = searchParams.get('categoria') ?? '';
 
@@ -52,11 +54,11 @@ export default function ShopPage() {
     }).catch(() => {}).finally(() => setLoading(false));
   }, [initialCatSlug]);
 
-  const allCategories = ['Todos', ...categories];
+  const allCategories = [t('all_categories'), ...categories];
 
   const filtered = useMemo(() => {
     let list = products;
-    if (activeCategory !== 'Todos') {
+    if (activeCategory !== t('all_categories')) {
       list = list.filter((p) => p.category === activeCategory);
     }
     if (sort === 'price_asc') list = [...list].sort((a, b) => a.price - b.price);
@@ -69,8 +71,8 @@ export default function ShopPage() {
       {/* Page header */}
       <div className="bg-brand-light border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-10">
-          <h1 className="text-4xl font-bold text-brand-dark mb-1">Loja</h1>
-          <p className="text-brand-muted">Equipamento desportivo de alta performance</p>
+          <h1 className="text-4xl font-bold text-brand-dark mb-1">{t('title')}</h1>
+          <p className="text-brand-muted">{t('subtitle')}</p>
         </div>
       </div>
 
@@ -80,7 +82,7 @@ export default function ShopPage() {
         <aside className="hidden md:block w-52 flex-shrink-0">
           <div className="sticky top-24">
             <h2 className="text-xs font-bold uppercase tracking-widest text-brand-muted mb-4">
-              Categoria
+              {t('category_label')}
             </h2>
             <ul className="space-y-1">
               {allCategories.map((cat) => (
@@ -109,16 +111,16 @@ export default function ShopPage() {
               className="md:hidden flex items-center gap-2 text-sm font-medium border border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50"
               onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
             >
-              Filtros <ChevronDown className={`w-4 h-4 transition-transform ${mobileFiltersOpen ? 'rotate-180' : ''}`} />
+              {t('filters')} <ChevronDown className={`w-4 h-4 transition-transform ${mobileFiltersOpen ? 'rotate-180' : ''}`} />
             </button>
 
             <span className="text-sm text-brand-muted hidden md:block">
-              {loading ? '...' : `${filtered.length} ${filtered.length === 1 ? 'produto' : 'produtos'}`}
+              {loading ? '...' : `${filtered.length} ${filtered.length === 1 ? t('product_singular') : t('product_plural')}`}
             </span>
 
             <div className="flex items-center gap-2 ml-auto">
               <label htmlFor="sort" className="text-sm text-brand-muted whitespace-nowrap hidden sm:block">
-                Ordenar por
+                {t('sort_by')}
               </label>
               <select
                 id="sort"
@@ -126,9 +128,9 @@ export default function ShopPage() {
                 onChange={(e) => setSort(e.target.value as SortKey)}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
               >
-                <option value="newest">Mais recentes</option>
-                <option value="price_asc">Preço: crescente</option>
-                <option value="price_desc">Preço: decrescente</option>
+                <option value="newest">{t('sort_newest')}</option>
+                <option value="price_asc">{t('sort_price_asc')}</option>
+                <option value="price_desc">{t('sort_price_desc')}</option>
               </select>
             </div>
           </div>
@@ -156,14 +158,14 @@ export default function ShopPage() {
           {loading && (
             <div className="flex items-center justify-center py-32 text-brand-muted">
               <Loader2 className="w-6 h-6 animate-spin mr-3" />
-              <span>A carregar produtos...</span>
+              <span>{t('loading_products')}</span>
             </div>
           )}
 
           {/* Empty */}
           {!loading && filtered.length === 0 && (
             <div className="py-24 text-center text-brand-muted">
-              <p className="text-lg">Nenhum produto encontrado nesta categoria.</p>
+              <p className="text-lg">{t('no_products_category')}</p>
             </div>
           )}
 
