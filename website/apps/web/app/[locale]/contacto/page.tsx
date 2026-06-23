@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Mail, Phone, MapPin, Check, Loader2, MessageCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Check, Loader2, MessageCircle, Instagram } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
 
@@ -92,6 +92,20 @@ export default function ContactPage() {
                   <div>
                     <p className="font-semibold text-brand-dark">{t('location_label')}</p>
                     <p>Portugal 🇵🇹</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 text-sm text-gray-600">
+                  <Instagram className="w-4 h-4 text-brand-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-semibold text-brand-dark">Instagram</p>
+                    <a
+                      href="https://www.instagram.com/reax.one/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-brand-primary transition-colors"
+                    >
+                      @reax.one
+                    </a>
                   </div>
                 </div>
               </div>

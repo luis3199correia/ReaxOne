@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, User, Menu, X } from 'lucide-react';
+import { ShoppingCart, User, Menu, X, Instagram } from 'lucide-react';
 import { useState } from 'react';
 import { useCartStore } from '@/store/cart';
 
@@ -53,6 +53,17 @@ export default function Navbar() {
           >
             {locale === 'pt' ? 'EN' : 'PT'}
           </Link>
+
+          {/* Instagram */}
+          <a
+            href="https://www.instagram.com/reax.one/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-brand-green transition-colors hidden md:block"
+            aria-label="Instagram"
+          >
+            <Instagram className="w-5 h-5" />
+          </a>
 
           {/* Cart */}
           <Link href={`${prefix}/carrinho`} className="relative hover:text-brand-green transition-colors">

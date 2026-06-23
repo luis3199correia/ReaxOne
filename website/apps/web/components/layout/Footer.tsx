@@ -1,6 +1,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Instagram } from 'lucide-react';
 
 
 export default function Footer() {
@@ -23,7 +24,15 @@ export default function Footer() {
             <p className="text-sm leading-relaxed mb-4">
               {t('tagline')}
             </p>
-            <p className="text-xs text-gray-600 italic">React First. Never Performed.</p>
+            <a
+              href="https://www.instagram.com/reax.one/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-gray-400 hover:text-brand-green transition-colors text-sm"
+            >
+              <Instagram className="w-4 h-4" />
+              @reax.one
+            </a>
           </div>
 
           <div>
