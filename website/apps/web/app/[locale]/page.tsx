@@ -220,8 +220,8 @@ export default async function HomePage() {
             '/images/lifestyle/joao-reacao-exterior-bola-ar-frente.jpg',
             '/images/lifestyle/joao-reacao-exterior-agachar-bola.jpg',
             '/images/lifestyle/joao-reacao-exterior-posicao-lateral.jpg',
-            '/images/lifestyle/joao-reacao-exterior-bola-cair.jpg',
-            '/images/produtos/bola-reacao-verde-padel.jpg',
+            '/images/lifestyle/treino-reacao-criancas.jpg',
+            '/images/lifestyle/treino-reacao-cao.jpg',
           ].map((src, i) => (
             <div key={i} className="relative aspect-square overflow-hidden rounded-lg">
               <Image

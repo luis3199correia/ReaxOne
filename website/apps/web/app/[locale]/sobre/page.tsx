@@ -19,8 +19,8 @@ export default async function SobrePage() {
     { num: '02', title: t('m02_title'), desc: t('m02_desc') },
     { num: '03', title: t('m03_title'), desc: t('m03_desc') },
     { num: '04', title: t('m04_title'), desc: t('m04_desc') },
-    { num: '05', title: t('m05_title'), desc: t('m05_desc') },
-    { num: '06', title: t('m06_title'), desc: t('m06_desc') },
+    { num: '05', title: t('m05_title'), desc: t('m05_desc'), img: '/images/lifestyle/treino-reacao-criancas.jpg' },
+    { num: '06', title: t('m06_title'), desc: t('m06_desc'), img: '/images/lifestyle/treino-reacao-cao.jpg' },
   ];
 
   const trainingSteps = [
@@ -147,10 +147,17 @@ export default async function SobrePage() {
           </p>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             {modalities.map((m) => (
-              <div key={m.num} className="border border-white/10 rounded-xl p-6 hover:border-brand-green transition-colors">
-                <p className="text-brand-green text-xs font-black tracking-widest mb-3">{m.num}</p>
-                <h3 className="text-xl font-black mb-3">{m.title}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{m.desc}</p>
+              <div key={m.num} className="border border-white/10 rounded-xl overflow-hidden hover:border-brand-green transition-colors">
+                {m.img && (
+                  <div className="relative h-40 w-full">
+                    <Image src={m.img} alt={m.title} fill className="object-cover" />
+                  </div>
+                )}
+                <div className="p-6">
+                  <p className="text-brand-green text-xs font-black tracking-widest mb-3">{m.num}</p>
+                  <h3 className="text-xl font-black mb-3">{m.title}</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">{m.desc}</p>
+                </div>
               </div>
             ))}
           </div>
