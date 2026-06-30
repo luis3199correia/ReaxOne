@@ -1,6 +1,18 @@
+import { Metadata } from 'next';
 import { getTranslations, getLocale } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'ReaxOne — Treino de Reação',
+  description:
+    'Bolas de reação, packs de treino e ebooks para atletas de todos os níveis. Treina mais rápido, reage melhor. Envio para Portugal e Europa.',
+  openGraph: {
+    title: 'ReaxOne — Treino de Reação',
+    description: 'Equipamento de treino de reação para atletas de todos os níveis.',
+    images: [{ url: '/images/og/og-default.jpg', width: 1200, height: 630, alt: 'ReaxOne' }],
+  },
+};
 
 export default async function HomePage() {
   const t = await getTranslations('home');
@@ -28,8 +40,27 @@ export default async function HomePage() {
     // API indisponível — secção fica vazia
   }
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'ReaxOne',
+    url: 'https://reaxone.com',
+    logo: 'https://reaxone.com/images/identidade/texto-branco.svg',
+    sameAs: ['https://www.instagram.com/reax.one/'],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+351-911-084-422',
+      contactType: 'customer service',
+      availableLanguage: ['Portuguese', 'English'],
+    },
+  };
+
   return (
     <div>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* ── HERO ── */}
       <section className="relative h-[90vh] min-h-[600px] flex items-center overflow-hidden">

@@ -1,14 +1,18 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   Res,
+  Req,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { IsEmail, IsString, MinLength } from 'class-validator';
 import { AuthService } from './auth.service';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 class RegisterDto {
   @IsEmail()
@@ -44,6 +48,24 @@ export class AuthController {
     const result = await this.authService.login(dto.email, dto.password);
     this.setTokenCookie(res, result.access_token);
     return res.json({ role: result.role });
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@Req() req: Request) {
+    return req.user; // { id, email, role } injetado pelo JwtStrategy
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  forgotPassword(@Body() body: { email: string }) {
+    return this.authService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() body: { token: string; password: string }) {
+    return this.authService.resetPassword(body.token, body.password);
   }
 
   @Post('logout')

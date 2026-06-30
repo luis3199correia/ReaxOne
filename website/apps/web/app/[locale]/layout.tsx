@@ -10,8 +10,47 @@ import '../globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'ReaxOne — Equipamento Desportivo',
-  description: 'Equipamento e roupa desportiva para quem leva o treino a sério',
+  metadataBase: new URL('https://reaxone.com'),
+  title: {
+    default: 'ReaxOne — Treino de Reação',
+    template: '%s | ReaxOne',
+  },
+  description:
+    'Equipamento de treino de reação para atletas de todos os níveis. Bolas de reação, packs de treino e ebooks. Envio para Portugal e Europa.',
+  keywords: [
+    'bola de reação', 'treino de reação', 'reaction ball', 'equipamento desportivo',
+    'treino funcional', 'desporto portugal', 'reaxone',
+  ],
+  authors: [{ name: 'ReaxOne', url: 'https://reaxone.com' }],
+  creator: 'ReaxOne',
+  openGraph: {
+    type: 'website',
+    locale: 'pt_PT',
+    alternateLocale: 'en_US',
+    siteName: 'ReaxOne',
+    title: 'ReaxOne — Treino de Reação',
+    description:
+      'Equipamento de treino de reação para atletas de todos os níveis. Bolas de reação, packs e ebooks.',
+    images: [
+      {
+        url: '/images/og/og-default.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'ReaxOne — Treino de Reação',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ReaxOne — Treino de Reação',
+    description: 'Equipamento de treino de reação para atletas de todos os níveis.',
+    images: ['/images/og/og-default.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
 };
 
 export function generateStaticParams() {

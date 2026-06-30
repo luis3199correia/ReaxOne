@@ -97,4 +97,46 @@ export class MailService {
 
     this.logger.log(`Ebook(s) enviado(s) para ${to} (encomenda ${orderId})`);
   }
+
+  async sendPasswordReset(to: string, firstName: string, resetLink: string): Promise<void> {
+    const from = process.env.SMTP_USER || 'noreply@reaxone.com';
+
+    await this.transporter.sendMail({
+      from:    `"ReaxOne" <${from}>`,
+      to,
+      subject: 'Recuperação de palavra-passe — ReaxOne',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #0F0F0F; padding: 24px; border-radius: 8px 8px 0 0;">
+            <h1 style="color: #88C900; margin: 0; font-size: 22px;">Recuperar palavra-passe</h1>
+          </div>
+          <div style="background: #f9f9f9; padding: 24px; border-radius: 0 0 8px 8px; border: 1px solid #e5e5e5;">
+            <p style="font-size: 15px; line-height: 1.6;">Olá <strong>${firstName}</strong>,</p>
+            <p style="font-size: 15px; line-height: 1.6;">
+              Recebemos um pedido para recuperar a palavra-passe da tua conta ReaxOne.
+              Clica no botão abaixo para definir uma nova palavra-passe.
+            </p>
+            <p style="text-align: center; margin: 32px 0;">
+              <a href="${resetLink}"
+                 style="background: #E8322A; color: white; padding: 14px 32px; border-radius: 8px;
+                        text-decoration: none; font-weight: bold; font-size: 15px; display: inline-block;">
+                Definir nova palavra-passe
+              </a>
+            </p>
+            <p style="font-size: 13px; color: #888; line-height: 1.6;">
+              Este link é válido durante <strong>15 minutos</strong>. Se não pediste a recuperação de
+              palavra-passe, ignora este email — a tua conta continua segura.
+            </p>
+            <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 20px 0;" />
+            <p style="font-size: 13px; color: #888; margin: 0;">
+              Performance Primeiro. Sempre.<br>
+              <strong>Equipa ReaxOne</strong>
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Email de reset de password enviado para ${to}`);
+  }
 }

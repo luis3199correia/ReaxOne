@@ -3,17 +3,27 @@
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, User, Menu, X, Instagram } from 'lucide-react';
-import { useState } from 'react';
+import { ShoppingCart, User, Menu, X, Instagram, LayoutDashboard } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/cart';
+import { api } from '@/lib/api';
+
+type AuthUser = { id: string; email: string; role: string } | null;
 
 export default function Navbar() {
   const t = useTranslations('nav');
   const locale = useLocale();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [authUser, setAuthUser] = useState<AuthUser>(null);
   const { items } = useCartStore();
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
   const prefix = `/${locale}`;
+
+  useEffect(() => {
+    api.get('/auth/me')
+      .then((res) => setAuthUser(res.data))
+      .catch(() => setAuthUser(null));
+  }, []);
 
   return (
     <header className="bg-brand-dark text-white sticky top-0 z-50 shadow-lg">
@@ -75,10 +85,20 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Account */}
-          <Link href={`${prefix}/auth`} className="hover:text-brand-green transition-colors">
-            <User className="w-5 h-5" />
-          </Link>
+          {/* Account / Admin */}
+          {authUser?.role === 'ADMIN' ? (
+            <Link href={`${prefix}/admin`} className="hover:text-brand-green transition-colors" title="Backoffice">
+              <LayoutDashboard className="w-5 h-5" />
+            </Link>
+          ) : authUser ? (
+            <Link href={`${prefix}/conta`} className="hover:text-brand-green transition-colors" title="A minha conta">
+              <User className="w-5 h-5" />
+            </Link>
+          ) : (
+            <Link href={`${prefix}/auth`} className="hover:text-brand-green transition-colors" title="Entrar">
+              <User className="w-5 h-5" />
+            </Link>
+          )}
 
           {/* Mobile menu toggle */}
           <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
