@@ -3,6 +3,14 @@ import { readdir, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
+// Allow up to 20 MB uploads; disable body size limit for this route
+export const config = {
+  api: { bodyParser: false, responseLimit: false },
+};
+
+// Needed so Next.js doesn't try to statically cache this route
+export const dynamic = 'force-dynamic';
+
 const FOLDERS = ['images/produtos', 'images/lifestyle'];
 const IMAGE_EXT = /\.(jpg|jpeg|png|gif|webp|svg)$/i;
 

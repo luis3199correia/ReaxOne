@@ -66,10 +66,13 @@ function ImagePicker({
       .finally(() => setLoading(false));
   }, []);
 
+  const [uploadError, setUploadError] = useState('');
+
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setUploadError('');
     try {
       const fd = new FormData();
       fd.append('file', file);
@@ -78,7 +81,11 @@ function ImagePicker({
       if (data.path) {
         setImages((prev) => [{ path: data.path, folder: 'images/produtos' }, ...prev]);
         onToggle(data.path);
+      } else {
+        setUploadError(data.error ?? 'Upload falhou');
       }
+    } catch {
+      setUploadError('Erro de rede — tenta novamente');
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -102,31 +109,38 @@ function ImagePicker({
         </div>
 
         {/* Toolbar */}
-        <div className="px-6 py-3 border-b flex items-center gap-3 flex-shrink-0">
-          <input
-            type="text"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filtrar imagens..."
-            className="input flex-1 text-sm py-2"
-          />
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="btn-secondary flex items-center gap-2 text-sm whitespace-nowrap"
-          >
-            {uploading
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : <Upload className="w-4 h-4" />}
-            Upload
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleUpload}
-          />
+        <div className="px-6 py-3 border-b flex-shrink-0 space-y-2">
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filtrar imagens..."
+              className="input flex-1 text-sm py-2"
+            />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="btn-secondary flex items-center gap-2 text-sm whitespace-nowrap"
+            >
+              {uploading
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : <Upload className="w-4 h-4" />}
+              Upload
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleUpload}
+            />
+          </div>
+          {uploadError && (
+            <p className="text-red-500 text-xs flex items-center gap-1">
+              <AlertCircle className="w-3 h-3" /> {uploadError}
+            </p>
+          )}
         </div>
 
         {/* Grid */}
@@ -151,7 +165,8 @@ function ImagePicker({
                         : 'border-transparent hover:border-gray-300'
                     }`}
                   >
-                    <Image src={img.path} alt="" fill className="object-cover" sizes="120px" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.path} alt="" className="w-full h-full object-cover" />
                     {isSelected && (
                       <div className="absolute inset-0 bg-brand-primary/30 flex items-center justify-center">
                         <div className="bg-brand-primary rounded-full p-1">
