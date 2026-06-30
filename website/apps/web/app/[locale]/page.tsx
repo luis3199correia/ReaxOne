@@ -2,42 +2,42 @@ import { getTranslations, getLocale } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 
+const FEATURED_CONFIG = [
+  { id: 'bola-reacao-verde',       fallbackImage: '/images/produtos/bola-reacao-verde-splash.jpg',  tagKey: 'tag_bestseller' as const },
+  { id: 'bola-reacao-branca',      fallbackImage: '/images/produtos/bola-reacao-branca-splash.jpg', tagKey: 'tag_new'        as const },
+  { id: 'bola-reacao-verde-padel', fallbackImage: '/images/produtos/bola-reacao-verde-padel.jpg',   tagKey: null },
+  { id: 'bola-reacao-branca-pack', fallbackImage: '/images/produtos/bola-reacao-branca-mao.jpg',    tagKey: 'tag_pack'       as const },
+];
+
 export default async function HomePage() {
   const t = await getTranslations('home');
   const tp = await getTranslations('products');
   const locale = await getLocale();
   const prefix = `/${locale}`;
 
-  const featuredProducts = [
-    {
-      id: 'bola-reacao-verde',
-      name: tp('bola-reacao-verde.name'),
-      price: 14.99,
-      image: '/images/produtos/bola-reacao-verde-splash.jpg',
-      tag: t('tag_bestseller'),
-    },
-    {
-      id: 'bola-reacao-branca',
-      name: tp('bola-reacao-branca.name'),
-      price: 14.99,
-      image: '/images/produtos/bola-reacao-branca-splash.jpg',
-      tag: t('tag_new'),
-    },
-    {
-      id: 'bola-reacao-verde-padel',
-      name: tp('bola-reacao-verde-padel.name'),
-      price: 14.99,
-      image: '/images/produtos/bola-reacao-verde-padel.jpg',
-      tag: null,
-    },
-    {
-      id: 'bola-reacao-branca-pack',
-      name: tp('bola-reacao-branca-pack.name'),
-      price: 24.99,
-      image: '/images/produtos/bola-reacao-branca-mao.jpg',
-      tag: t('tag_pack'),
-    },
-  ];
+  // Buscar produtos reais da API para ter preços actualizados
+  let apiMap: Record<string, { price: number; images: string[] }> = {};
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    const res = await fetch(`${apiUrl}/products`, { next: { revalidate: 60 } });
+    if (res.ok) {
+      const list: { slug: string; price: number; images: string[] }[] = await res.json();
+      apiMap = Object.fromEntries(list.map((p) => [p.slug, { price: p.price, images: p.images }]));
+    }
+  } catch {
+    // API indisponível — mostra sem preço
+  }
+
+  const featuredProducts = FEATURED_CONFIG.map(({ id, fallbackImage, tagKey }) => {
+    const api = apiMap[id];
+    return {
+      id,
+      name: tp(`${id}.name`),
+      price: api?.price ?? null,
+      image: api?.images?.[0] || fallbackImage,
+      tag: tagKey ? t(tagKey) : null,
+    };
+  }).filter((p) => p.price !== null); // só mostra produtos que existam na API
 
   return (
     <div>
@@ -147,7 +147,7 @@ export default async function HomePage() {
                 <h3 className="font-semibold text-sm text-brand-dark leading-snug mb-1">
                   {product.name}
                 </h3>
-                <p className="text-brand-primary font-bold">€{product.price.toFixed(2)}</p>
+                <p className="text-brand-primary font-bold">€{(product.price as number).toFixed(2)}</p>
               </div>
             </Link>
           ))}
