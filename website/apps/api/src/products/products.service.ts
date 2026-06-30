@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface CreateProductDto {
@@ -51,9 +51,16 @@ export class ProductsService {
   }
 
   async delete(id: string) {
-    return this.prisma.product.update({
-      where: { id },
-      data: { active: false },
-    });
+    try {
+      return await this.prisma.product.delete({ where: { id } });
+    } catch (error: any) {
+      // P2003 = foreign key constraint (produto tem encomendas associadas)
+      if (error?.code === 'P2003' || error?.code === 'P2014') {
+        throw new ConflictException(
+          'Este produto tem encomendas associadas e não pode ser apagado. Desativa-o em vez disso.',
+        );
+      }
+      throw error;
+    }
   }
 }

@@ -1,8 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Plus, Pencil, ToggleLeft, ToggleRight, X, Check, Loader2, AlertCircle } from 'lucide-react';
+import {
+  Plus, Pencil, ToggleLeft, ToggleRight, X, Check, Loader2,
+  AlertCircle, Trash2, ImagePlus, Upload,
+} from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface Product {
@@ -23,6 +26,11 @@ interface Category {
   slug: string;
 }
 
+interface AvailableImage {
+  path: string;
+  folder: string;
+}
+
 const EMPTY_FORM = {
   name: '',
   slug: '',
@@ -30,9 +38,149 @@ const EMPTY_FORM = {
   price: '',
   stock: '',
   categoryId: '',
-  images: '',
+  images: [] as string[],
   active: true,
 };
+
+/* ─── Image Picker Overlay ─────────────────────────────────────────────── */
+
+function ImagePicker({
+  selected,
+  onToggle,
+  onClose,
+}: {
+  selected: string[];
+  onToggle: (path: string) => void;
+  onClose: () => void;
+}) {
+  const [images, setImages] = useState<AvailableImage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [filter, setFilter] = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch('/api/images')
+      .then((r) => r.json())
+      .then((data) => setImages(data))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/images', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (data.path) {
+        setImages((prev) => [{ path: data.path, folder: 'images/produtos' }, ...prev]);
+        onToggle(data.path);
+      }
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
+  }
+
+  const filtered = images.filter((img) =>
+    img.path.toLowerCase().includes(filter.toLowerCase()),
+  );
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl flex flex-col max-h-[85vh]">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
+          <h3 className="text-lg font-bold text-brand-dark">Escolher imagem</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Toolbar */}
+        <div className="px-6 py-3 border-b flex items-center gap-3 flex-shrink-0">
+          <input
+            type="text"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filtrar imagens..."
+            className="input flex-1 text-sm py-2"
+          />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="btn-secondary flex items-center gap-2 text-sm whitespace-nowrap"
+          >
+            {uploading
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <Upload className="w-4 h-4" />}
+            Upload
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleUpload}
+          />
+        </div>
+
+        {/* Grid */}
+        <div className="overflow-y-auto p-4 flex-1">
+          {loading ? (
+            <div className="flex items-center justify-center py-16 text-gray-400">
+              <Loader2 className="w-5 h-5 animate-spin mr-2" /> A carregar...
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="text-center text-gray-400 py-16 text-sm">Nenhuma imagem encontrada.</p>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {filtered.map((img) => {
+                const isSelected = selected.includes(img.path);
+                return (
+                  <button
+                    key={img.path}
+                    onClick={() => onToggle(img.path)}
+                    className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                      isSelected
+                        ? 'border-brand-primary ring-2 ring-brand-primary/30'
+                        : 'border-transparent hover:border-gray-300'
+                    }`}
+                  >
+                    <Image src={img.path} alt="" fill className="object-cover" sizes="120px" />
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-brand-primary/30 flex items-center justify-center">
+                        <div className="bg-brand-primary rounded-full p-1">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t flex-shrink-0 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            {selected.length} imagem{selected.length !== 1 ? 's' : ''} selecionada{selected.length !== 1 ? 's' : ''}
+          </p>
+          <button onClick={onClose} className="btn-primary">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main Page ────────────────────────────────────────────────────────── */
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -40,11 +188,21 @@ export default function AdminProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Edit / create modal
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  // Image picker
+  const [showPicker, setShowPicker] = useState(false);
+
+  // Delete
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   function fetchProducts() {
     setLoading(true);
@@ -62,9 +220,12 @@ export default function AdminProductsPage() {
 
   useEffect(() => { fetchProducts(); }, []);
 
+  /* ── Modal helpers ── */
+
   function openCreate() {
     setEditing(null);
     setForm(EMPTY_FORM);
+    setSaveError('');
     setModal('create');
   }
 
@@ -77,9 +238,10 @@ export default function AdminProductsPage() {
       price: String(p.price),
       stock: String(p.stock),
       categoryId: p.category?.id ?? '',
-      images: p.images.join(', '),
+      images: p.images ?? [],
       active: p.active,
     });
+    setSaveError('');
     setModal('edit');
   }
 
@@ -88,9 +250,10 @@ export default function AdminProductsPage() {
     setEditing(null);
     setSaving(false);
     setSaved(false);
+    setSaveError('');
   }
 
-  function handleField(key: keyof typeof EMPTY_FORM, value: string | boolean) {
+  function handleField(key: keyof typeof EMPTY_FORM, value: string | boolean | string[]) {
     setForm((f) => {
       const next = { ...f, [key]: value };
       if (key === 'name' && typeof value === 'string' && modal === 'create') {
@@ -106,24 +269,42 @@ export default function AdminProductsPage() {
     });
   }
 
+  /* ── Image helpers ── */
+
+  function toggleImage(path: string) {
+    setForm((f) => {
+      const already = f.images.includes(path);
+      return {
+        ...f,
+        images: already ? f.images.filter((p) => p !== path) : [...f.images, path],
+      };
+    });
+  }
+
+  function removeImage(path: string) {
+    setForm((f) => ({ ...f, images: f.images.filter((p) => p !== path) }));
+  }
+
+  /* ── Save ── */
+
   async function handleSave() {
     const price = parseFloat(form.price);
     const stock = parseInt(form.stock, 10);
     if (!form.name || isNaN(price) || isNaN(stock)) return;
 
-    const images = form.images.split(',').map((s) => s.trim()).filter(Boolean);
     const payload = {
       name: form.name,
       slug: form.slug,
       description: form.description,
       price,
       stock,
-      images,
+      images: form.images,
       active: form.active,
       ...(form.categoryId ? { categoryId: form.categoryId } : {}),
     };
 
     setSaving(true);
+    setSaveError('');
     try {
       if (modal === 'create') {
         await api.post('/products', payload);
@@ -132,29 +313,48 @@ export default function AdminProductsPage() {
       }
       setSaved(true);
       setTimeout(() => {
-        setSaved(false);
         closeModal();
-        fetchProducts(); // recarrega lista da API
-      }, 800);
-    } catch {
+        fetchProducts();
+      }, 700);
+    } catch (err: any) {
+      setSaveError(err?.response?.data?.message ?? 'Erro ao guardar.');
       setSaving(false);
     }
   }
 
+  /* ── Toggle active ── */
+
   async function toggleActive(p: Product) {
-    // Optimistic update
     setProducts((prev) =>
-      prev.map((x) => (x.id === p.id ? { ...x, active: !x.active } : x))
+      prev.map((x) => (x.id === p.id ? { ...x, active: !x.active } : x)),
     );
     try {
       await api.patch(`/products/${p.id}`, { active: !p.active });
     } catch {
-      // Reverter se falhar
       setProducts((prev) =>
-        prev.map((x) => (x.id === p.id ? { ...x, active: p.active } : x))
+        prev.map((x) => (x.id === p.id ? { ...x, active: p.active } : x)),
       );
     }
   }
+
+  /* ── Delete ── */
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await api.delete(`/products/${deleteTarget.id}`);
+      setProducts((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch (err: any) {
+      setDeleteError(err?.response?.data?.message ?? 'Erro ao apagar o produto.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────── */
 
   return (
     <div>
@@ -172,7 +372,6 @@ export default function AdminProductsPage() {
         </button>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-6 text-sm">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
@@ -180,7 +379,6 @@ export default function AdminProductsPage() {
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="flex items-center justify-center py-20 text-brand-muted">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -190,8 +388,8 @@ export default function AdminProductsPage() {
 
       {/* Table */}
       {!loading && (
-        <div className="card overflow-hidden">
-          <table className="w-full">
+        <div className="card overflow-x-auto">
+          <table className="w-full min-w-[560px]">
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Produto</th>
@@ -232,7 +430,9 @@ export default function AdminProductsPage() {
                       €{p.price.toFixed(2)}
                     </td>
                     <td className="px-4 py-3 hidden sm:table-cell">
-                      <span className={`text-sm font-medium ${p.stock === 0 ? 'text-red-500' : p.stock < 10 ? 'text-yellow-600' : 'text-gray-700'}`}>
+                      <span className={`text-sm font-medium ${
+                        p.stock === 0 ? 'text-red-500' : p.stock < 10 ? 'text-yellow-600' : 'text-gray-700'
+                      }`}>
                         {p.stock}
                       </span>
                     </td>
@@ -249,12 +449,22 @@ export default function AdminProductsPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => openEdit(p)}
-                        className="text-gray-400 hover:text-brand-primary transition-colors p-1 rounded-lg hover:bg-brand-primary/10"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => openEdit(p)}
+                          className="text-gray-400 hover:text-brand-primary transition-colors p-1.5 rounded-lg hover:bg-brand-primary/10"
+                          title="Editar"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => { setDeleteTarget(p); setDeleteError(''); }}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                          title="Apagar"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -264,21 +474,65 @@ export default function AdminProductsPage() {
         </div>
       )}
 
-      {/* Modal */}
+      {/* ── Delete confirmation modal ── */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <h2 className="text-base font-bold text-brand-dark">Apagar produto?</h2>
+                <p className="text-sm text-gray-500">{deleteTarget.name}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-5">
+              Esta ação é irreversível. Se o produto tiver encomendas associadas, não poderá ser apagado.
+            </p>
+            {deleteError && (
+              <div className="flex items-start gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4 text-sm">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                {deleteError}
+              </div>
+            )}
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setDeleteTarget(null); setDeleteError(''); }}
+                disabled={deleting}
+                className="btn-secondary flex-1"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
+              >
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Apagar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Edit / Create modal ── */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between px-6 py-4 border-b">
+            <div className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0">
               <h2 className="text-lg font-bold text-brand-dark">
                 {modal === 'create' ? 'Novo produto' : 'Editar produto'}
               </h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-700 transition-colors">
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="overflow-y-auto p-6 space-y-5 flex-1">
               <div className="grid grid-cols-2 gap-4">
+
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
                   <input
@@ -289,6 +543,7 @@ export default function AdminProductsPage() {
                     placeholder="Bola de Reação Verde"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Slug (URL)</label>
                   <input
@@ -299,6 +554,7 @@ export default function AdminProductsPage() {
                     placeholder="bola-reacao-verde"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
                   <select
@@ -312,6 +568,7 @@ export default function AdminProductsPage() {
                     ))}
                   </select>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Preço (€) *</label>
                   <input
@@ -324,6 +581,7 @@ export default function AdminProductsPage() {
                     placeholder="14.99"
                   />
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock *</label>
                   <input
@@ -335,6 +593,7 @@ export default function AdminProductsPage() {
                     placeholder="50"
                   />
                 </div>
+
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
                   <textarea
@@ -345,18 +604,39 @@ export default function AdminProductsPage() {
                     placeholder="Descrição do produto..."
                   />
                 </div>
+
+                {/* ── Imagens ── */}
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Imagens <span className="text-gray-400 font-normal">(caminhos separados por vírgula)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={form.images}
-                    onChange={(e) => handleField('images', e.target.value)}
-                    className="input text-sm"
-                    placeholder="/images/produtos/bola-reacao-verde-splash.jpg"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Imagens</label>
+                  <div className="flex flex-wrap gap-2">
+                    {form.images.map((src, idx) => (
+                      <div key={src} className="relative w-20 h-20 rounded-lg overflow-hidden bg-brand-light group flex-shrink-0">
+                        <Image src={src} alt="" fill className="object-cover" sizes="80px" />
+                        <button
+                          onClick={() => removeImage(src)}
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                        <span className="absolute bottom-1 left-1 text-[10px] font-bold bg-black/50 text-white rounded px-1">
+                          {idx + 1}
+                        </span>
+                      </div>
+                    ))}
+
+                    <button
+                      onClick={() => setShowPicker(true)}
+                      className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-brand-primary hover:text-brand-primary transition-colors gap-1 flex-shrink-0"
+                    >
+                      <ImagePlus className="w-5 h-5" />
+                      <span className="text-[10px] font-medium">Adicionar</span>
+                    </button>
+                  </div>
+                  {form.images.length === 0 && (
+                    <p className="text-xs text-gray-400 mt-1">A primeira imagem é usada como capa na loja.</p>
+                  )}
                 </div>
+
                 <div className="col-span-2">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
@@ -371,25 +651,42 @@ export default function AdminProductsPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 px-6 py-4 border-t bg-gray-50 rounded-b-2xl">
-              <button onClick={closeModal} className="btn-secondary flex-1">
-                Cancelar
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                  saved
-                    ? 'bg-brand-green text-brand-dark'
-                    : 'bg-brand-primary text-white hover:bg-red-700'
-                }`}
-              >
-                {saving && !saved && <Loader2 className="w-4 h-4 animate-spin" />}
-                {saved ? <><Check className="w-4 h-4" /> Guardado!</> : 'Guardar'}
-              </button>
+            <div className="flex flex-col gap-2 px-6 py-4 border-t bg-gray-50 rounded-b-2xl flex-shrink-0">
+              {saveError && (
+                <div className="flex items-start gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  {saveError}
+                </div>
+              )}
+              <div className="flex gap-3">
+                <button onClick={closeModal} className="btn-secondary flex-1">
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                    saved
+                      ? 'bg-brand-green text-brand-dark'
+                      : 'bg-brand-primary text-white hover:bg-red-700'
+                  }`}
+                >
+                  {saving && !saved && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {saved ? <><Check className="w-4 h-4" /> Guardado!</> : 'Guardar'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Image Picker overlay ── */}
+      {showPicker && (
+        <ImagePicker
+          selected={form.images}
+          onToggle={toggleImage}
+          onClose={() => setShowPicker(false)}
+        />
       )}
     </div>
   );
