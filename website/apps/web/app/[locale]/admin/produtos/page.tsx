@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   Plus, Pencil, ToggleLeft, ToggleRight, X, Check, Loader2,
-  AlertCircle, Trash2, ImagePlus, Upload,
+  AlertCircle, Trash2, ImagePlus, Upload, Star,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -18,6 +18,7 @@ interface Product {
   category?: { id: string; name: string; slug: string };
   images: string[];
   active: boolean;
+  featured: boolean;
 }
 
 interface Category {
@@ -40,6 +41,7 @@ const EMPTY_FORM = {
   categoryId: '',
   images: [] as string[],
   active: true,
+  featured: false,
 };
 
 /* ─── Image Picker Overlay ─────────────────────────────────────────────── */
@@ -255,6 +257,7 @@ export default function AdminProductsPage() {
       categoryId: p.category?.id ?? '',
       images: p.images ?? [],
       active: p.active,
+      featured: p.featured ?? false,
     });
     setSaveError('');
     setModal('edit');
@@ -315,6 +318,7 @@ export default function AdminProductsPage() {
       stock,
       images: form.images,
       active: form.active,
+      featured: form.featured,
       ...(form.categoryId ? { categoryId: form.categoryId } : {}),
     };
 
@@ -348,6 +352,21 @@ export default function AdminProductsPage() {
     } catch {
       setProducts((prev) =>
         prev.map((x) => (x.id === p.id ? { ...x, active: p.active } : x)),
+      );
+    }
+  }
+
+  /* ── Toggle featured ── */
+
+  async function toggleFeatured(p: Product) {
+    setProducts((prev) =>
+      prev.map((x) => (x.id === p.id ? { ...x, featured: !x.featured } : x)),
+    );
+    try {
+      await api.patch(`/products/${p.id}`, { featured: !p.featured });
+    } catch {
+      setProducts((prev) =>
+        prev.map((x) => (x.id === p.id ? { ...x, featured: p.featured } : x)),
       );
     }
   }
@@ -412,6 +431,7 @@ export default function AdminProductsPage() {
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Preço</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Stock</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                <th className="text-center px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide" title="Destaque na página inicial">⭐</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -461,6 +481,19 @@ export default function AdminProductsPage() {
                           ? <><ToggleRight className="w-5 h-5 text-brand-green" /><span className="text-brand-green hidden sm:inline">Ativo</span></>
                           : <><ToggleLeft className="w-5 h-5 text-gray-400" /><span className="text-gray-400 hidden sm:inline">Inativo</span></>
                         }
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => toggleFeatured(p)}
+                        title={p.featured ? 'Em destaque — clica para remover' : 'Clica para colocar em destaque'}
+                        className="p-1.5 rounded-lg transition-colors hover:bg-yellow-50"
+                      >
+                        <Star
+                          className={`w-4 h-4 transition-colors ${
+                            p.featured ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 hover:text-yellow-300'
+                          }`}
+                        />
                       </button>
                     </td>
                     <td className="px-4 py-3 text-right">
@@ -652,7 +685,7 @@ export default function AdminProductsPage() {
                   )}
                 </div>
 
-                <div className="col-span-2">
+                <div className="col-span-2 space-y-3">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
@@ -661,6 +694,18 @@ export default function AdminProductsPage() {
                       className="w-4 h-4 rounded accent-brand-primary"
                     />
                     <span className="text-sm font-medium text-gray-700">Produto ativo (visível na loja)</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.featured}
+                      onChange={(e) => handleField('featured', e.target.checked)}
+                      className="w-4 h-4 rounded accent-yellow-400"
+                    />
+                    <span className="text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                      Destaque na página inicial
+                    </span>
                   </label>
                 </div>
               </div>

@@ -10,15 +10,19 @@ interface CreateProductDto {
   stock?: number;
   categoryId?: string;
   ebookFile?: string; // caminho para o PDF (apenas para ebooks)
+  featured?: boolean;
 }
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(active = true) {
+  async findAll(active = true, featured?: boolean) {
     return this.prisma.product.findMany({
-      where: active ? { active: true } : {},
+      where: {
+        ...(active ? { active: true } : {}),
+        ...(featured !== undefined ? { featured } : {}),
+      },
       include: { category: true },
       orderBy: { createdAt: 'desc' },
     });

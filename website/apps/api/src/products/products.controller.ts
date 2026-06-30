@@ -18,9 +18,12 @@ export class ProductsController {
   constructor(private productsService: ProductsService) {}
 
   // Público — lista produtos ativos
+  // ?all=true  → inclui inativos (backoffice)
+  // ?featured=true → apenas produtos em destaque
   @Get()
-  findAll(@Query('all') all?: string) {
-    return this.productsService.findAll(all !== 'true');
+  findAll(@Query('all') all?: string, @Query('featured') featured?: string) {
+    const featuredFilter = featured === 'true' ? true : featured === 'false' ? false : undefined;
+    return this.productsService.findAll(all !== 'true', featuredFilter);
   }
 
   // Público — produto por slug

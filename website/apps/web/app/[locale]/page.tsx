@@ -2,42 +2,31 @@ import { getTranslations, getLocale } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const FEATURED_CONFIG = [
-  { id: 'bola-reacao-verde',       fallbackImage: '/images/produtos/bola-reacao-verde-splash.jpg',  tagKey: 'tag_bestseller' as const },
-  { id: 'bola-reacao-branca',      fallbackImage: '/images/produtos/bola-reacao-branca-splash.jpg', tagKey: 'tag_new'        as const },
-  { id: 'bola-reacao-verde-padel', fallbackImage: '/images/produtos/bola-reacao-verde-padel.jpg',   tagKey: null },
-  { id: 'bola-reacao-branca-pack', fallbackImage: '/images/produtos/bola-reacao-branca-mao.jpg',    tagKey: 'tag_pack'       as const },
-];
-
 export default async function HomePage() {
   const t = await getTranslations('home');
   const tp = await getTranslations('products');
   const locale = await getLocale();
   const prefix = `/${locale}`;
 
-  // Buscar produtos reais da API para ter preços actualizados
-  let apiMap: Record<string, { price: number; images: string[] }> = {};
+  // Buscar produtos marcados como destaque no backoffice
+  type ApiProduct = { id: string; slug: string; name: string; price: number; images: string[] };
+  let featuredProducts: { id: string; name: string; price: number; image: string; tag: string | null }[] = [];
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-    const res = await fetch(`${apiUrl}/products`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiUrl}/products?featured=true`, { next: { revalidate: 60 } });
     if (res.ok) {
-      const list: { slug: string; price: number; images: string[] }[] = await res.json();
-      apiMap = Object.fromEntries(list.map((p) => [p.slug, { price: p.price, images: p.images }]));
+      const list: ApiProduct[] = await res.json();
+      featuredProducts = list.map((p) => ({
+        id: p.slug,  // slug usado como link /loja/[slug]
+        name: p.name,
+        price: p.price,
+        image: p.images?.[0] || '/images/produtos/placeholder.jpg',
+        tag: null,
+      }));
     }
   } catch {
-    // API indisponível — mostra sem preço
+    // API indisponível — secção fica vazia
   }
-
-  const featuredProducts = FEATURED_CONFIG.map(({ id, fallbackImage, tagKey }) => {
-    const api = apiMap[id];
-    return {
-      id,
-      name: tp(`${id}.name`),
-      price: api?.price ?? null,
-      image: api?.images?.[0] || fallbackImage,
-      tag: tagKey ? t(tagKey) : null,
-    };
-  }).filter((p) => p.price !== null); // só mostra produtos que existam na API
 
   return (
     <div>
@@ -147,7 +136,7 @@ export default async function HomePage() {
                 <h3 className="font-semibold text-sm text-brand-dark leading-snug mb-1">
                   {product.name}
                 </h3>
-                <p className="text-brand-primary font-bold">€{(product.price as number).toFixed(2)}</p>
+                <p className="text-brand-primary font-bold">€{product.price.toFixed(2)}</p>
               </div>
             </Link>
           ))}
