@@ -1,13 +1,28 @@
 import { NextResponse } from 'next/server';
-import { readdir } from 'fs/promises';
+import { readdir, writeFile, mkdir } from 'fs/promises';
+import { existsSync } from 'fs';
 import { join } from 'path';
-import { writeFile, mkdir } from 'fs/promises';
 
 const FOLDERS = ['images/produtos', 'images/lifestyle'];
 const IMAGE_EXT = /\.(jpg|jpeg|png|gif|webp|svg)$/i;
 
+/**
+ * Resolve the public/ directory at runtime.
+ *
+ * Development:  cwd = <repo>/website/apps/web/  → public/ is at cwd/public
+ * Docker standalone: cwd = /app, server runs as `node apps/web/server.js`
+ *   → public/ is copied to /app/apps/web/public/
+ */
+function getPublicDir(): string {
+  const candidates = [
+    join(process.cwd(), 'apps/web/public'), // Docker standalone
+    join(process.cwd(), 'public'),           // Development / next dev
+  ];
+  return candidates.find((p) => existsSync(p)) ?? candidates[candidates.length - 1];
+}
+
 export async function GET() {
-  const publicDir = join(process.cwd(), 'public');
+  const publicDir = getPublicDir();
   const all: { path: string; folder: string }[] = [];
 
   for (const folder of FOLDERS) {
@@ -19,7 +34,7 @@ export async function GET() {
         }
       }
     } catch {
-      // folder may not exist
+      // folder doesn't exist yet — skip
     }
   }
 
@@ -43,12 +58,13 @@ export async function POST(request: Request) {
       .toLowerCase();
     const filename = `${Date.now()}-${safeName}`;
 
-    const dir = join(process.cwd(), 'public', 'images', 'produtos');
+    const dir = join(getPublicDir(), 'images', 'produtos');
     await mkdir(dir, { recursive: true });
     await writeFile(join(dir, filename), buffer);
 
     return NextResponse.json({ path: `/images/produtos/${filename}` });
-  } catch {
+  } catch (err) {
+    console.error('[upload] error:', err);
     return NextResponse.json({ error: 'Upload falhou' }, { status: 500 });
   }
 }
