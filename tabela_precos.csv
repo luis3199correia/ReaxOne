@@ -1,0 +1,190 @@
+Descricao envio,Preco,Status
+Envio 2 dias PT 1kg Levantamento em Ponto,3.61000
+Envio 2 dias PT 5kg Levantamento em Ponto,3.83000,Disabled
+Envio 2 dias PT 10kg Levantamento em Ponto,4.73000,Disabled
+Envio 2 dias PT 15kg Levantamento em Ponto,6.28000,Disabled
+Envio 2 dias PT 20kg Levantamento em Ponto,6.71000,Disabled
+Envio 2 dias PT 25kg Levantamento em Ponto,8.33000,Disabled
+Envio 2 dias PT 30kg Levantamento em Ponto,8.83000,Disabled
+Envio Next Day PT 1kg Levantamento em Ponto,3.86000
+Envio Next Day PT 5kg Levantamento em Ponto,4.16000,Disabled
+Envio Next Day PT 10kg Levantamento em Ponto,4.55000,Disabled
+Envio Next Day PT 15kg Levantamento em Ponto,6.00000,Disabled
+Envio Next Day PT 20kg Levantamento em Ponto,6.66000,Disabled
+Envio Next Day PT 25kg Levantamento em Ponto,8.42000,Disabled
+Envio Next Day PT 30kg Levantamento em Ponto,8.93000,Disabled
+Envio 2 dias PT 1kg 1 Tentativa de Entrega,4.01000
+Envio 2 dias PT 5kg 1 Tentativa de Entrega,4.23000,Disabled
+Envio 2 dias PT 10kg 1 Tentativa de Entrega,5.13000,Disabled
+Envio 2 dias PT 15kg 1 Tentativa de Entrega,6.68000,Disabled
+Envio 2 dias PT 20kg 1 Tentativa de Entrega,7.10000,Disabled
+Envio 2 dias PT 25kg 1 Tentativa de Entrega,8.73000,Disabled
+Envio 2 dias PT 30kg 1 Tentativa de Entrega,9.23000,Disabled
+Envio 2 dias PT Kg Adicional,0.24000,Disabled
+Envio Next Day PT 1kg 1 Tentativa de Entrega,4.27000
+Envio Next Day PT 5kg 1 Tentativa de Entrega,4.49000,Disabled
+Envio Next Day PT 10kg 1 Tentativa de Entrega,5.07000,Disabled
+Envio Next Day PT 15kg 1 Tentativa de Entrega,6.45000,Disabled
+Envio Next Day PT 20kg 1 Tentativa de Entrega,7.44000,Disabled
+Envio Next Day PT 25kg 1 Tentativa de Entrega,8.80000,Disabled
+Envio Next Day PT 30kg 1 Tentativa de Entrega,9.54000,Disabled
+Envio Next Day PT 1kg 2 Tentativas de Entrega,4.39000
+Envio Next Day PT 3kg 2 Tentativas de Entrega,4.56000,Disabled
+Envio Next Day PT 5kg 2 Tentativas de Entrega,4.70000,Disabled
+Envio Next Day PT 10kg 2 Tentativas de Entrega,5.08000,Disabled
+Envio Next Day PT 15kg 2 Tentativas de Entrega,6.54000,Disabled
+Envio Next Day PT 20kg 2 Tentativas de Entrega,7.20000,Disabled
+Envio Next Day PT 25kg 2 Tentativas de Entrega,8.96000,Disabled
+Envio Next Day PT 30kg 2 Tentativas de Entrega,9.46000,Disabled
+Envio Next Day PT Kg Adicional,0.31000,Disabled
+Envio Ilhas 1kg 5-9 dias,8.91000,Disabled
+Envio Ilhas 5kg 5-9 dias,10.92000,Disabled
+Envio Ilhas 10kg 5-9 dias,14.28000,Disabled
+Envio Ilhas 15kg 5-9 dias,18.69000,Disabled
+Envio Ilhas 20kg 5-9 dias,22.97000,Disabled
+Envio Ilhas 25kg 5-9 dias,27.19000,Disabled
+Envio Ilhas 30kg 5-9 dias,31.40000,Disabled
+Envio Ilhas Kg Adicional,1.13000,Disabled
+Envio Ilhas 1kg 2-5 dias,15.91000,Disabled
+Envio Ilhas 5kg 2-5 dias,31.58000,Disabled
+Envio Ilhas 10kg 2-5 dias,56.80000,Disabled
+Envio Ilhas 15kg 2-5 dias,76.60000,Disabled
+Envio Ilhas 20kg 2-5 dias,98.20000,Disabled
+Envio Espanha 1kg,5.96000
+Envio Espanha 5kg,7.35000,Disabled
+Envio Espanha 10kg,9.03000,Disabled
+Envio Espanha 15kg,13.49000,Disabled
+Envio Espanha 20kg,17.24000,Disabled
+Envio Espanha 25kg,20.76000,Disabled
+Envio Espanha 30kg,24.19000,Disabled
+Envio Espanha Kg Adicional,0.49000,Disabled
+Envio Ilhas Espanholas  1kg 3-5 dias,11.78000
+Envio Ilhas Espanholas  5kg 3-5 dias,22.60000,Disabled
+Envio Ilhas Espanholas  10kg 3-5 dias,49.36000,Disabled
+Envio Ilhas Espanholas  15kg 3-5 dias,63.28000,Disabled
+Envio Ilhas Espanholas  20kg 3-5 dias,90.88000,Disabled
+Envio Ilhas Espanholas  25kg 3-5 dias,118.39000,Disabled
+Envio Ilhas Espanholas 30kg 3-5 dias,145.83000,Disabled
+Envio Ilhas Espanholas 1kg 6-10 dias,10.96000
+Envio Ilhas Espanholas 5kg 6-10 dias,13.56000,Disabled
+Envio Ilhas Espanholas 10kg 6-10 dias,17.29000,Disabled
+Envio Ilhas Espanholas 15kg 6-10 dias,18.99000,Disabled
+Envio Ilhas Espanholas 20kg 6-10 dias,25.01000,Disabled
+Envio Ilhas Espanholas 25kg 6-10 dias,27.25000,Disabled
+Europa Zona 2 Economy 1kg,12.53000
+Europa Zona 2 Economy 2kg,13.44000,Disabled
+Europa Zona 2 Economy 3kg,15.26000,Disabled
+Europa Zona 2 Economy 4kg,17.10000,Disabled
+Europa Zona 2 Economy 5kg,18.92000,Disabled
+Europa Zona 2 Economy 10kg,24.40000,Disabled
+Europa Zona 2 Economy 15kg,33.53000,Disabled
+Europa Zona 2 Economy 20kg,42.66000,Disabled
+Europa Zona 2 Economy 25kg,51.81000,Disabled
+Europa Zona 2 Economy 30kg,60.94000,Disabled
+Europa Zona 2 Kg Adicional,2.22000,Disabled
+Europa Zona 3 Economy 1kg,13.35000
+Europa Zona 3 Economy 2kg,14.76000,Disabled
+Europa Zona 3 Economy 3kg,17.57000,Disabled
+Europa Zona 3 Economy 4kg,20.38000,Disabled
+Europa Zona 3 Economy 5kg,23.19000,Disabled
+Europa Zona 3 Economy 10kg,31.62000,Disabled
+Europa Zona 3 Economy 15kg,45.68000,Disabled
+Europa Zona 3 Economy 20kg,59.72000,Disabled
+Europa Zona 3 Economy 25kg,73.78000,Disabled
+Europa Zona 3 Economy 30kg,87.83000,Disabled
+Europa Zona 3 Economy Kg Adicional,3.19000,Disabled
+Mundo Zona A Premium 1kg,25.01000,Disabled
+Mundo Zona A Premium 2kg,28.58000,Disabled
+Mundo Zona A Premium 3kg,32.95000,Disabled
+Mundo Zona A Premium 4kg,36.16000,Disabled
+Mundo Zona A Premium 5kg,40.03000,Disabled
+Mundo Zona A Premium 10kg,56.28000,Disabled
+Mundo Zona A Premium 15kg,75.99000,Disabled
+Mundo Zona A Premium 20kg,95.69000,Disabled
+Mundo Zona A Premium 25kg,118.05000,Disabled
+Mundo Zona A Premium 30kg,140.39000,Disabled
+Mundo Zona A Premium kg,8.96000,Disabled
+Mundo Zona B Premium 1kg,25.60000,Disabled
+Mundo Zona B Premium 2kg,31.15000,Disabled
+Mundo Zona B Premium 3kg,36.86000,Disabled
+Mundo Zona B Premium 4kg,42.25000,Disabled
+Mundo Zona B Premium 5kg,47.38000,Disabled
+Mundo Zona B Premium 10kg,78.24000,Disabled
+Mundo Zona B Premium 15kg,110.03000,Disabled
+Mundo Zona B Premium 20kg,140.35000,Disabled
+Mundo Zona B Premium 25kg,170.05000,Disabled
+Mundo Zona B Premium 30kg,198.43000,Disabled
+Mundo Zona B Premium kg,11.29000,Disabled
+Mundo Zona C Premium 1kg,54.94000,Disabled
+Mundo Zona C Premium 2kg,80.28000,Disabled
+Mundo Zona C Premium 3kg,98.82000,Disabled
+Mundo Zona C Premium 4kg,109.76000,Disabled
+Mundo Zona C Premium 5kg,120.16000,Disabled
+Mundo Zona C Premium 10kg,198.76000,Disabled
+Mundo Zona C Premium 15kg,288.08000,Disabled
+Mundo Zona C Premium 20kg,373.26000,Disabled
+Mundo Zona C Premium 25kg,416.32000,Disabled
+Mundo Zona C Premium 30kg,457.47000,Disabled
+Mundo Zona C Premium kg,21.00000,Disabled
+Mundo Zona D Premium 1kg,39.27000,Disabled
+Mundo Zona D Premium 2kg,48.17000,Disabled
+Mundo Zona D Premium 3kg,58.70000,Disabled
+Mundo Zona D Premium 4kg,69.64000,Disabled
+Mundo Zona D Premium 5kg,80.03000,Disabled
+Mundo Zona D Premium 10kg,136.84000,Disabled
+Mundo Zona D Premium 15kg,187.58000,Disabled
+Mundo Zona D Premium 20kg,235.95000,Disabled
+Mundo Zona D Premium 25kg,275.34000,Disabled
+Mundo Zona D Premium 30kg,312.96000,Disabled
+Mundo Zona D Premium kg,15.59000,Disabled
+Carga Caixas Zona 1 5kg,7.15000,Disabled
+Carga Caixas Zona 1 10kg,7.88000,Disabled
+Carga Caixas Zona 1 20kg,8.60000,Disabled
+Carga Caixas Zona 1 30kg,9.87000,Disabled
+Carga Caixas zona 1 40kg,10.04000,Disabled
+Carga Caixas zona 1 50kg,11.96000,Disabled
+Carga Caixas zona 1 60kg,13.95000,Disabled
+Carga Caixas zona 1 70kg,15.46000,Disabled
+Carga Caixas zona 1 80kg,17.03000,Disabled
+Carga Caixas zona 1 90kg,18.11000,Disabled
+Carga Caixas zona 1 100kg,20.09000,Disabled
+Carga Caixas zona 1 125kg,25.12000,Disabled
+Carga Caixas zona 1 150kg,30.13000,Disabled
+Carga Caixas zona 1 175kg,35.16000,Disabled
+Carga Caixas zona 1 200kg,40.18000,Disabled
+Carga Caixas Zona 1 250kg,50.22000,Disabled
+Carga Caixas Zona 1 300kg,60.26000,Disabled
+Carga Caixas Zona 1 350kg,70.31000,Disabled
+Carga Caixas Zona 1 400kg,80.35000,Disabled
+Carga Caixas Zona 1 450kg,90.40000,Disabled
+Carga Caixas Zona 1 500kg,100.44000,Disabled
+Carga Caixas Zona 1 600kg,120.53000,Disabled
+Carga Caixas Zona 1 700kg,140.62000,Disabled
+Carga Caixas Zona 1 800kg,160.71000,Disabled
+Carga Caixas Zona 1 900kg,180.79000,Disabled
+Carga Caixas Zona 1 1000kg,200.88000,Disabled
+Carga Caixas kg adicional,0.20000,Disabled
+Carga Paletes zona 1,30.48000,Disabled
+Carga Paletes zona 2,35.04000,Disabled
+Carga Paletes zona 3,34.28000,Disabled
+Carga Paletes zona 4,46.30000,Disabled
+Returns 1kg,4.36000,Disabled
+Returns 5kg,4.62000,Disabled
+Returns 10kg,4.93000,Disabled
+Returns 15kg,6.54000,Disabled
+Returns 20kg,6.98000,Disabled
+Returns 25kg,8.68000,Disabled
+Returns 30kg,9.20000,Disabled
+Envio fragil,1.20000,Disabled
+Insurance,0.45000,Disabled
+International Insurance,1.00000,Disabled
+Levantamento Armazem,0.85000,Disabled
+Software Impressao de Guias,5.00000,Disabled
+Chegada de restock,14.90000,Disabled
+Caixas recebidas,0.70000,Disabled
+Paletes recebidas,1.60000,Disabled
+Handling produtos devolvidos,0.28000,Disabled
+Preparacao encomenda,0.75000,Disabled
+Preparacao por item,0.20000,Disabled
+Personalizacao,0.12000,Disabled
+Armazenamento por item,0.00500,Disabled

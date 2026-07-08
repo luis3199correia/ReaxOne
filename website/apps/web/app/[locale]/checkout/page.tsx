@@ -1,40 +1,69 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { Loader2, Truck, Check } from 'lucide-react';
+import { Loader2, Truck, Check, Calculator, AlertTriangle, Phone } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import { api } from '@/lib/api';
+import {
+  detectZone,
+  getShippingOptions,
+  COUNTRY_OPTIONS,
+  ZONE_LABELS,
+  ShippingOption,
+  ShippingZone,
+} from '@/lib/shippingRates';
 
 type PaymentMethod = 'mbway' | 'transfer';
-
-interface ShippingMethod {
-  id: string;
-  name: string;
-  price: number;
-  delivery_days?: string;
-}
 
 interface CheckoutForm {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
-  // morada de entrega
+  // Morada de faturação
   address: string;
   city: string;
   postalCode: string;
-  // morada alternativa (só se differentAddress = true)
+  country: string;
+  // Morada de entrega alternativa
   shipAddress?: string;
   shipCity?: string;
   shipPostalCode?: string;
+  shipCountry?: string;
+  // Fatura
   wantsInvoice: boolean;
   nif?: string;
   companyName?: string;
 }
 
+/* ── Country Select ─────────────────────────────────────────────────────── */
+function CountrySelect({ value, onChange, error }: {
+  value: string;
+  onChange: (v: string) => void;
+  error?: boolean;
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`input ${error ? 'border-red-400' : ''}`}
+    >
+      <option value="">— Seleciona o país —</option>
+      {COUNTRY_OPTIONS.map((opt) =>
+        opt.disabled ? (
+          <option key={opt.value} value={opt.value} disabled>{opt.label}</option>
+        ) : (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        )
+      )}
+    </select>
+  );
+}
+
+/* ── Main Page ──────────────────────────────────────────────────────────── */
 export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const locale = useLocale();
@@ -44,59 +73,71 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mbway');
   const [wantsInvoice, setWantsInvoice] = useState(false);
   const [differentAddress, setDifferentAddress] = useState(false);
-  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
-  const [selectedShipping, setSelectedShipping] = useState<ShippingMethod | null>(null);
-  const [loadingShipping, setLoadingShipping] = useState(false);
+
+  // Envio
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
+  const [shippingZone, setShippingZone] = useState<ShippingZone | null>(null);
+  const [shippingCalculated, setShippingCalculated] = useState(false);
+
+  // País (controlado fora do react-hook-form para reagir aos dropdowns)
+  const [country, setCountry] = useState('PT');
+  const [shipCountry, setShipCountry] = useState('PT');
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const zipcodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutForm>();
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutForm>({
+    defaultValues: { country: 'PT', shipCountry: 'PT' },
+  });
 
-  // Usa o código postal da morada alternativa se existir, senão o principal
-  const postalCode     = watch('postalCode');
-  const shipPostalCode = watch('shipPostalCode');
-  const activeZip      = differentAddress ? shipPostalCode : postalCode;
+  const postalCode     = watch('postalCode')     ?? '';
+  const shipPostalCode = watch('shipPostalCode') ?? '';
 
-  useEffect(() => {
-    const zip = activeZip?.replace(/\D/g, '');
-    if (zip?.length !== 7) {
-      setShippingMethods([]);
-      setSelectedShipping(null);
-      return;
-    }
-    if (zipcodeTimer.current) clearTimeout(zipcodeTimer.current);
-    zipcodeTimer.current = setTimeout(async () => {
-      setLoadingShipping(true);
-      try {
-        const formatted = `${zip.slice(0, 4)}-${zip.slice(4)}`;
-        const res = await api.post('/shipping/methods', { zipcode: formatted });
-        const methods: ShippingMethod[] = res.data?.methods || [];
-        setShippingMethods(methods);
-        if (methods.length > 0) setSelectedShipping(methods[0]);
-      } catch {
-        setShippingMethods([{ id: 'standard', name: 'Envio Standard', price: 3.99 }]);
-        setSelectedShipping({ id: 'standard', name: 'Envio Standard', price: 3.99 });
-      } finally {
-        setLoadingShipping(false);
-      }
-    }, 600);
-  }, [activeZip]);
+  // País e zip usados para calcular portes
+  const activeCountry = differentAddress ? shipCountry : country;
+  const activeZip     = differentAddress ? shipPostalCode : postalCode;
+  const canCalculate  = !!activeCountry && activeZip.replace(/\D/g, '').length >= 4;
+
+  /* ── Calcular portes ── */
+  function calculateShipping() {
+    const zone = detectZone(activeCountry, activeZip);
+    const opts = getShippingOptions(zone);
+    setShippingZone(zone);
+    setShippingOptions(opts);
+    setShippingCalculated(true);
+    setSelectedShipping(opts.length > 0 ? opts[0] : null);
+  }
+
+  // Resetar portes quando morada muda
+  function resetShipping() {
+    setShippingOptions([]);
+    setSelectedShipping(null);
+    setShippingZone(null);
+    setShippingCalculated(false);
+  }
 
   const shippingCost = selectedShipping?.price ?? 0;
   const orderTotal   = total + shippingCost;
 
+  /* ── Submit ── */
   const onSubmit = async (data: CheckoutForm) => {
-    if (!selectedShipping && items.length > 0) {
-      setError('Seleciona um método de envio.');
+    if (!shippingCalculated) {
+      setError('Calcula os portes antes de finalizar a encomenda.');
       return;
     }
+    if (shippingZone === 'PT_ILHAS' || shippingZone === 'BLOCKED' || !selectedShipping) {
+      setError('Não é possível enviar para esta localização. Entra em contacto connosco.');
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
       const street     = differentAddress ? data.shipAddress!    : data.address;
-      const city       = differentAddress ? data.shipCity!        : data.city;
-      const postalCode = differentAddress ? data.shipPostalCode!  : data.postalCode;
+      const city       = differentAddress ? data.shipCity!       : data.city;
+      const postalCode = differentAddress ? data.shipPostalCode! : data.postalCode;
+      const orderCountry = differentAddress ? shipCountry : country;
 
       const res = await api.post('/orders', {
         firstName: data.firstName,
@@ -106,11 +147,12 @@ export default function CheckoutPage() {
         street,
         city,
         postalCode,
+        country: orderCountry,
         paymentMethod,
         wantsInvoice,
-        nif:           data.nif,
-        companyName:   data.companyName,
-        shippingMethod: selectedShipping?.id,
+        nif:            data.nif,
+        companyName:    data.companyName,
+        shippingMethod: selectedShipping.id,
         shippingCost,
         items: items.map((i) => ({
           productId: i.id,
@@ -143,7 +185,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2 space-y-8">
 
-            {/* Dados pessoais + morada */}
+            {/* ── Dados pessoais + morada de faturação ── */}
             <div className="card p-6">
               <h2 className="text-lg font-semibold mb-4">{t('personal_info')}</h2>
               <div className="grid grid-cols-2 gap-4">
@@ -174,9 +216,20 @@ export default function CheckoutPage() {
                 <div>
                   <label className="block text-sm font-medium mb-1">{t('postal_code')} *</label>
                   <input
-                    {...register('postalCode', { required: true, pattern: /^\d{4}-?\d{3}$/ })}
+                    {...register('postalCode', {
+                      required: true,
+                      onChange: () => !differentAddress && resetShipping(),
+                    })}
                     className={`input ${errors.postalCode ? 'border-red-400' : ''}`}
                     placeholder="0000-000"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1">País *</label>
+                  <CountrySelect
+                    value={country}
+                    onChange={(v) => { setCountry(v); if (!differentAddress) resetShipping(); }}
+                    error={!country}
                   />
                 </div>
               </div>
@@ -189,8 +242,7 @@ export default function CheckoutPage() {
                     checked={differentAddress}
                     onChange={(e) => {
                       setDifferentAddress(e.target.checked);
-                      setShippingMethods([]);
-                      setSelectedShipping(null);
+                      resetShipping();
                     }}
                     className="w-4 h-4 rounded accent-brand-primary"
                   />
@@ -201,7 +253,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* Morada de entrega — só aparece quando o checkbox está ativo */}
+            {/* ── Morada de entrega alternativa ── */}
             {differentAddress && (
               <div className="card p-6 border-l-4 border-brand-primary">
                 <h2 className="text-lg font-semibold mb-4">Morada de entrega</h2>
@@ -223,69 +275,149 @@ export default function CheckoutPage() {
                   <div>
                     <label className="block text-sm font-medium mb-1">{t('postal_code')} *</label>
                     <input
-                      {...register('shipPostalCode', { required: differentAddress, pattern: /^\d{4}-?\d{3}$/ })}
+                      {...register('shipPostalCode', {
+                        required: differentAddress,
+                        onChange: () => resetShipping(),
+                      })}
                       className={`input ${errors.shipPostalCode ? 'border-red-400' : ''}`}
                       placeholder="0000-000"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium mb-1">País *</label>
+                    <CountrySelect
+                      value={shipCountry}
+                      onChange={(v) => { setShipCountry(v); resetShipping(); }}
+                      error={!shipCountry}
                     />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Métodos de envio */}
+            {/* ── Portes de envio ── */}
             <div className="card p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Truck className="w-5 h-5 text-brand-primary" />
                 Envio
               </h2>
-              {loadingShipping ? (
-                <div className="flex items-center gap-2 text-sm text-brand-muted py-4">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  A calcular métodos de envio...
+
+              {/* Botão calcular */}
+              {!shippingCalculated && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500 mb-3">
+                    Preenche o código postal e o país para calcular os portes.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={calculateShipping}
+                    disabled={!canCalculate}
+                    className="flex items-center gap-2 text-sm font-semibold text-brand-primary hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Calculator className="w-4 h-4" />
+                    Calcular portes
+                  </button>
                 </div>
-              ) : shippingMethods.length > 0 ? (
-                <div className="space-y-3">
-                  {shippingMethods.map((method) => (
-                    <label
-                      key={method.id}
-                      className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                        selectedShipping?.id === method.id
-                          ? 'border-brand-primary bg-red-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+              )}
+
+              {/* Resultado do cálculo */}
+              {shippingCalculated && (
+                <>
+                  {/* Zona detectada */}
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                      Zona: <span className="text-brand-dark">{shippingZone ? ZONE_LABELS[shippingZone] : ''}</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={resetShipping}
+                      className="text-xs text-gray-400 hover:text-gray-600 underline"
                     >
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name="shipping"
-                          checked={selectedShipping?.id === method.id}
-                          onChange={() => setSelectedShipping(method)}
-                          className="accent-brand-primary"
-                        />
-                        <div>
-                          <p className="font-medium text-sm">{method.name}</p>
-                          {method.delivery_days && (
-                            <p className="text-xs text-gray-500">{method.delivery_days} dias úteis</p>
-                          )}
-                        </div>
+                      Alterar
+                    </button>
+                  </div>
+
+                  {/* Ilhas PT — sem opções */}
+                  {shippingZone === 'PT_ILHAS' && (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                      <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-800">Envio para as ilhas não disponível online</p>
+                        <p className="text-sm text-amber-700 mt-1">
+                          Para encomendas para os Açores ou Madeira, entra em contacto connosco para calcular os portes manualmente.
+                        </p>
+                        <a
+                          href="https://wa.me/351911084422"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-2 text-sm font-semibold text-amber-800 hover:underline"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          +351 911 084 422
+                        </a>
                       </div>
-                      <span className="font-bold text-brand-dark">
-                        {method.price === 0
-                          ? <span className="text-brand-green">Grátis</span>
-                          : `€${method.price.toFixed(2)}`
-                        }
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 py-2">
-                  Insere o código postal para ver os métodos de envio disponíveis.
-                </p>
+                    </div>
+                  )}
+
+                  {/* País não suportado */}
+                  {shippingZone === 'BLOCKED' && (
+                    <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4">
+                      <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-semibold text-red-800">Não fazemos envios para este país</p>
+                        <p className="text-sm text-red-700 mt-1">
+                          De momento só enviamos para Portugal, Espanha e alguns países da Europa. Entra em contacto para saber mais.
+                        </p>
+                        <a
+                          href="https://wa.me/351911084422"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-2 text-sm font-semibold text-red-800 hover:underline"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          +351 911 084 422
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Opções de envio */}
+                  {shippingOptions.length > 0 && (
+                    <div className="space-y-3">
+                      {shippingOptions.map((opt) => (
+                        <label
+                          key={opt.id}
+                          className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                            selectedShipping?.id === opt.id
+                              ? 'border-brand-primary bg-red-50'
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="shipping"
+                              checked={selectedShipping?.id === opt.id}
+                              onChange={() => setSelectedShipping(opt)}
+                              className="accent-brand-primary"
+                            />
+                            <div>
+                              <p className="font-medium text-sm">{opt.name}</p>
+                              <p className="text-xs text-gray-500">{opt.deliveryDays} dia{opt.deliveryDays !== '1' ? 's' : ''} útil{opt.deliveryDays !== '1' ? 'eis' : ''} · IVA incluído</p>
+                            </div>
+                          </div>
+                          <span className="font-bold text-brand-dark whitespace-nowrap">
+                            €{opt.price.toFixed(2)}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
-            {/* Pagamento */}
+            {/* ── Pagamento ── */}
             <div className="card p-6">
               <h2 className="text-lg font-semibold mb-4">{t('payment')}</h2>
               <div className="space-y-3 mb-6">
@@ -310,7 +442,7 @@ export default function CheckoutPage() {
               )}
             </div>
 
-            {/* Fatura */}
+            {/* ── Fatura ── */}
             <div className="card p-6">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input type="checkbox" checked={wantsInvoice} onChange={(e) => setWantsInvoice(e.target.checked)} className="w-5 h-5 accent-brand-primary" />
@@ -331,7 +463,7 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Resumo */}
+          {/* ── Resumo ── */}
           <div className="card p-6 h-fit sticky top-6">
             <h2 className="text-lg font-semibold mb-4">{t('order_summary')}</h2>
             <div className="space-y-3 mb-4">
@@ -349,8 +481,13 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span>Envio</span>
-                <span className={shippingCost === 0 ? 'text-brand-green' : ''}>
-                  {loadingShipping ? '...' : shippingCost === 0 ? 'Grátis' : `€${shippingCost.toFixed(2)}`}
+                <span className={shippingCost === 0 ? 'text-gray-400' : ''}>
+                  {!shippingCalculated
+                    ? <span className="text-gray-400 italic text-xs">a calcular</span>
+                    : shippingCost === 0
+                    ? '—'
+                    : `€${shippingCost.toFixed(2)}`
+                  }
                 </span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t">
@@ -360,14 +497,17 @@ export default function CheckoutPage() {
             </div>
             <button
               type="submit"
-              disabled={submitting || items.length === 0}
-              className="btn-primary w-full mt-6 flex items-center justify-center gap-2"
+              disabled={submitting || items.length === 0 || !shippingCalculated || !selectedShipping}
+              className="btn-primary w-full mt-6 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting
                 ? <><Loader2 className="w-4 h-4 animate-spin" /> A processar...</>
                 : <><Check className="w-4 h-4" /> {t('place_order')}</>
               }
             </button>
+            {!shippingCalculated && (
+              <p className="text-xs text-gray-400 text-center mt-2">Calcula os portes para continuar</p>
+            )}
           </div>
         </div>
       </form>
