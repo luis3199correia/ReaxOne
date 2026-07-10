@@ -163,7 +163,13 @@ export default function CheckoutPage() {
         })),
       });
       clearCart();
-      router.push(`/${locale}/conta?order=${res.data.id}`);
+      const params = new URLSearchParams({
+        order:  res.data.id,
+        total:  orderTotal.toFixed(2),
+        method: paymentMethod,
+        email:  data.email,
+      });
+      router.push(`/${locale}/checkout/confirmacao?${params.toString()}`);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao criar encomenda. Tenta novamente.');
     } finally {
