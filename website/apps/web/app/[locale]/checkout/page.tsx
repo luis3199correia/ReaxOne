@@ -148,7 +148,7 @@ export default function CheckoutPage() {
         city,
         postalCode,
         country: orderCountry,
-        paymentMethod,
+        paymentMethod: paymentMethod === 'mbway' ? 'MBWAY' : 'BANK_TRANSFER',
         wantsInvoice,
         nif:            data.nif,
         companyName:    data.companyName,

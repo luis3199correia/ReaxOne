@@ -1,12 +1,12 @@
 Descricao envio,Preco,Status
-Envio 2 dias PT 1kg Levantamento em Ponto,3.61000
+Envio 2 dias PT 1kg Levantamento em Ponto,3.61000,Disabled
 Envio 2 dias PT 5kg Levantamento em Ponto,3.83000,Disabled
 Envio 2 dias PT 10kg Levantamento em Ponto,4.73000,Disabled
 Envio 2 dias PT 15kg Levantamento em Ponto,6.28000,Disabled
 Envio 2 dias PT 20kg Levantamento em Ponto,6.71000,Disabled
 Envio 2 dias PT 25kg Levantamento em Ponto,8.33000,Disabled
 Envio 2 dias PT 30kg Levantamento em Ponto,8.83000,Disabled
-Envio Next Day PT 1kg Levantamento em Ponto,3.86000
+Envio Next Day PT 1kg Levantamento em Ponto,3.86000,Disabled
 Envio Next Day PT 5kg Levantamento em Ponto,4.16000,Disabled
 Envio Next Day PT 10kg Levantamento em Ponto,4.55000,Disabled
 Envio Next Day PT 15kg Levantamento em Ponto,6.00000,Disabled
@@ -21,14 +21,14 @@ Envio 2 dias PT 20kg 1 Tentativa de Entrega,7.10000,Disabled
 Envio 2 dias PT 25kg 1 Tentativa de Entrega,8.73000,Disabled
 Envio 2 dias PT 30kg 1 Tentativa de Entrega,9.23000,Disabled
 Envio 2 dias PT Kg Adicional,0.24000,Disabled
-Envio Next Day PT 1kg 1 Tentativa de Entrega,4.27000
+Envio Next Day PT 1kg 1 Tentativa de Entrega,4.27000,Disabled
 Envio Next Day PT 5kg 1 Tentativa de Entrega,4.49000,Disabled
 Envio Next Day PT 10kg 1 Tentativa de Entrega,5.07000,Disabled
 Envio Next Day PT 15kg 1 Tentativa de Entrega,6.45000,Disabled
 Envio Next Day PT 20kg 1 Tentativa de Entrega,7.44000,Disabled
 Envio Next Day PT 25kg 1 Tentativa de Entrega,8.80000,Disabled
 Envio Next Day PT 30kg 1 Tentativa de Entrega,9.54000,Disabled
-Envio Next Day PT 1kg 2 Tentativas de Entrega,4.39000
+Envio Next Day PT 1kg 2 Tentativas de Entrega,4.39000,Disabled
 Envio Next Day PT 3kg 2 Tentativas de Entrega,4.56000,Disabled
 Envio Next Day PT 5kg 2 Tentativas de Entrega,4.70000,Disabled
 Envio Next Day PT 10kg 2 Tentativas de Entrega,5.08000,Disabled

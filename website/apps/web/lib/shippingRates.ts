@@ -23,11 +23,7 @@ export interface ShippingOption {
 // Apenas entradas NÃO desativadas no CSV
 const RAW: Record<Exclude<ShippingZone, 'BLOCKED'>, Omit<ShippingOption, 'price'>[]> = {
   PT_CONTINENTAL: [
-    { id: 'pt_2d_lev',  name: 'Envio 2 dias — Levantamento em Ponto',    priceBase: 3.61, deliveryDays: '2' },
-    { id: 'pt_nd_lev',  name: 'Envio Next Day — Levantamento em Ponto',  priceBase: 3.86, deliveryDays: '1' },
-    { id: 'pt_2d_1t',   name: 'Envio 2 dias — 1 Tentativa de Entrega',   priceBase: 4.01, deliveryDays: '2' },
-    { id: 'pt_nd_1t',   name: 'Envio Next Day — 1 Tentativa de Entrega', priceBase: 4.27, deliveryDays: '1' },
-    { id: 'pt_nd_2t',   name: 'Envio Next Day — 2 Tentativas de Entrega',priceBase: 4.39, deliveryDays: '1' },
+    { id: 'pt_2d_1t', name: 'Envio 2 dias — 1 Tentativa de Entrega', priceBase: 4.01, deliveryDays: '2' },
   ],
   PT_ILHAS: [], // Todas as opções estão Disabled no CSV
   ES_CONTINENTAL: [
