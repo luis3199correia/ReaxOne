@@ -25,7 +25,9 @@ const RAW: Record<Exclude<ShippingZone, 'BLOCKED'>, Omit<ShippingOption, 'price'
   PT_CONTINENTAL: [
     { id: 'pt_2d_1t', name: 'Envio 2 dias — 1 Tentativa de Entrega', priceBase: 4.01, deliveryDays: '2' },
   ],
-  PT_ILHAS: [], // Todas as opções estão Disabled no CSV
+  PT_ILHAS: [
+    { id: 'pt_ilhas_59', name: 'Envio Ilhas — 5 a 9 dias', priceBase: 8.91, deliveryDays: '5-9' },
+  ],
   ES_CONTINENTAL: [
     { id: 'es_std', name: 'Envio para Espanha', priceBase: 5.96, deliveryDays: '3-5' },
   ],
