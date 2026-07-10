@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private prisma: PrismaService,
     private batchService: BatchService,
@@ -86,10 +88,10 @@ export class OrdersService {
       paymentMethod:  data.paymentMethod,
       shippingMethod: data.shippingMethod,
       items:          order.items,
-    }).catch(() => {});
+    }).catch((e) => this.logger.error('[Mail] Erro ao notificar admin de nova encomenda', e));
 
     // Criar encomenda na Batch em background — apenas para produtos físicos
-    this.createBatchOrder(order).catch(() => {});
+    this.createBatchOrder(order).catch((e) => this.logger.error('[Batch] Erro ao criar encomenda', e));
 
     return order;
   }
