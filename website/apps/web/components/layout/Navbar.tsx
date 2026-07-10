@@ -6,8 +6,6 @@ import Image from 'next/image';
 import { ShoppingCart, User, Menu, X, Instagram, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/cart';
-import { api } from '@/lib/api';
-
 type AuthUser = { id: string; email: string; role: string } | null;
 
 export default function Navbar() {
@@ -20,8 +18,11 @@ export default function Navbar() {
   const prefix = `/${locale}`;
 
   useEffect(() => {
-    api.get('/auth/me')
-      .then((res) => setAuthUser(res.data))
+    // Usa fetch diretamente para não acionar o interceptor do axios (que redireciona em 401)
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    fetch(`${apiUrl}/auth/me`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => setAuthUser(data))
       .catch(() => setAuthUser(null));
   }, []);
 
