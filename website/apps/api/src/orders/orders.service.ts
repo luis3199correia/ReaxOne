@@ -75,6 +75,19 @@ export class OrdersService {
       include: { items: true, payment: true },
     });
 
+    // Notificar admin por email em background
+    this.mailService.sendNewOrderNotification({
+      id:             order.id,
+      firstName:      order.firstName,
+      lastName:       order.lastName,
+      email:          order.email,
+      phone:          order.phone,
+      totalAmount:    order.totalAmount,
+      paymentMethod:  data.paymentMethod,
+      shippingMethod: data.shippingMethod,
+      items:          order.items,
+    }).catch(() => {});
+
     // Criar encomenda na Batch em background — apenas para produtos físicos
     this.createBatchOrder(order).catch(() => {});
 

@@ -98,6 +98,108 @@ export class MailService {
     this.logger.log(`Ebook(s) enviado(s) para ${to} (encomenda ${orderId})`);
   }
 
+  async sendNewOrderNotification(order: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    totalAmount: number;
+    paymentMethod?: string;
+    shippingMethod?: string;
+    items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
+  }): Promise<void> {
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+    if (!adminEmail) return; // silencioso se não configurado
+
+    const from    = process.env.SMTP_USER || 'noreply@reaxone.com';
+    const shortId = order.id.slice(-8).toUpperCase();
+
+    const itemsHtml = order.items
+      .map(
+        (i) =>
+          `<tr>
+            <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.name}${i.size ? ` <span style="color:#888;">(${i.size})</span>` : ''}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">€${(i.price * i.quantity).toFixed(2)}</td>
+          </tr>`,
+      )
+      .join('');
+
+    const paymentLabel =
+      order.paymentMethod === 'MBWAY' ? 'MB Way' : 'Transferência Bancária';
+
+    await this.transporter.sendMail({
+      from:    `"ReaxOne Loja" <${from}>`,
+      to:      adminEmail,
+      subject: `🛒 Nova encomenda #${shortId} — €${order.totalAmount.toFixed(2)}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto;">
+          <div style="background: #0F0F0F; padding: 20px 24px; border-radius: 8px 8px 0 0;">
+            <h1 style="color: #88C900; margin: 0; font-size: 20px;">Nova encomenda recebida!</h1>
+          </div>
+          <div style="background: #f9f9f9; padding: 24px; border-radius: 0 0 8px 8px; border: 1px solid #e5e5e5;">
+
+            <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+              <tr>
+                <td style="padding:6px 0;color:#888;font-size:13px;width:140px;">Referência</td>
+                <td style="padding:6px 0;font-weight:bold;font-size:15px;">#${shortId}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#888;font-size:13px;">Cliente</td>
+                <td style="padding:6px 0;">${order.firstName} ${order.lastName}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#888;font-size:13px;">Email</td>
+                <td style="padding:6px 0;"><a href="mailto:${order.email}" style="color:#E8322A;">${order.email}</a></td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#888;font-size:13px;">Telefone</td>
+                <td style="padding:6px 0;">${order.phone}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#888;font-size:13px;">Pagamento</td>
+                <td style="padding:6px 0;">${paymentLabel}</td>
+              </tr>
+              ${order.shippingMethod ? `
+              <tr>
+                <td style="padding:6px 0;color:#888;font-size:13px;">Envio</td>
+                <td style="padding:6px 0;">${order.shippingMethod}</td>
+              </tr>` : ''}
+            </table>
+
+            <h3 style="font-size:14px;color:#333;margin:0 0 8px;">Itens</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <thead>
+                <tr style="background:#efefef;">
+                  <th style="padding:6px 8px;text-align:left;font-weight:600;">Produto</th>
+                  <th style="padding:6px 8px;text-align:center;font-weight:600;">Qty</th>
+                  <th style="padding:6px 8px;text-align:right;font-weight:600;">Total</th>
+                </tr>
+              </thead>
+              <tbody>${itemsHtml}</tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2" style="padding:10px 8px;text-align:right;font-weight:bold;">Total da encomenda:</td>
+                  <td style="padding:10px 8px;text-align:right;font-weight:bold;font-size:16px;color:#E8322A;">€${order.totalAmount.toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <p style="margin-top:24px;font-size:13px;color:#888;">
+              Ver no backoffice:
+              <a href="${process.env.FRONTEND_URL ?? 'https://reaxone.com'}/pt/admin/encomendas" style="color:#E8322A;">
+                Admin → Encomendas
+              </a>
+            </p>
+          </div>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Notificação de nova encomenda #${shortId} enviada para ${adminEmail}`);
+  }
+
   async sendPasswordReset(to: string, firstName: string, resetLink: string): Promise<void> {
     const from = process.env.SMTP_USER || 'noreply@reaxone.com';
 
