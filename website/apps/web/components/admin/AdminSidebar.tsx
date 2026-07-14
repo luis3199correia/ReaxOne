@@ -80,7 +80,7 @@ export default function AdminSidebar() {
       </div>
 
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden md:flex w-56 bg-brand-dark text-white min-h-screen flex-shrink-0 flex-col">
+      <aside className="hidden md:flex w-56 bg-brand-dark text-white h-screen sticky top-0 flex-shrink-0 flex-col overflow-y-auto">
         <div className="p-6 border-b border-white/10">
           <p className="font-bold text-lg">
             REAX<span className="text-brand-primary">ONE</span>

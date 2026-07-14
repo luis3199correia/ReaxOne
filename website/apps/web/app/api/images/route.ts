@@ -83,7 +83,8 @@ export async function GET() {
         if (!IMAGE_EXT.test(rawFile)) continue;
         // Renomeia automaticamente ficheiros com nomes problemáticos (whatsapp, espaços, etc.)
         const file = await maybeRename(dir, rawFile);
-        all.push({ path: `/api/images/serve/${folder}/${file}`, folder });
+        // encodeURIComponent garante URL válida mesmo que o rename falhe e o nome tenha espaços
+        all.push({ path: `/api/images/serve/${folder}/${encodeURIComponent(file)}`, folder });
       }
     } catch {
       // pasta não acessível — ignorar
