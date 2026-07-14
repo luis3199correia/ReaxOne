@@ -84,6 +84,11 @@ export class OrdersService {
       email:         order.email,
       totalAmount:   order.totalAmount,
       paymentMethod: data.paymentMethod,
+      shippingMethod: data.shippingMethod,
+      street:        order.street,
+      city:          order.city,
+      postalCode:    order.postalCode,
+      country:       order.country,
       items:         order.items,
     }).catch((e) => this.logger.error('[Mail] Erro ao enviar confirmação ao cliente', e));
 
@@ -97,6 +102,10 @@ export class OrdersService {
       totalAmount:    order.totalAmount,
       paymentMethod:  data.paymentMethod,
       shippingMethod: data.shippingMethod,
+      street:         order.street,
+      city:           order.city,
+      postalCode:     order.postalCode,
+      country:        order.country,
       items:          order.items,
     }).catch((e) => this.logger.error('[Mail] Erro ao notificar admin de nova encomenda', e));
 
@@ -213,8 +222,23 @@ export class OrdersService {
       this.prisma.order.update({
         where: { id: orderId },
         data:  { status: 'PAID' },
+        include: { items: true, payment: true },
       }),
     ]);
+
+    // Enviar email de pagamento confirmado com detalhes da encomenda
+    this.mailService.sendPaymentConfirmed({
+      id:            order.id,
+      firstName:     order.firstName,
+      email:         order.email,
+      totalAmount:   order.totalAmount,
+      street:        order.street,
+      city:          order.city,
+      postalCode:    order.postalCode,
+      country:       order.country,
+      shippingMethod: order.shippingMethod,
+      items:         (order as any).items ?? [],
+    }).catch((e) => this.logger.error('[Mail] Erro ao enviar confirmação de pagamento', e));
 
     // Enviar ebooks por email em background (não bloqueia a resposta)
     this.deliverEbooks(orderId, order.email, order.firstName).catch(() => {});

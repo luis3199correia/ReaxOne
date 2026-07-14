@@ -107,9 +107,14 @@ export class MailService {
     email: string;
     totalAmount: number;
     paymentMethod: string;
+    shippingMethod?: string | null;
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
     items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
   }): Promise<void> {
-    const shortId = order.id.slice(-8).toUpperCase();
+    const shortId    = order.id.slice(-8).toUpperCase();
     const mbwayPhone = process.env.MBWAY_PHONE ?? '';
     const iban       = process.env.BANK_IBAN   ?? '';
 
@@ -152,7 +157,8 @@ export class MailService {
               Recebemos a tua encomenda <strong>#${shortId}</strong>.
               Assim que confirmarmos o pagamento, tratamos do envio!
             </p>
-            <h3 style="font-size:14px;color:#333;margin:20px 0 8px;">Resumo</h3>
+
+            <h3 style="font-size:14px;color:#333;margin:20px 0 8px;">Produtos</h3>
             <table style="width:100%;border-collapse:collapse;font-size:14px;">
               <thead><tr style="background:#efefef;">
                 <th style="padding:6px 8px;text-align:left;">Produto</th>
@@ -165,6 +171,17 @@ export class MailService {
                 <td style="padding:10px 8px;text-align:right;font-weight:bold;color:#E8322A;">€${order.totalAmount.toFixed(2)}</td>
               </tr></tfoot>
             </table>
+
+            <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
+              <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">MORADA DE ENTREGA</p>
+              <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
+                ${order.street}<br>
+                ${order.postalCode} ${order.city}<br>
+                ${order.country}
+                ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${order.shippingMethod}</span>` : ''}
+              </p>
+            </div>
+
             ${paymentInstructions}
             ${this.contactBlock()}
             ${this.footer()}
@@ -174,6 +191,78 @@ export class MailService {
 
     if (error) throw new Error(JSON.stringify(error));
     this.logger.log(`Confirmação de encomenda #${shortId} enviada para ${order.email}`);
+  }
+
+  // ─── Pagamento confirmado (com detalhes completos) ───────────────────────
+
+  async sendPaymentConfirmed(order: {
+    id: string;
+    firstName: string;
+    email: string;
+    totalAmount: number;
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+    shippingMethod?: string | null;
+    items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
+  }): Promise<void> {
+    const shortId = order.id.slice(-8).toUpperCase();
+
+    const itemsHtml = order.items.map((i) =>
+      `<tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.name}${i.size ? ` (${i.size})` : ''}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">€${(i.price * i.quantity).toFixed(2)}</td>
+      </tr>`).join('');
+
+    const { error } = await this.resend.emails.send({
+      from:    this.from,
+      to:      [order.email],
+      subject: `✅ Pagamento confirmado #${shortId} — ReaxOne`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;">
+          <div style="background:#0F0F0F;padding:24px;border-radius:8px 8px 0 0;">
+            <h1 style="color:#88C900;margin:0;font-size:22px;">Pagamento confirmado!</h1>
+          </div>
+          <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${order.firstName}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">
+              O pagamento da tua encomenda <strong>#${shortId}</strong> foi confirmado. Estamos a preparar o teu pedido!
+            </p>
+
+            <h3 style="font-size:14px;color:#333;margin:20px 0 8px;">Produtos</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <thead><tr style="background:#efefef;">
+                <th style="padding:6px 8px;text-align:left;">Produto</th>
+                <th style="padding:6px 8px;text-align:center;">Qty</th>
+                <th style="padding:6px 8px;text-align:right;">Total</th>
+              </tr></thead>
+              <tbody>${itemsHtml}</tbody>
+              <tfoot><tr>
+                <td colspan="2" style="padding:10px 8px;text-align:right;font-weight:bold;">Total pago:</td>
+                <td style="padding:10px 8px;text-align:right;font-weight:bold;color:#16A34A;">€${order.totalAmount.toFixed(2)}</td>
+              </tr></tfoot>
+            </table>
+
+            <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
+              <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">MORADA DE ENTREGA</p>
+              <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
+                ${order.street}<br>
+                ${order.postalCode} ${order.city}<br>
+                ${order.country}
+                ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${order.shippingMethod}</span>` : ''}
+              </p>
+            </div>
+
+            ${this.contactBlock()}
+            ${this.footer()}
+          </div>
+        </div>`,
+    });
+
+    if (error) throw new Error(JSON.stringify(error));
+    this.logger.log(`Email de pagamento confirmado #${shortId} enviado para ${order.email}`);
   }
 
   // ─── Notificação de nova encomenda ao admin ───────────────────────────────
@@ -186,7 +275,11 @@ export class MailService {
     phone: string;
     totalAmount: number;
     paymentMethod?: string;
-    shippingMethod?: string;
+    shippingMethod?: string | null;
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
     items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
   }): Promise<void> {
     const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
@@ -220,6 +313,7 @@ export class MailService {
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Telefone</td><td style="padding:6px 0;">${order.phone}</td></tr>
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Pagamento</td><td style="padding:6px 0;">${paymentLabel}</td></tr>
               ${order.shippingMethod ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Envio</td><td style="padding:6px 0;">${order.shippingMethod}</td></tr>` : ''}
+              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Morada</td><td style="padding:6px 0;">${order.street}, ${order.postalCode} ${order.city}, ${order.country}</td></tr>
             </table>
             <h3 style="font-size:14px;color:#333;margin:0 0 8px;">Itens</h3>
             <table style="width:100%;border-collapse:collapse;font-size:14px;">
