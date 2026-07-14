@@ -79,10 +79,10 @@ export default function AdminSidebar() {
         </p>
         <button
           onClick={handleLogout}
-          className="text-gray-400 hover:text-white p-1"
-          aria-label="Terminar sessão"
+          className="flex items-center gap-1.5 text-gray-300 hover:text-white text-sm font-medium px-2 py-1 rounded hover:bg-white/10 transition-colors"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-4 h-4" />
+          Sair
         </button>
       </div>
 
