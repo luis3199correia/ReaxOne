@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
 import {
   LayoutDashboard,
   Package,
@@ -13,13 +14,20 @@ import {
   Settings,
   Menu,
   X,
+  LogOut,
 } from 'lucide-react';
 
 export default function AdminSidebar() {
   const t = useTranslations('admin');
   const locale = useLocale();
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+
+  async function handleLogout() {
+    try { await api.post('/auth/logout'); } catch {}
+    router.push(`/${locale}/auth`);
+  }
 
   const links = [
     { href: `/${locale}/admin`,               label: t('dashboard'), icon: LayoutDashboard },
@@ -80,6 +88,15 @@ export default function AdminSidebar() {
           <p className="text-xs text-gray-400 mt-1">{t('title')}</p>
         </div>
         <NavLinks />
+        <div className="mt-auto p-4 border-t border-white/10">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white transition-colors w-full"
+          >
+            <LogOut className="w-4 h-4 flex-shrink-0" />
+            Terminar sessão
+          </button>
+        </div>
       </aside>
 
       {/* ── Mobile drawer overlay ── */}
@@ -108,6 +125,15 @@ export default function AdminSidebar() {
               </button>
             </div>
             <NavLinks />
+            <div className="mt-auto p-4 border-t border-white/10">
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white transition-colors w-full"
+              >
+                <LogOut className="w-4 h-4 flex-shrink-0" />
+                Terminar sessão
+              </button>
+            </div>
           </aside>
         </div>
       )}

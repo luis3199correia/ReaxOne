@@ -5,12 +5,8 @@ import { join, extname, basename } from 'path';
 
 export const dynamic = 'force-dynamic';
 
-const SCAN_FOLDERS = [
-  'images/produtos',
-  'images/lifestyle',
-  'images/hero',
-  'images/ebooks',
-];
+// Pastas que NÃO devem aparecer na galeria de imagens
+const EXCLUDED_FOLDERS = new Set(['og', 'identidade', 'marca']);
 const IMAGE_EXT = /\.(jpg|jpeg|png|gif|webp|svg|avif)$/i;
 
 /** Converte nome de ficheiro para slug limpo, sem whatsapp nem caracteres especiais */
@@ -65,9 +61,21 @@ function getPublicDir(): string {
  */
 export async function GET() {
   const publicDir = getPublicDir();
+  const imagesRoot = join(publicDir, 'images');
   const all: { path: string; folder: string }[] = [];
 
-  for (const folder of SCAN_FOLDERS) {
+  // Descobre automaticamente todas as subpastas de images/
+  let subfolders: string[] = [];
+  try {
+    const entries = await readdir(imagesRoot, { withFileTypes: true });
+    subfolders = entries
+      .filter((e) => e.isDirectory() && !EXCLUDED_FOLDERS.has(e.name))
+      .map((e) => `images/${e.name}`);
+  } catch {
+    // images/ não existe
+  }
+
+  for (const folder of subfolders) {
     const dir = join(publicDir, folder);
     try {
       const files = await readdir(dir);
@@ -75,13 +83,10 @@ export async function GET() {
         if (!IMAGE_EXT.test(rawFile)) continue;
         // Renomeia automaticamente ficheiros com nomes problemáticos (whatsapp, espaços, etc.)
         const file = await maybeRename(dir, rawFile);
-        all.push({
-          path: `/api/images/serve/${folder}/${file}`,
-          folder,
-        });
+        all.push({ path: `/api/images/serve/${folder}/${file}`, folder });
       }
     } catch {
-      // pasta não existe ainda — ignorar
+      // pasta não acessível — ignorar
     }
   }
 

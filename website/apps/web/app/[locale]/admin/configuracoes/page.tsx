@@ -47,26 +47,6 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* Invoice config */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold mb-4">Faturação</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Fornecedor de faturação</label>
-              <select className="input">
-                <option value="">Selecionar...</option>
-                <option value="invoicexpress">InvoiceXpress</option>
-                <option value="moloni">Moloni</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">API Key</label>
-              <input type="password" className="input" placeholder="••••••••••••" />
-            </div>
-            <button className="btn-primary">Guardar</button>
-          </div>
-        </div>
-
       </div>
     </div>
   );
