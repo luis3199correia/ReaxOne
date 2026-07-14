@@ -15,6 +15,12 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 class RegisterDto {
+  @IsString()
+  firstName: string;
+
+  @IsString()
+  lastName: string;
+
   @IsEmail()
   email: string;
 
@@ -37,7 +43,12 @@ export class AuthController {
 
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res() res: Response) {
-    const result = await this.authService.register(dto.email, dto.password);
+    const result = await this.authService.register(
+      dto.email,
+      dto.password,
+      dto.firstName,
+      dto.lastName,
+    );
     this.setTokenCookie(res, result.access_token);
     return res.json({ role: result.role });
   }

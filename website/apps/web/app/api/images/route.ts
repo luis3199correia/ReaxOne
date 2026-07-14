@@ -1,12 +1,42 @@
 import { NextResponse } from 'next/server';
-import { readdir, writeFile, mkdir } from 'fs/promises';
+import { readdir, writeFile, mkdir, rename } from 'fs/promises';
 import { existsSync } from 'fs';
-import { join } from 'path';
+import { join, extname, basename } from 'path';
 
 export const dynamic = 'force-dynamic';
 
-const SCAN_FOLDERS = ['images/produtos', 'images/lifestyle'];
+const SCAN_FOLDERS = [
+  'images/produtos',
+  'images/lifestyle',
+  'images/hero',
+  'images/ebooks',
+];
 const IMAGE_EXT = /\.(jpg|jpeg|png|gif|webp|svg|avif)$/i;
+
+/** Converte nome de ficheiro para slug limpo, sem whatsapp nem caracteres especiais */
+function sanitiseFilename(name: string): string {
+  const ext = extname(name);
+  const base = basename(name, ext);
+  return base
+    .toLowerCase()
+    .replace(/whatsapp[\s_-]?image[\s_-]?/gi, 'foto-')
+    .replace(/whatsapp/gi, 'foto')
+    .replace(/[^a-z0-9._-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '') + ext.toLowerCase();
+}
+
+/** Renomeia ficheiros com nomes problemáticos no disco e devolve o novo nome */
+async function maybeRename(dir: string, file: string): Promise<string> {
+  const clean = sanitiseFilename(file);
+  if (clean === file) return file;
+  try {
+    await rename(join(dir, file), join(dir, clean));
+    return clean;
+  } catch {
+    return file; // se falhar, usa o nome original
+  }
+}
 
 /**
  * Resolve the public/ directory at runtime.
@@ -38,20 +68,20 @@ export async function GET() {
   const all: { path: string; folder: string }[] = [];
 
   for (const folder of SCAN_FOLDERS) {
+    const dir = join(publicDir, folder);
     try {
-      const files = await readdir(join(publicDir, folder));
-      for (const file of files) {
-        if (IMAGE_EXT.test(file)) {
-          // Always use the serve route — works whether files were there at build
-          // time or uploaded at runtime, regardless of standalone path quirks.
-          all.push({
-            path: `/api/images/serve/${folder}/${file}`,
-            folder,
-          });
-        }
+      const files = await readdir(dir);
+      for (const rawFile of files) {
+        if (!IMAGE_EXT.test(rawFile)) continue;
+        // Renomeia automaticamente ficheiros com nomes problemáticos (whatsapp, espaços, etc.)
+        const file = await maybeRename(dir, rawFile);
+        all.push({
+          path: `/api/images/serve/${folder}/${file}`,
+          folder,
+        });
       }
     } catch {
-      // folder doesn't exist yet — skip
+      // pasta não existe ainda — ignorar
     }
   }
 

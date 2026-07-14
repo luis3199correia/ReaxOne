@@ -16,14 +16,14 @@ export class AuthService {
     private prisma: PrismaService,
   ) {}
 
-  async register(email: string, password: string) {
+  async register(email: string, password: string, firstName?: string, lastName?: string) {
     const existing = await this.usersService.findByEmail(email);
     if (existing) {
       throw new ConflictException('Email já registado');
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = await this.usersService.create({ email, password: hashed });
+    const user = await this.usersService.create({ email, password: hashed, firstName, lastName });
 
     return this.signToken(user);
   }

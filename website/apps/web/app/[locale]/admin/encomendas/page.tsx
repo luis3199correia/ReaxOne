@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { ChevronDown, ChevronUp, CheckCircle, Loader2, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle, Loader2, RefreshCw, XCircle } from 'lucide-react';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:   'Pendente',
@@ -248,18 +248,36 @@ export default function AdminEncomendas() {
                                   <p className="text-sm text-gray-500 mt-1">{order.phone}</p>
                                 </div>
 
-                                {isPending && (
-                                  <button
-                                    onClick={() => confirmPayment(order.id)}
-                                    disabled={confirming === order.id}
-                                    className="btn-primary flex items-center gap-2 text-sm py-2"
-                                  >
-                                    {confirming === order.id
-                                      ? <><Loader2 className="w-4 h-4 animate-spin" /> A confirmar…</>
-                                      : <><CheckCircle className="w-4 h-4" /> Confirmar Pagamento</>
-                                    }
-                                  </button>
-                                )}
+                                <div className="flex flex-col gap-2">
+                                  {isPending && (
+                                    <button
+                                      onClick={() => confirmPayment(order.id)}
+                                      disabled={confirming === order.id}
+                                      className="btn-primary flex items-center gap-2 text-sm py-2"
+                                    >
+                                      {confirming === order.id
+                                        ? <><Loader2 className="w-4 h-4 animate-spin" /> A confirmar…</>
+                                        : <><CheckCircle className="w-4 h-4" /> Confirmar Pagamento</>
+                                      }
+                                    </button>
+                                  )}
+                                  {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+                                    <button
+                                      onClick={() => {
+                                        if (window.confirm(`Cancelar encomenda #${order.id.slice(-8).toUpperCase()}? Esta ação não pode ser desfeita.`)) {
+                                          updateStatus(order.id, 'CANCELLED');
+                                        }
+                                      }}
+                                      disabled={updatingStatus === order.id}
+                                      className="flex items-center gap-2 text-sm font-medium text-red-600 hover:text-red-800 transition-colors disabled:opacity-50"
+                                    >
+                                      {updatingStatus === order.id
+                                        ? <><Loader2 className="w-4 h-4 animate-spin" /> A cancelar…</>
+                                        : <><XCircle className="w-4 h-4" /> Cancelar encomenda</>
+                                      }
+                                    </button>
+                                  )}
+                                </div>
                               </div>
 
                             </div>
