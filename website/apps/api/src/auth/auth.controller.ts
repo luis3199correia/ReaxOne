@@ -82,7 +82,15 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   logout(@Res() res: Response) {
-    res.clearCookie('reaxone_token');
+    const isProd = process.env.NODE_ENV === 'production';
+    // Must pass the exact same options used when setting the cookie,
+    // otherwise the browser ignores the clear request.
+    res.clearCookie('reaxone_token', {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? 'none' : 'lax',
+      domain: isProd ? '.reaxone.com' : undefined,
+    });
     return res.json({ ok: true });
   }
 

@@ -74,9 +74,16 @@ export default function AdminSidebar() {
         >
           <Menu className="w-6 h-6" />
         </button>
-        <p className="font-bold text-base">
+        <p className="font-bold text-base flex-1">
           REAX<span className="text-brand-primary">ONE</span>
         </p>
+        <button
+          onClick={handleLogout}
+          className="text-gray-400 hover:text-white p-1"
+          aria-label="Terminar sessão"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
       </div>
 
       {/* ── Desktop sidebar ── */}
