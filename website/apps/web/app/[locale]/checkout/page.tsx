@@ -39,6 +39,36 @@ interface CheckoutForm {
   companyName?: string;
 }
 
+/* ── Postal code format by country ─────────────────────────────────────── */
+const POSTAL_FORMATS: Record<string, { placeholder: string; pattern: RegExp; hint: string }> = {
+  PT: { placeholder: '0000-000', pattern: /^\d{4}-?\d{3}$/,  hint: '0000-000' },
+  ES: { placeholder: '00000',   pattern: /^\d{5}$/,           hint: '00000' },
+  AT: { placeholder: '0000',    pattern: /^\d{4}$/,           hint: '0000' },
+  BE: { placeholder: '0000',    pattern: /^\d{4}$/,           hint: '0000' },
+  CZ: { placeholder: '000 00',  pattern: /^\d{3}\s?\d{2}$/,  hint: '000 00' },
+  DK: { placeholder: '0000',    pattern: /^\d{4}$/,           hint: '0000' },
+  EE: { placeholder: '00000',   pattern: /^\d{5}$/,           hint: '00000' },
+  FI: { placeholder: '00000',   pattern: /^\d{5}$/,           hint: '00000' },
+  FR: { placeholder: '00000',   pattern: /^\d{5}$/,           hint: '00000' },
+  DE: { placeholder: '00000',   pattern: /^\d{5}$/,           hint: '00000' },
+  GR: { placeholder: '000 00',  pattern: /^\d{3}\s?\d{2}$/,  hint: '000 00' },
+  HU: { placeholder: '0000',    pattern: /^\d{4}$/,           hint: '0000' },
+  IE: { placeholder: 'A65 F4E2',pattern: /^[A-Z0-9]{3}\s?[A-Z0-9]{4}$/i, hint: 'A65 F4E2' },
+  IT: { placeholder: '00000',   pattern: /^\d{5}$/,           hint: '00000' },
+  LV: { placeholder: 'LV-0000', pattern: /^(LV-)?\d{4}$/i,   hint: 'LV-0000' },
+  LT: { placeholder: '00000',   pattern: /^\d{5}$/,           hint: '00000' },
+  MT: { placeholder: 'ABC 1234',pattern: /^[A-Z]{3}\s?\d{4}$/i, hint: 'ABC 1234' },
+  NL: { placeholder: '0000 AA', pattern: /^\d{4}\s?[A-Z]{2}$/i, hint: '0000 AA' },
+  PL: { placeholder: '00-000',  pattern: /^\d{2}-?\d{3}$/,   hint: '00-000' },
+  SI: { placeholder: '0000',    pattern: /^\d{4}$/,           hint: '0000' },
+  SK: { placeholder: '000 00',  pattern: /^\d{3}\s?\d{2}$/,  hint: '000 00' },
+  SE: { placeholder: '000 00',  pattern: /^\d{3}\s?\d{2}$/,  hint: '000 00' },
+};
+
+function getPostalFormat(country: string) {
+  return POSTAL_FORMATS[country] ?? { placeholder: '00000', pattern: /^.{3,}$/, hint: '' };
+}
+
 /* ── Country Select ─────────────────────────────────────────────────────── */
 function CountrySelect({ value, onChange, error }: {
   value: string;
@@ -224,11 +254,13 @@ export default function CheckoutPage() {
                   <input
                     {...register('postalCode', {
                       required: true,
+                      validate: (v) => getPostalFormat(country).pattern.test(v.trim()) || `Formato inválido (ex: ${getPostalFormat(country).hint})`,
                       onChange: () => !differentAddress && resetShipping(),
                     })}
                     className={`input ${errors.postalCode ? 'border-red-400' : ''}`}
-                    placeholder="0000-000"
+                    placeholder={getPostalFormat(country).placeholder}
                   />
+                  {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode.message as string}</p>}
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium mb-1">País *</label>
@@ -283,11 +315,13 @@ export default function CheckoutPage() {
                     <input
                       {...register('shipPostalCode', {
                         required: differentAddress,
+                        validate: (v) => !differentAddress || getPostalFormat(shipCountry).pattern.test((v ?? '').trim()) || `Formato inválido (ex: ${getPostalFormat(shipCountry).hint})`,
                         onChange: () => resetShipping(),
                       })}
                       className={`input ${errors.shipPostalCode ? 'border-red-400' : ''}`}
-                      placeholder="0000-000"
+                      placeholder={getPostalFormat(shipCountry).placeholder}
                     />
+                    {errors.shipPostalCode && <p className="text-red-500 text-xs mt-1">{errors.shipPostalCode.message as string}</p>}
                   </div>
                   <div className="col-span-2">
                     <label className="block text-sm font-medium mb-1">País *</label>
