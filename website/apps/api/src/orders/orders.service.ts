@@ -77,6 +77,16 @@ export class OrdersService {
       include: { items: true, payment: true },
     });
 
+    // Confirmar encomenda ao cliente em background
+    this.mailService.sendOrderConfirmation({
+      id:            order.id,
+      firstName:     order.firstName,
+      email:         order.email,
+      totalAmount:   order.totalAmount,
+      paymentMethod: data.paymentMethod,
+      items:         order.items,
+    }).catch((e) => this.logger.error('[Mail] Erro ao enviar confirmação ao cliente', e));
+
     // Notificar admin por email em background
     this.mailService.sendNewOrderNotification({
       id:             order.id,

@@ -59,6 +59,15 @@ export default function AdminSidebar() {
             </Link>
           );
         })}
+        <div className="pt-2 border-t border-white/10 mt-2">
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white transition-colors w-full"
+          >
+            <LogOut className="w-4 h-4 flex-shrink-0" />
+            Terminar sessão
+          </button>
+        </div>
       </nav>
     );
   }
@@ -95,15 +104,6 @@ export default function AdminSidebar() {
           <p className="text-xs text-gray-400 mt-1">{t('title')}</p>
         </div>
         <NavLinks grow />
-        <div className="flex-shrink-0 p-4 border-t border-white/10">
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white transition-colors w-full"
-          >
-            <LogOut className="w-4 h-4 flex-shrink-0" />
-            Terminar sessão
-          </button>
-        </div>
       </aside>
 
       {/* ── Mobile drawer overlay ── */}
@@ -132,15 +132,6 @@ export default function AdminSidebar() {
               </button>
             </div>
             <NavLinks grow />
-            <div className="flex-shrink-0 p-4 border-t border-white/10">
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white transition-colors w-full"
-              >
-                <LogOut className="w-4 h-4 flex-shrink-0" />
-                Terminar sessão
-              </button>
-            </div>
           </aside>
         </div>
       )}

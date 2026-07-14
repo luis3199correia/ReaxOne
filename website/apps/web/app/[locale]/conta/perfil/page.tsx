@@ -25,13 +25,15 @@ export default function PerfilPage() {
   const { register, handleSubmit, reset, formState: { isSubmitting, errors } } = useForm<ProfileForm>();
 
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-    fetch(`${apiUrl}/auth/me`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!data) { router.replace(`/${locale}/auth`); return; }
-        setEmail(data.email);
-        reset({ firstName: data.firstName ?? '', lastName: data.lastName ?? '', phone: data.phone ?? '' });
+    api.get('/users/me')
+      .then((res) => {
+        const data = res.data;
+        setEmail(data.email ?? '');
+        reset({
+          firstName: data.firstName ?? '',
+          lastName:  data.lastName  ?? '',
+          phone:     data.phone     ?? '',
+        });
       })
       .catch(() => router.replace(`/${locale}/auth`))
       .finally(() => setLoading(false));

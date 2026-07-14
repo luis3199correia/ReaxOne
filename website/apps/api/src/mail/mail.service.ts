@@ -204,6 +204,94 @@ export class MailService {
     this.logger.log(`Notificação de nova encomenda #${shortId} enviada para ${adminEmail}`);
   }
 
+  async sendOrderConfirmation(order: {
+    id: string;
+    firstName: string;
+    email: string;
+    totalAmount: number;
+    paymentMethod: string;
+    items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
+  }): Promise<void> {
+    const from    = this.fromAddress;
+    const shortId = order.id.slice(-8).toUpperCase();
+
+    const paymentLabel = order.paymentMethod === 'MBWAY' ? 'MB Way' : 'Transferência Bancária';
+    const mbwayPhone   = process.env.MBWAY_PHONE ?? '';
+    const iban         = process.env.BANK_IBAN   ?? '';
+
+    const paymentInstructions = order.paymentMethod === 'MBWAY'
+      ? `<p style="font-size:14px;line-height:1.6;color:#333;">
+           Para concluir o pagamento via <strong>MB Way</strong>, envia <strong>€${order.totalAmount.toFixed(2)}</strong>
+           para o número <strong>${mbwayPhone}</strong> com a referência <strong>#${shortId}</strong>.
+         </p>`
+      : `<p style="font-size:14px;line-height:1.6;color:#333;">
+           Para concluir o pagamento por <strong>Transferência Bancária</strong>, transfere
+           <strong>€${order.totalAmount.toFixed(2)}</strong> para o IBAN:<br>
+           <strong>${iban}</strong><br>
+           Indica a referência <strong>#${shortId}</strong> na descrição.
+         </p>`;
+
+    const itemsHtml = order.items
+      .map((i) => `<tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.name}${i.size ? ` (${i.size})` : ''}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">€${(i.price * i.quantity).toFixed(2)}</td>
+      </tr>`)
+      .join('');
+
+    await this.transporter.sendMail({
+      from:    `"ReaxOne" <${from}>`,
+      to:      order.email,
+      subject: `Encomenda recebida #${shortId} — ReaxOne`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;">
+          <div style="background:#0F0F0F;padding:24px;border-radius:8px 8px 0 0;">
+            <h1 style="color:#88C900;margin:0;font-size:22px;">Encomenda recebida!</h1>
+          </div>
+          <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${order.firstName}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">
+              Recebemos a tua encomenda <strong>#${shortId}</strong>. Assim que confirmarmos o pagamento,
+              tratamos do envio!
+            </p>
+
+            <h3 style="font-size:14px;color:#333;margin:20px 0 8px;">Resumo da encomenda</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;">
+              <thead>
+                <tr style="background:#efefef;">
+                  <th style="padding:6px 8px;text-align:left;">Produto</th>
+                  <th style="padding:6px 8px;text-align:center;">Qty</th>
+                  <th style="padding:6px 8px;text-align:right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>${itemsHtml}</tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="2" style="padding:10px 8px;text-align:right;font-weight:bold;">Total:</td>
+                  <td style="padding:10px 8px;text-align:right;font-weight:bold;color:#E8322A;">€${order.totalAmount.toFixed(2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
+              <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">INSTRUÇÕES DE PAGAMENTO (${paymentLabel})</p>
+              ${paymentInstructions}
+            </div>
+
+            <p style="font-size:13px;color:#888;line-height:1.6;">
+              Dúvidas? Fala connosco pelo WhatsApp:
+              <a href="https://wa.me/351911084422" style="color:#E8322A;">+351 911 084 422</a>
+            </p>
+            <hr style="border:none;border-top:1px solid #e5e5e5;margin:20px 0;" />
+            <p style="font-size:13px;color:#888;margin:0;">Performance Primeiro. Sempre.<br><strong>Equipa ReaxOne</strong></p>
+          </div>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Confirmação de encomenda #${shortId} enviada para ${order.email}`);
+  }
+
   async sendPasswordReset(to: string, firstName: string, resetLink: string): Promise<void> {
     const from = this.fromAddress;
 
