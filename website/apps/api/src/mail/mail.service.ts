@@ -112,6 +112,9 @@ export class MailService {
     city: string;
     postalCode: string;
     country: string;
+    wantsInvoice?: boolean | null;
+    nif?: string | null;
+    companyName?: string | null;
     items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
   }): Promise<void> {
     const shortId    = order.id.slice(-8).toUpperCase();
@@ -181,6 +184,15 @@ export class MailService {
                 ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${order.shippingMethod}</span>` : ''}
               </p>
             </div>
+
+            ${order.wantsInvoice && order.nif ? `
+            <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
+              <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">DADOS DE FATURAÇÃO</p>
+              <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
+                ${order.companyName ? `${order.companyName}<br>` : ''}
+                NIF: <strong>${order.nif}</strong>
+              </p>
+            </div>` : ''}
 
             ${paymentInstructions}
             ${this.contactBlock()}
@@ -280,6 +292,9 @@ export class MailService {
     city: string;
     postalCode: string;
     country: string;
+    wantsInvoice?: boolean | null;
+    nif?: string | null;
+    companyName?: string | null;
     items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
   }): Promise<void> {
     const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
@@ -314,6 +329,7 @@ export class MailService {
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Pagamento</td><td style="padding:6px 0;">${paymentLabel}</td></tr>
               ${order.shippingMethod ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Envio</td><td style="padding:6px 0;">${order.shippingMethod}</td></tr>` : ''}
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Morada</td><td style="padding:6px 0;">${order.street}, ${order.postalCode} ${order.city}, ${order.country}</td></tr>
+              ${order.wantsInvoice && order.nif ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">NIF</td><td style="padding:6px 0;">${order.companyName ? `${order.companyName} — ` : ''}${order.nif}</td></tr>` : ''}
             </table>
             <h3 style="font-size:14px;color:#333;margin:0 0 8px;">Itens</h3>
             <table style="width:100%;border-collapse:collapse;font-size:14px;">

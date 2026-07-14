@@ -89,6 +89,9 @@ export class OrdersService {
       city:          order.city,
       postalCode:    order.postalCode,
       country:       order.country,
+      wantsInvoice:  order.wantsInvoice,
+      nif:           order.nif,
+      companyName:   order.companyName,
       items:         order.items,
     }).catch((e) => this.logger.error('[Mail] Erro ao enviar confirmação ao cliente', e));
 
@@ -106,6 +109,9 @@ export class OrdersService {
       city:           order.city,
       postalCode:     order.postalCode,
       country:        order.country,
+      wantsInvoice:   order.wantsInvoice,
+      nif:            order.nif,
+      companyName:    order.companyName,
       items:          order.items,
     }).catch((e) => this.logger.error('[Mail] Erro ao notificar admin de nova encomenda', e));
 
