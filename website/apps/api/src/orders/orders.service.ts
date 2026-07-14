@@ -101,7 +101,9 @@ export class OrdersService {
     }).catch((e) => this.logger.error('[Mail] Erro ao notificar admin de nova encomenda', e));
 
     // Criar encomenda na Batch em background — apenas para produtos físicos
-    this.createBatchOrder(order).catch((e) => this.logger.error('[Batch] Erro ao criar encomenda', e));
+    if (process.env.BATCH_DISABLED !== 'true') {
+      this.createBatchOrder(order).catch((e) => this.logger.error('[Batch] Erro ao criar encomenda', e));
+    }
 
     return order;
   }
@@ -148,6 +150,7 @@ export class OrdersService {
       weight:      weightGrams,
       volumes:     physicalItems.reduce((acc: number, i: any) => acc + i.quantity, 0),
       total:       order.totalAmount,
+      platform:    order.shippingMethod || undefined,
       cart,
     });
 

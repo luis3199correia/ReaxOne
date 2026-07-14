@@ -27,6 +27,7 @@ export interface BatchOrderPayload {
   volumes: number;
   total: number;
   cart: Record<string, number>; // { "nome // sku": quantidade }
+  platform?: string;   // sobrepõe BATCH_PLATFORM se fornecido
 }
 
 @Injectable()
@@ -124,11 +125,14 @@ export class BatchService {
       form.append('country',     payload.country || 'Portugal');
       form.append('obs',         payload.obs || '');
       form.append('external_id', payload.external_id);
-      form.append('platform',    this.credentials.platform);
+      form.append('platform',    payload.platform || this.credentials.platform);
       form.append('weight',      String(payload.weight));
       form.append('volumes',     String(payload.volumes));
       form.append('total',       String(payload.total));
-      form.append('store',       this.credentials.store);
+      // store é opcional — só enviar se estiver configurado
+      if (this.credentials.store && this.credentials.store !== '0') {
+        form.append('store', this.credentials.store);
+      }
       form.append('status',      'pronta para recolha');
 
       // cart: { "nome // sku": quantidade }
