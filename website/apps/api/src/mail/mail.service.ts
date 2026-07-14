@@ -292,6 +292,87 @@ export class MailService {
     this.logger.log(`Confirmação de encomenda #${shortId} enviada para ${order.email}`);
   }
 
+  async sendOrderStatusUpdate(order: {
+    id: string;
+    firstName: string;
+    email: string;
+    status: string;
+    totalAmount: number;
+  }): Promise<void> {
+    // Não enviar para PENDING (estado inicial) nem PAID (já tratado pela confirmação de pagamento)
+    if (['PENDING', 'PAID'].includes(order.status)) return;
+
+    const from    = this.fromAddress;
+    const shortId = order.id.slice(-8).toUpperCase();
+    const whatsapp = process.env.WHATSAPP_NUMBER ?? '351911084422';
+    const contactEmail = process.env.CONTACT_EMAIL ?? 'contatos@reaxone.com';
+
+    const STATUS_INFO: Record<string, { subject: string; title: string; color: string; body: string }> = {
+      SHIPPED: {
+        subject: `A tua encomenda #${shortId} foi enviada! 📦`,
+        title:   'Encomenda enviada!',
+        color:   '#7C3AED',
+        body:    `A tua encomenda <strong>#${shortId}</strong> saiu do nosso armazém e está a caminho. Deverás recebê-la em breve. Assim que tivermos informação de rastreio, enviamos-te os detalhes.`,
+      },
+      DELIVERED: {
+        subject: `Encomenda #${shortId} entregue — obrigado! 🎉`,
+        title:   'Encomenda entregue!',
+        color:   '#16A34A',
+        body:    `A tua encomenda <strong>#${shortId}</strong> foi marcada como entregue. Esperamos que estejas a gostar dos teus produtos ReaxOne! Se ainda não recebeste ou algo não está bem, entra em contacto connosco.`,
+      },
+      CANCELLED: {
+        subject: `Encomenda #${shortId} cancelada`,
+        title:   'Encomenda cancelada',
+        color:   '#DC2626',
+        body:    `A tua encomenda <strong>#${shortId}</strong> foi cancelada. Se não pediste o cancelamento ou tens alguma dúvida, fala connosco — resolvemos rapidamente.`,
+      },
+    };
+
+    const info = STATUS_INFO[order.status];
+    if (!info) return; // estado desconhecido — não enviar
+
+    const contactBlock = `
+      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:20px 0;">
+        <p style="font-size:13px;color:#0369a1;margin:0 0 8px;font-weight:bold;">PRECISAS DE AJUDA?</p>
+        <p style="font-size:13px;color:#333;margin:0;line-height:1.8;">
+          📧 Email: <a href="mailto:${contactEmail}" style="color:#E8322A;">${contactEmail}</a><br>
+          💬 WhatsApp: <a href="https://wa.me/${whatsapp}" style="color:#E8322A;">+${whatsapp.replace(/(\d{3})(\d{3})(\d{3})(\d{3})/, '$1 $2 $3 $4')}</a>
+        </p>
+      </div>`;
+
+    await this.transporter.sendMail({
+      from:    `"ReaxOne" <${from}>`,
+      to:      order.email,
+      subject: info.subject,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;">
+          <div style="background:#0F0F0F;padding:24px;border-radius:8px 8px 0 0;">
+            <h1 style="color:${info.color};margin:0;font-size:22px;">${info.title}</h1>
+          </div>
+          <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${order.firstName}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">${info.body}</p>
+            <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
+              <tr>
+                <td style="padding:6px 0;color:#888;width:140px;">Referência</td>
+                <td style="padding:6px 0;font-weight:bold;">#${shortId}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px 0;color:#888;">Total</td>
+                <td style="padding:6px 0;">€${order.totalAmount.toFixed(2)}</td>
+              </tr>
+            </table>
+            ${contactBlock}
+            <hr style="border:none;border-top:1px solid #e5e5e5;margin:20px 0;" />
+            <p style="font-size:13px;color:#888;margin:0;">Performance Primeiro. Sempre.<br><strong>Equipa ReaxOne</strong></p>
+          </div>
+        </div>
+      `,
+    });
+
+    this.logger.log(`Email de estado (${order.status}) para encomenda #${shortId} enviado a ${order.email}`);
+  }
+
   async sendPasswordReset(to: string, firstName: string, resetLink: string): Promise<void> {
     const from = this.fromAddress;
 

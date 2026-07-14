@@ -184,10 +184,21 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: string) {
-    return this.prisma.order.update({
+    const order = await this.prisma.order.update({
       where: { id },
       data:  { status: status as any },
     });
+
+    // Notificar cliente por email em background
+    this.mailService.sendOrderStatusUpdate({
+      id:          order.id,
+      firstName:   order.firstName,
+      email:       order.email,
+      status,
+      totalAmount: order.totalAmount,
+    }).catch((e) => this.logger.error('[Mail] Erro ao notificar cliente de mudança de estado', e));
+
+    return order;
   }
 
   async confirmPayment(orderId: string) {
