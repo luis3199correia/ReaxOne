@@ -28,13 +28,17 @@ export class MailService {
    * @param orderId     ID da encomenda (para referência)
    * @param ebooks      Lista de { title, filePath } — um por ebook comprado
    */
+  private get fromAddress(): string {
+    return process.env.SMTP_FROM || process.env.CONTACT_EMAIL || 'noreply@reaxone.com';
+  }
+
   async sendEbookDelivery(
     to: string,
     firstName: string,
     orderId: string,
     ebooks: Array<{ title: string; filePath: string }>,
   ): Promise<void> {
-    const from = process.env.SMTP_USER || 'noreply@reaxone.com';
+    const from = this.fromAddress;
 
     // Construir attachments — apenas para ficheiros que existam no disco
     const attachments: nodemailer.SendMailOptions['attachments'] = [];
@@ -112,7 +116,7 @@ export class MailService {
     const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
     if (!adminEmail) return; // silencioso se não configurado
 
-    const from    = process.env.SMTP_USER || 'noreply@reaxone.com';
+    const from    = this.fromAddress;
     const shortId = order.id.slice(-8).toUpperCase();
 
     const itemsHtml = order.items
@@ -201,7 +205,7 @@ export class MailService {
   }
 
   async sendPasswordReset(to: string, firstName: string, resetLink: string): Promise<void> {
-    const from = process.env.SMTP_USER || 'noreply@reaxone.com';
+    const from = this.fromAddress;
 
     await this.transporter.sendMail({
       from:    `"ReaxOne" <${from}>`,
