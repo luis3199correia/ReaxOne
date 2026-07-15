@@ -38,9 +38,9 @@ export default function AdminSidebar() {
     { href: `/${locale}/admin/configuracoes`, label: t('settings'),  icon: Settings },
   ];
 
-  function NavLinks({ grow }: { grow?: boolean }) {
+  function NavLinks() {
     return (
-      <nav className={`p-4 space-y-1${grow ? ' flex-1 overflow-y-auto' : ''}`}>
+      <nav className="p-4 space-y-1">
         {links.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href;
           return (
@@ -103,7 +103,7 @@ export default function AdminSidebar() {
           </p>
           <p className="text-xs text-gray-400 mt-1">{t('title')}</p>
         </div>
-        <NavLinks grow />
+        <NavLinks />
       </aside>
 
       {/* ── Mobile drawer overlay ── */}
@@ -131,7 +131,7 @@ export default function AdminSidebar() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <NavLinks grow />
+            <NavLinks />
           </aside>
         </div>
       )}
