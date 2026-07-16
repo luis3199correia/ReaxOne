@@ -21,7 +21,7 @@ export default async function HomePage() {
   const prefix = `/${locale}`;
 
   // Buscar produtos marcados como destaque no backoffice
-  type ApiProduct = { id: string; slug: string; name: string; price: number; images: string[] };
+  type ApiProduct = { id: string; slug: string; name: string; nameEn?: string; price: number; images: string[] };
   let featuredProducts: { id: string; name: string; price: number; image: string; tag: string | null }[] = [];
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -30,7 +30,7 @@ export default async function HomePage() {
       const list: ApiProduct[] = await res.json();
       featuredProducts = list.map((p) => ({
         id: p.slug,  // slug usado como link /loja/[slug]
-        name: p.name,
+        name: locale === 'en' && p.nameEn ? p.nameEn : p.name,
         price: p.price,
         image: p.images?.[0] || '/images/produtos/placeholder.jpg',
         tag: null,

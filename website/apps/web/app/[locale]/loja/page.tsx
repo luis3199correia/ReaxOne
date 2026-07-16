@@ -13,6 +13,7 @@ function toProduct(p: any): Product {
   return {
     id: p.id,
     name: p.name,
+    nameEn: p.nameEn ?? undefined,
     slug: p.slug,
     price: p.price,
     images: p.images ?? [],

@@ -9,6 +9,7 @@ import { useCartStore } from '@/store/cart';
 export interface Product {
   id: string;
   name: string;
+  nameEn?: string;
   slug: string;
   price: number;
   images: string[];
@@ -28,6 +29,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const isOutOfStock = product.stock === 0;
   const imageSrc = product.images[0] ?? '/images/placeholder.png';
+  const displayName = locale === 'en' && product.nameEn ? product.nameEn : product.name;
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -50,7 +52,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="relative aspect-square bg-brand-light overflow-hidden">
         <Image
           src={imageSrc}
-          alt={product.name}
+          alt={displayName}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -77,7 +79,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </span>
         )}
         <h3 className="font-semibold text-brand-dark leading-snug mb-2 flex-1">
-          {product.name}
+          {displayName}
         </h3>
         <div className="flex items-center justify-between mt-auto">
           <span className="text-lg font-bold text-brand-dark">

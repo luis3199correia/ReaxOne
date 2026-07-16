@@ -15,18 +15,21 @@ interface Props {
 
 interface FullProduct extends Product {
   description?: string;
+  descriptionEn?: string;
 }
 
 function toProduct(p: any): FullProduct {
   return {
     id: p.id,
     name: p.name,
+    nameEn: p.nameEn ?? undefined,
     slug: p.slug,
     price: p.price,
     images: p.images ?? [],
     category: p.category?.name ?? undefined,
     stock: p.stock,
     description: p.description ?? '',
+    descriptionEn: p.descriptionEn ?? undefined,
   };
 }
 
@@ -65,11 +68,13 @@ export default function ProductPage({ params: paramsPromise }: Props) {
   }, [slug]);
 
   function getTranslatedDescription(): string {
+    if (locale === 'en' && product?.descriptionEn) return product.descriptionEn;
     const productMessages = messages?.products as Record<string, { description?: string }> | undefined;
     return productMessages?.[slug]?.description ?? product?.description ?? '';
   }
 
   function getTranslatedName(): string {
+    if (locale === 'en' && product?.nameEn) return product.nameEn;
     const productMessages = messages?.products as Record<string, { name?: string }> | undefined;
     return productMessages?.[slug]?.name ?? product?.name ?? '';
   }

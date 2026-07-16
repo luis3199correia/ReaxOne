@@ -3,8 +3,10 @@ import { PrismaService } from '../prisma/prisma.service';
 
 interface CreateProductDto {
   name: string;
+  nameEn?: string;
   slug: string;
   description?: string;
+  descriptionEn?: string;
   price: number;
   images?: string[];
   stock?: number;

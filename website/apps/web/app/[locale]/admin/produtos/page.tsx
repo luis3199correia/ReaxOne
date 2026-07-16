@@ -11,8 +11,10 @@ import { api } from '@/lib/api';
 interface Product {
   id: string;
   name: string;
+  nameEn?: string;
   slug: string;
   description: string;
+  descriptionEn?: string;
   price: number;
   stock: number;
   category?: { id: string; name: string; slug: string };
@@ -34,8 +36,10 @@ interface AvailableImage {
 
 const EMPTY_FORM = {
   name: '',
+  nameEn: '',
   slug: '',
   description: '',
+  descriptionEn: '',
   price: '',
   stock: '',
   categoryId: '',
@@ -209,6 +213,7 @@ export default function AdminProductsPage() {
   const [modal, setModal] = useState<'create' | 'edit' | null>(null);
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [langTab, setLangTab] = useState<'pt' | 'en'>('pt');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -243,6 +248,7 @@ export default function AdminProductsPage() {
     setEditing(null);
     setForm(EMPTY_FORM);
     setSaveError('');
+    setLangTab('pt');
     setModal('create');
   }
 
@@ -250,8 +256,10 @@ export default function AdminProductsPage() {
     setEditing(p);
     setForm({
       name: p.name,
+      nameEn: p.nameEn ?? '',
       slug: p.slug,
       description: p.description ?? '',
+      descriptionEn: p.descriptionEn ?? '',
       price: String(p.price),
       stock: String(p.stock),
       categoryId: p.category?.id ?? '',
@@ -260,6 +268,7 @@ export default function AdminProductsPage() {
       featured: p.featured ?? false,
     });
     setSaveError('');
+    setLangTab('pt');
     setModal('edit');
   }
 
@@ -312,8 +321,10 @@ export default function AdminProductsPage() {
 
     const payload = {
       name: form.name,
+      nameEn: form.nameEn || undefined,
       slug: form.slug,
       description: form.description,
+      descriptionEn: form.descriptionEn || undefined,
       price,
       stock,
       images: form.images,
@@ -581,15 +592,61 @@ export default function AdminProductsPage() {
             <div className="overflow-y-auto p-6 space-y-5 flex-1">
               <div className="grid grid-cols-2 gap-4">
 
+                {/* ── Language tabs ── */}
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
-                  <input
-                    type="text"
-                    value={form.name}
-                    onChange={(e) => handleField('name', e.target.value)}
-                    className="input"
-                    placeholder="Bola de Reação Verde"
-                  />
+                  <div className="flex rounded-lg border border-gray-200 overflow-hidden mb-4 w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setLangTab('pt')}
+                      className={`px-4 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                        langTab === 'pt'
+                          ? 'bg-brand-dark text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      🇵🇹 Português
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLangTab('en')}
+                      className={`px-4 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 border-l border-gray-200 ${
+                        langTab === 'en'
+                          ? 'bg-brand-dark text-white'
+                          : 'bg-white text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      🇬🇧 English
+                      {form.nameEn ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-brand-green inline-block" title="Preenchido" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 inline-block" title="Por preencher" />
+                      )}
+                    </button>
+                  </div>
+
+                  {langTab === 'pt' ? (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nome * <span className="text-gray-400 font-normal">(Português)</span></label>
+                      <input
+                        type="text"
+                        value={form.name}
+                        onChange={(e) => handleField('name', e.target.value)}
+                        className="input"
+                        placeholder="Bola de Reação Verde"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nome <span className="text-gray-400 font-normal">(English)</span></label>
+                      <input
+                        type="text"
+                        value={form.nameEn}
+                        onChange={(e) => handleField('nameEn', e.target.value)}
+                        className="input"
+                        placeholder="Green Reaction Ball"
+                      />
+                    </>
+                  )}
                 </div>
 
                 <div>
@@ -643,14 +700,29 @@ export default function AdminProductsPage() {
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-                  <textarea
-                    rows={3}
-                    value={form.description}
-                    onChange={(e) => handleField('description', e.target.value)}
-                    className="input resize-none"
-                    placeholder="Descrição do produto..."
-                  />
+                  {langTab === 'pt' ? (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Descrição <span className="text-gray-400 font-normal">(Português)</span></label>
+                      <textarea
+                        rows={3}
+                        value={form.description}
+                        onChange={(e) => handleField('description', e.target.value)}
+                        className="input resize-none"
+                        placeholder="Descrição do produto em português..."
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-gray-400 font-normal">(English)</span></label>
+                      <textarea
+                        rows={3}
+                        value={form.descriptionEn}
+                        onChange={(e) => handleField('descriptionEn', e.target.value)}
+                        className="input resize-none"
+                        placeholder="Product description in English..."
+                      />
+                    </>
+                  )}
                 </div>
 
                 {/* ── Imagens ── */}
