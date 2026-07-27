@@ -158,7 +158,9 @@ export class MailService {
             <p style="font-size:15px;line-height:1.6;">Olá <strong>${order.firstName}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">
               Recebemos a tua encomenda <strong>#${shortId}</strong>.
-              ${order.shippingMethod === 'digital'
+              ${order.shippingMethod === 'digital' && order.totalAmount === 0
+                ? `O teu ebook é <strong>gratuito</strong> — vamos enviá-lo diretamente via <strong>WhatsApp</strong> em breve. 📲<br>Número: <a href="https://wa.me/${this.whatsapp}" style="color:#E8322A;">+${this.whatsapp}</a>`
+                : order.shippingMethod === 'digital'
                 ? 'A tua compra é um produto digital — <strong>não há portes de envio</strong>. Receberás o teu ebook no email assim que confirmarmos o pagamento. 📚'
                 : 'Assim que confirmarmos o pagamento, tratamos do envio!'
               }
