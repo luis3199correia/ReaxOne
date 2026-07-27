@@ -18,7 +18,9 @@ function toProduct(p: any): Product {
     price: p.price,
     images: p.images ?? [],
     category: p.category?.name ?? undefined,
+    categorySlug: p.category?.slug ?? undefined,
     stock: p.stock,
+    isEbook: p.category?.slug === 'ebooks' || !!p.ebookFile,
   };
 }
 

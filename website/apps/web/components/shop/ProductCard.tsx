@@ -14,8 +14,10 @@ export interface Product {
   price: number;
   images: string[];
   category?: string;
+  categorySlug?: string;
   stock: number;
   badge?: string;
+  isEbook?: boolean;
 }
 
 interface ProductCardProps {
@@ -40,6 +42,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       price: product.price,
       image: imageSrc,
       quantity: 1,
+      isEbook: product.isEbook ?? product.categorySlug === 'ebooks',
     });
   }
 

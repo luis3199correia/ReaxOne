@@ -4,7 +4,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { Loader2, Truck, Check, Calculator, AlertTriangle, Phone } from 'lucide-react';
+import { Loader2, Truck, Check, Calculator, AlertTriangle, Phone, BookOpen } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import { api } from '@/lib/api';
 import {
@@ -147,16 +147,19 @@ export default function CheckoutPage() {
     setShippingCalculated(false);
   }
 
-  const shippingCost = selectedShipping?.price ?? 0;
+  // Detetar se todos os itens são ebooks (entrega digital, sem portes)
+  const isAllEbooks = items.length > 0 && items.every((i) => i.isEbook);
+
+  const shippingCost = isAllEbooks ? 0 : (selectedShipping?.price ?? 0);
   const orderTotal   = total + shippingCost;
 
   /* ── Submit ── */
   const onSubmit = async (data: CheckoutForm) => {
-    if (!shippingCalculated) {
+    if (!isAllEbooks && !shippingCalculated) {
       setError('Calcula os portes antes de finalizar a encomenda.');
       return;
     }
-    if (shippingZone === 'PT_ILHAS' || shippingZone === 'BLOCKED' || !selectedShipping) {
+    if (!isAllEbooks && (shippingZone === 'PT_ILHAS' || shippingZone === 'BLOCKED' || !selectedShipping)) {
       setError('Não é possível enviar para esta localização. Entra em contacto connosco.');
       return;
     }
@@ -182,8 +185,8 @@ export default function CheckoutPage() {
         wantsInvoice,
         nif:            data.nif,
         companyName:    data.companyName,
-        shippingMethod: selectedShipping.id,
-        shippingCost,
+        shippingMethod: isAllEbooks ? 'digital' : selectedShipping!.id,
+        shippingCost:   isAllEbooks ? 0 : shippingCost,
         items: items.map((i) => ({
           productId: i.id,
           name:      i.name,
@@ -335,7 +338,20 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {/* ── Portes de envio ── */}
+            {/* ── Portes de envio / Entrega digital ── */}
+            {isAllEbooks ? (
+              <div className="card p-6 border-l-4 border-brand-green">
+                <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-brand-green" />
+                  Entrega digital
+                </h2>
+                <p className="text-sm text-gray-600">
+                  A tua compra é um produto digital. <strong>Não há portes de envio.</strong>
+                  <br />
+                  Receberás o ebook no teu email assim que o pagamento for confirmado.
+                </p>
+              </div>
+            ) : (
             <div className="card p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Truck className="w-5 h-5 text-brand-primary" />
@@ -456,6 +472,7 @@ export default function CheckoutPage() {
                 </>
               )}
             </div>
+            )}
 
             {/* ── Pagamento ── */}
             <div className="card p-6">
@@ -521,9 +538,11 @@ export default function CheckoutPage() {
               </div>
               <div className="flex justify-between text-sm">
                 <span>Envio</span>
-                <span className={shippingCost === 0 ? 'text-gray-400' : ''}>
-                  {!shippingCalculated
-                    ? <span className="text-gray-400 italic text-xs">a calcular</span>
+                <span className="text-gray-400">
+                  {isAllEbooks
+                    ? <span className="text-brand-green font-medium">Grátis</span>
+                    : !shippingCalculated
+                    ? <span className="italic text-xs">a calcular</span>
                     : shippingCost === 0
                     ? '—'
                     : `€${shippingCost.toFixed(2)}`
@@ -537,7 +556,7 @@ export default function CheckoutPage() {
             </div>
             <button
               type="submit"
-              disabled={submitting || items.length === 0 || !shippingCalculated || !selectedShipping}
+              disabled={submitting || items.length === 0 || (!isAllEbooks && (!shippingCalculated || !selectedShipping))}
               className="btn-primary w-full mt-6 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting
@@ -545,7 +564,7 @@ export default function CheckoutPage() {
                 : <><Check className="w-4 h-4" /> {t('place_order')}</>
               }
             </button>
-            {!shippingCalculated && (
+            {!isAllEbooks && !shippingCalculated && (
               <p className="text-xs text-gray-400 text-center mt-2">Calcula os portes para continuar</p>
             )}
           </div>

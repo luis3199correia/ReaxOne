@@ -158,7 +158,10 @@ export class MailService {
             <p style="font-size:15px;line-height:1.6;">Olá <strong>${order.firstName}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">
               Recebemos a tua encomenda <strong>#${shortId}</strong>.
-              Assim que confirmarmos o pagamento, tratamos do envio!
+              ${order.shippingMethod === 'digital'
+                ? 'A tua compra é um produto digital — <strong>não há portes de envio</strong>. Receberás o teu ebook no email assim que confirmarmos o pagamento. 📚'
+                : 'Assim que confirmarmos o pagamento, tratamos do envio!'
+              }
             </p>
 
             <h3 style="font-size:14px;color:#333;margin:20px 0 8px;">Produtos</h3>
@@ -175,6 +178,7 @@ export class MailService {
               </tr></tfoot>
             </table>
 
+            ${order.shippingMethod !== 'digital' ? `
             <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
               <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">MORADA DE ENTREGA</p>
               <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
@@ -183,7 +187,7 @@ export class MailService {
                 ${order.country}
                 ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${order.shippingMethod}</span>` : ''}
               </p>
-            </div>
+            </div>` : ''}
 
             ${order.wantsInvoice && order.nif ? `
             <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">

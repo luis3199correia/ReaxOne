@@ -27,9 +27,11 @@ function toProduct(p: any): FullProduct {
     price: p.price,
     images: p.images ?? [],
     category: p.category?.name ?? undefined,
+    categorySlug: p.category?.slug ?? undefined,
     stock: p.stock,
     description: p.description ?? '',
     descriptionEn: p.descriptionEn ?? undefined,
+    isEbook: p.category?.slug === 'ebooks' || !!p.ebookFile,
   };
 }
 
@@ -87,6 +89,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
       price: product.price,
       image: product.images[0],
       quantity: qty,
+      isEbook: product.isEbook,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 2500);

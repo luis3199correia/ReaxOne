@@ -8,6 +8,7 @@ export interface CartItem {
   quantity: number;
   size?: string;
   image?: string;
+  isEbook?: boolean;
 }
 
 interface CartStore {
