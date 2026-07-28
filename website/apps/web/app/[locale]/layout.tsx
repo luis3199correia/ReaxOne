@@ -5,6 +5,8 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n/config';
 import ConditionalShell from '@/components/layout/ConditionalShell';
+import { SettingsProvider } from '@/components/providers/SettingsProvider';
+import { fetchPublicSettings } from '@/lib/settings';
 import '../globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -91,12 +93,15 @@ export default async function LocaleLayout({
   if (!locales.includes(locale as any)) notFound();
 
   const messages = await getMessages();
+  const settings = await fetchPublicSettings();
 
   return (
     <html lang={locale}>
       <body className={inter.className}>
         <NextIntlClientProvider messages={messages}>
-          <ConditionalShell>{children}</ConditionalShell>
+          <SettingsProvider value={settings}>
+            <ConditionalShell>{children}</ConditionalShell>
+          </SettingsProvider>
         </NextIntlClientProvider>
       </body>
     </html>

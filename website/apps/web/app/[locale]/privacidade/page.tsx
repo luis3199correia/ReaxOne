@@ -1,4 +1,8 @@
-export default function PrivacidadePage() {
+import { fetchPublicSettings } from '@/lib/settings';
+
+export default async function PrivacidadePage() {
+  const settings = await fetchPublicSettings();
+
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
       <h1 className="text-4xl font-black text-brand-dark mb-2">Política de Privacidade</h1>
@@ -8,7 +12,7 @@ export default function PrivacidadePage() {
 
         <section>
           <h2 className="text-xl font-bold text-brand-dark mb-3">Responsável pelo tratamento</h2>
-          <p>ReaxOne — <a href="mailto:contact@reaxone.com" className="text-brand-primary hover:underline">contact@reaxone.com</a></p>
+          <p>ReaxOne — <a href={`mailto:${settings.contactEmail}`} className="text-brand-primary hover:underline">{settings.contactEmail}</a></p>
         </section>
 
         <section>
@@ -28,7 +32,7 @@ export default function PrivacidadePage() {
 
         <section>
           <h2 className="text-xl font-bold text-brand-dark mb-3">Os teus direitos</h2>
-          <p>Tens direito a aceder, corrigir ou eliminar os teus dados pessoais. Para exercer estes direitos, contacta-nos em <a href="mailto:contact@reaxone.com" className="text-brand-primary hover:underline">contact@reaxone.com</a>.</p>
+          <p>Tens direito a aceder, corrigir ou eliminar os teus dados pessoais. Para exercer estes direitos, contacta-nos em <a href={`mailto:${settings.contactEmail}`} className="text-brand-primary hover:underline">{settings.contactEmail}</a>.</p>
         </section>
 
         <section>

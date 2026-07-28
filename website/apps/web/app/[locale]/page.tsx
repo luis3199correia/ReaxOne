@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { getTranslations, getLocale } from 'next-intl/server';
 import Image from 'next/image';
 import Link from 'next/link';
+import { fetchPublicSettings } from '@/lib/settings';
 
 export const metadata: Metadata = {
   title: 'ReaxOne — Treino de Reação',
@@ -19,6 +20,7 @@ export default async function HomePage() {
   const tp = await getTranslations('products');
   const locale = await getLocale();
   const prefix = `/${locale}`;
+  const settings = await fetchPublicSettings();
 
   // Buscar produtos marcados como destaque no backoffice
   type ApiProduct = { id: string; slug: string; name: string; nameEn?: string; price: number; images: string[] };
@@ -47,12 +49,14 @@ export default async function HomePage() {
     url: 'https://reaxone.com',
     logo: 'https://reaxone.com/images/identidade/texto-branco.svg',
     sameAs: ['https://www.instagram.com/reax.one/'],
-    contactPoint: {
-      '@type': 'ContactPoint',
-      telephone: '+351-911-084-422',
-      contactType: 'customer service',
-      availableLanguage: ['Portuguese', 'English'],
-    },
+    ...(settings.whatsappEnabled && {
+      contactPoint: {
+        '@type': 'ContactPoint',
+        telephone: `+${settings.whatsappNumber}`,
+        contactType: 'customer service',
+        availableLanguage: ['Portuguese', 'English'],
+      },
+    }),
   };
 
   return (

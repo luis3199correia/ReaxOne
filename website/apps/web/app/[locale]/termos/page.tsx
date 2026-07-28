@@ -1,4 +1,8 @@
-export default function TermosPage() {
+import { fetchPublicSettings } from '@/lib/settings';
+
+export default async function TermosPage() {
+  const settings = await fetchPublicSettings();
+
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
       <h1 className="text-4xl font-black text-brand-dark mb-2">Termos e Condições</h1>
@@ -8,7 +12,7 @@ export default function TermosPage() {
 
         <section>
           <h2 className="text-xl font-bold text-brand-dark mb-3">1. Identificação</h2>
-          <p>ReaxOne é uma marca portuguesa de equipamento desportivo. Contacto: <a href="mailto:contact@reaxone.com" className="text-brand-primary hover:underline">contact@reaxone.com</a></p>
+          <p>ReaxOne é uma marca portuguesa de equipamento desportivo. Contacto: <a href={`mailto:${settings.contactEmail}`} className="text-brand-primary hover:underline">{settings.contactEmail}</a></p>
         </section>
 
         <section>

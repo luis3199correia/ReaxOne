@@ -3,14 +3,17 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-
-const WA_NUMBER = '351911084422';
+import { whatsappUrl } from '@/lib/settings';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 export default function WhatsAppBubble() {
   const [tooltip, setTooltip] = useState(true);
   const t = useTranslations('whatsapp');
+  const settings = useSettings();
 
-  const waUrl = `https://wa.me/${WA_NUMBER}?text=${t('message')}`;
+  if (!settings.whatsappEnabled) return null;
+
+  const waUrl = whatsappUrl(settings.whatsappNumber, t('message'));
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">

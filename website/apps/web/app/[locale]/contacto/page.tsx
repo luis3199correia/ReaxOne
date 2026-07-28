@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form';
 import { Mail, Phone, MapPin, Check, Loader2, MessageCircle, Instagram } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
+import { whatsappUrl, formatWhatsappDisplay } from '@/lib/settings';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 interface ContactForm {
   name: string;
@@ -15,6 +17,7 @@ interface ContactForm {
 
 export default function ContactPage() {
   const t = useTranslations('contact');
+  const settings = useSettings();
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<ContactForm>();
   const [sent, setSent] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -68,25 +71,27 @@ export default function ContactPage() {
                   <Mail className="w-4 h-4 text-brand-primary mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-brand-dark">Email</p>
-                    <a href="mailto:contatos@reaxone.com" className="hover:text-brand-primary transition-colors">
-                      contatos@reaxone.com
+                    <a href={`mailto:${settings.contactEmail}`} className="hover:text-brand-primary transition-colors">
+                      {settings.contactEmail}
                     </a>
                   </div>
                 </div>
-                <div className="flex items-start gap-3 text-sm text-gray-600">
-                  <Phone className="w-4 h-4 text-brand-primary mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-semibold text-brand-dark">WhatsApp</p>
-                    <a
-                      href="https://wa.me/351911084422"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-brand-primary transition-colors"
-                    >
-                      +351 911 084 422
-                    </a>
+                {settings.whatsappEnabled && (
+                  <div className="flex items-start gap-3 text-sm text-gray-600">
+                    <Phone className="w-4 h-4 text-brand-primary mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold text-brand-dark">WhatsApp</p>
+                      <a
+                        href={whatsappUrl(settings.whatsappNumber)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-brand-primary transition-colors"
+                      >
+                        {formatWhatsappDisplay(settings.whatsappNumber)}
+                      </a>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="flex items-start gap-3 text-sm text-gray-600">
                   <MapPin className="w-4 h-4 text-brand-primary mt-0.5 flex-shrink-0" />
                   <div>
@@ -112,18 +117,20 @@ export default function ContactPage() {
             </div>
 
             {/* WhatsApp CTA */}
-            <a
-              href="https://wa.me/351911084422?text=Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20os%20produtos%20ReaxOne."
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 bg-[#25D366] text-white px-5 py-4 rounded-xl font-semibold hover:bg-[#1ebe5c] transition-colors"
-            >
-              <MessageCircle className="w-5 h-5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-bold">{t('whatsapp_cta_title')}</p>
-                <p className="text-xs opacity-90">{t('whatsapp_cta_subtitle')}</p>
-              </div>
-            </a>
+            {settings.whatsappEnabled && (
+              <a
+                href={whatsappUrl(settings.whatsappNumber, 'Ol%C3%A1%2C%20gostaria%20de%20saber%20mais%20sobre%20os%20produtos%20ReaxOne.')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 bg-[#25D366] text-white px-5 py-4 rounded-xl font-semibold hover:bg-[#1ebe5c] transition-colors"
+              >
+                <MessageCircle className="w-5 h-5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-bold">{t('whatsapp_cta_title')}</p>
+                  <p className="text-xs opacity-90">{t('whatsapp_cta_subtitle')}</p>
+                </div>
+              </a>
+            )}
 
             <div className="bg-brand-light rounded-xl p-4 text-sm text-gray-600">
               <p className="font-semibold text-brand-dark mb-1">{t('response_time_heading')}</p>

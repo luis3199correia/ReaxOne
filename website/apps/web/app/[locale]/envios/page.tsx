@@ -1,8 +1,10 @@
 import { getLocale } from 'next-intl/server';
 import Link from 'next/link';
+import { whatsappUrl, formatWhatsappDisplay, fetchPublicSettings } from '@/lib/settings';
 
 export default async function EnviosPage() {
   const locale = await getLocale();
+  const settings = await fetchPublicSettings();
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
@@ -36,8 +38,10 @@ export default async function EnviosPage() {
           <h2 className="text-xl font-bold text-brand-dark mb-3">Contacto</h2>
           <p>Para qualquer questão sobre a tua encomenda, fala connosco:</p>
           <ul className="mt-2 space-y-1">
-            <li>📧 <a href="mailto:contact@reaxone.com" className="text-brand-primary hover:underline">contact@reaxone.com</a></li>
-            <li>📱 <a href="https://wa.me/351911084422" className="text-brand-primary hover:underline">+351 911 084 422</a></li>
+            <li>📧 <a href={`mailto:${settings.contactEmail}`} className="text-brand-primary hover:underline">{settings.contactEmail}</a></li>
+            {settings.whatsappEnabled && (
+              <li>📱 <a href={whatsappUrl(settings.whatsappNumber)} className="text-brand-primary hover:underline">{formatWhatsappDisplay(settings.whatsappNumber)}</a></li>
+            )}
           </ul>
         </section>
 

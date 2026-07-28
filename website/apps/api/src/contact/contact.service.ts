@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Resend } from 'resend';
+import { SettingsService } from '../settings/settings.service';
 
 export interface ContactDto {
   name: string;
@@ -12,14 +13,20 @@ export interface ContactDto {
 export class ContactService {
   private resend = new Resend(process.env.RESEND_API_KEY || process.env.SMTP_PASS);
 
+  constructor(private settingsService: SettingsService) {}
+
   private get from(): string {
     const addr = process.env.SMTP_FROM || process.env.CONTACT_EMAIL || 'noreply@reaxone.com';
     return `ReaxOne <${addr}>`;
   }
 
   async sendContactEmail(dto: ContactDto) {
-    const contactEmail = process.env.CONTACT_EMAIL || 'contatos@reaxone.com';
-    const whatsapp     = process.env.WHATSAPP_NUMBER ?? '351911084422';
+    const settings     = await this.settingsService.getPublicSettings();
+    const contactEmail = settings.contactEmail;
+    const whatsappLine = settings.whatsappEnabled
+      ? `Se preferires falar diretamente:<br>
+              💬 WhatsApp: <a href="https://wa.me/${settings.whatsappNumber}" style="color:#E8322A;">+${settings.whatsappNumber}</a>`
+      : '';
 
     // Email para a equipa
     await this.resend.emails.send({
@@ -58,10 +65,7 @@ export class ContactService {
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
             <p style="font-size:15px;line-height:1.6;">Olá <strong>${dto.name}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">Obrigado pelo teu contacto. A nossa equipa irá responder em breve.</p>
-            <p style="font-size:14px;color:#666;line-height:1.6;">
-              Se preferires falar diretamente:<br>
-              💬 WhatsApp: <a href="https://wa.me/${whatsapp}" style="color:#E8322A;">+${whatsapp}</a>
-            </p>
+            ${whatsappLine ? `<p style="font-size:14px;color:#666;line-height:1.6;">${whatsappLine}</p>` : ''}
             <hr style="border:none;border-top:1px solid #e5e5e5;margin:16px 0;" />
             <p style="font-size:13px;color:#888;">Performance Primeiro. Sempre.<br><strong>Equipa ReaxOne</strong></p>
           </div>

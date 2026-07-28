@@ -5,10 +5,13 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { CheckCircle, Smartphone, Building2, ArrowRight } from 'lucide-react';
+import { whatsappUrl, formatWhatsappDisplay } from '@/lib/settings';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 function ConfirmacaoContent() {
   const params   = useSearchParams();
   const locale   = useLocale();
+  const settings = useSettings();
   const orderId  = params.get('order') ?? '';
   const total    = params.get('total') ?? '0.00';
   const method   = params.get('method') ?? 'mbway';
@@ -41,12 +44,21 @@ function ConfirmacaoContent() {
               Vai receber um pedido de pagamento de <strong>€{total}</strong> no teu telemóvel.
               Aceita o pagamento na aplicação MB Way.
             </p>
-            <p className="text-sm text-gray-500">
-              Se não receberes o pedido em alguns minutos, entra em contacto connosco pelo WhatsApp:{' '}
-              <a href="https://wa.me/351911084422" className="text-brand-primary font-medium hover:underline">
-                +351 911 084 422
-              </a>
-            </p>
+            {settings.whatsappEnabled ? (
+              <p className="text-sm text-gray-500">
+                Se não receberes o pedido em alguns minutos, entra em contacto connosco pelo WhatsApp:{' '}
+                <a href={whatsappUrl(settings.whatsappNumber)} className="text-brand-primary font-medium hover:underline">
+                  {formatWhatsappDisplay(settings.whatsappNumber)}
+                </a>
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Se não receberes o pedido em alguns minutos, entra em contacto connosco pelo email:{' '}
+                <a href={`mailto:${settings.contactEmail}`} className="text-brand-primary font-medium hover:underline">
+                  {settings.contactEmail}
+                </a>
+              </p>
+            )}
           </>
         ) : (
           <>
@@ -59,7 +71,10 @@ function ConfirmacaoContent() {
               <strong>#{shortId}</strong> na descrição da transferência.
             </p>
             <div className="bg-gray-50 rounded-lg p-4 text-sm font-mono text-gray-700 space-y-1">
-              <p><span className="text-gray-400">IBAN:</span> {process.env.NEXT_PUBLIC_BANK_IBAN ?? 'PT50 0000 0000 0000 0000 0000 0'}</p>
+              <p><span className="text-gray-400">IBAN:</span> {settings.iban}</p>
+              {settings.ibanHolder && (
+                <p><span className="text-gray-400">Titular:</span> {settings.ibanHolder}</p>
+              )}
               <p><span className="text-gray-400">Referência:</span> #{shortId}</p>
             </div>
             <p className="text-xs text-gray-400 mt-3">

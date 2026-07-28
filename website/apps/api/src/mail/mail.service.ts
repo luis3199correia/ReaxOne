@@ -2,13 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
 import * as fs from 'fs';
 import * as path from 'path';
+import { SettingsService, PublicSettings } from '../settings/settings.service';
 
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
   private resend: Resend;
 
-  constructor() {
+  constructor(private settingsService: SettingsService) {
     this.resend = new Resend(process.env.RESEND_API_KEY || process.env.SMTP_PASS);
   }
 
@@ -17,21 +18,13 @@ export class MailService {
     return `ReaxOne <${addr}>`;
   }
 
-  private get whatsapp(): string {
-    return process.env.WHATSAPP_NUMBER ?? '351911084422';
-  }
-
-  private get contactEmail(): string {
-    return process.env.CONTACT_EMAIL ?? 'contatos@reaxone.com';
-  }
-
-  private contactBlock(): string {
+  private contactBlock(settings: PublicSettings): string {
     return `
       <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px;margin:20px 0;">
         <p style="font-size:13px;color:#0369a1;margin:0 0 8px;font-weight:bold;">PRECISAS DE AJUDA?</p>
         <p style="font-size:13px;color:#333;margin:0;line-height:1.8;">
-          📧 Email: <a href="mailto:${this.contactEmail}" style="color:#E8322A;">${this.contactEmail}</a><br>
-          💬 WhatsApp: <a href="https://wa.me/${this.whatsapp}" style="color:#E8322A;">+${this.whatsapp}</a>
+          📧 Email: <a href="mailto:${settings.contactEmail}" style="color:#E8322A;">${settings.contactEmail}</a>
+          ${settings.whatsappEnabled ? `<br>💬 WhatsApp: <a href="https://wa.me/${settings.whatsappNumber}" style="color:#E8322A;">+${settings.whatsappNumber}</a>` : ''}
         </p>
       </div>`;
   }
@@ -53,6 +46,7 @@ export class MailService {
     ebooks: Array<{ title: string; filePath: string }>,
   ): Promise<void> {
     const shortId = orderId.slice(-8).toUpperCase();
+    const settings = await this.settingsService.getPublicSettings();
 
     const attachments: Array<{ filename: string; content: Buffer }> = [];
     for (const ebook of ebooks) {
@@ -88,7 +82,7 @@ export class MailService {
             <p style="font-size:14px;color:#555;line-height:1.6;">
               Guarda o ficheiro PDF num lugar seguro — podes lê-lo no teu telemóvel, tablet ou computador.
             </p>
-            ${this.contactBlock()}
+            ${this.contactBlock(settings)}
             ${this.footer()}
           </div>
         </div>`,
@@ -118,8 +112,8 @@ export class MailService {
     items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
   }): Promise<void> {
     const shortId    = order.id.slice(-8).toUpperCase();
+    const settings   = await this.settingsService.getPublicSettings();
     const mbwayPhone = process.env.MBWAY_PHONE ?? '';
-    const iban       = process.env.BANK_IBAN   ?? '';
 
     const paymentInstructions = order.paymentMethod === 'MBWAY'
       ? `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
@@ -132,7 +126,8 @@ export class MailService {
       : `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
            <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">PAGAMENTO — TRANSFERÊNCIA BANCÁRIA</p>
            <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
-             IBAN: <strong>${iban}</strong><br>
+             IBAN: <strong>${settings.iban}</strong><br>
+             ${settings.ibanHolder ? `Titular: <strong>${settings.ibanHolder}</strong><br>` : ''}
              Valor: <strong>€${order.totalAmount.toFixed(2)}</strong><br>
              Referência: <strong>#${shortId}</strong>
            </p>
@@ -159,7 +154,9 @@ export class MailService {
             <p style="font-size:15px;line-height:1.6;">
               Recebemos a tua encomenda <strong>#${shortId}</strong>.
               ${order.shippingMethod === 'digital' && order.totalAmount === 0
-                ? `O teu ebook é <strong>gratuito</strong> — vamos enviá-lo diretamente via <strong>WhatsApp</strong> em breve. 📲<br>Número: <a href="https://wa.me/${this.whatsapp}" style="color:#E8322A;">+${this.whatsapp}</a>`
+                ? settings.whatsappEnabled
+                  ? `O teu ebook é <strong>gratuito</strong> — vamos enviá-lo diretamente via <strong>WhatsApp</strong> em breve. 📲<br>Número: <a href="https://wa.me/${settings.whatsappNumber}" style="color:#E8322A;">+${settings.whatsappNumber}</a>`
+                  : `O teu ebook é <strong>gratuito</strong> — vamos enviá-lo diretamente para o teu email em breve. 📲`
                 : order.shippingMethod === 'digital'
                 ? 'A tua compra é um produto digital — <strong>não há portes de envio</strong>. Receberás o teu ebook no email assim que confirmarmos o pagamento. 📚'
                 : 'Assim que confirmarmos o pagamento, tratamos do envio!'
@@ -201,7 +198,7 @@ export class MailService {
             </div>` : ''}
 
             ${paymentInstructions}
-            ${this.contactBlock()}
+            ${this.contactBlock(settings)}
             ${this.footer()}
           </div>
         </div>`,
@@ -225,7 +222,8 @@ export class MailService {
     shippingMethod?: string | null;
     items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
   }): Promise<void> {
-    const shortId = order.id.slice(-8).toUpperCase();
+    const shortId  = order.id.slice(-8).toUpperCase();
+    const settings = await this.settingsService.getPublicSettings();
 
     const itemsHtml = order.items.map((i) =>
       `<tr>
@@ -273,7 +271,7 @@ export class MailService {
               </p>
             </div>
 
-            ${this.contactBlock()}
+            ${this.contactBlock(settings)}
             ${this.footer()}
           </div>
         </div>`,
@@ -372,7 +370,8 @@ export class MailService {
   }): Promise<void> {
     if (['PENDING', 'PAID'].includes(order.status)) return;
 
-    const shortId = order.id.slice(-8).toUpperCase();
+    const shortId  = order.id.slice(-8).toUpperCase();
+    const settings = await this.settingsService.getPublicSettings();
 
     const STATUS_INFO: Record<string, { subject: string; title: string; color: string; body: string }> = {
       SHIPPED: {
@@ -414,7 +413,7 @@ export class MailService {
               <tr><td style="padding:6px 0;color:#888;width:140px;">Referência</td><td style="padding:6px 0;font-weight:bold;">#${shortId}</td></tr>
               <tr><td style="padding:6px 0;color:#888;">Total</td><td style="padding:6px 0;">€${order.totalAmount.toFixed(2)}</td></tr>
             </table>
-            ${this.contactBlock()}
+            ${this.contactBlock(settings)}
             ${this.footer()}
           </div>
         </div>`,
@@ -427,6 +426,7 @@ export class MailService {
   // ─── Reset de password ────────────────────────────────────────────────────
 
   async sendPasswordReset(to: string, firstName: string, resetLink: string): Promise<void> {
+    const settings = await this.settingsService.getPublicSettings();
     const { error } = await this.resend.emails.send({
       from:    this.from,
       to:      [to],
@@ -451,7 +451,7 @@ export class MailService {
               Este link é válido durante <strong>15 minutos</strong>.
               Se não pediste a recuperação, ignora este email.
             </p>
-            ${this.contactBlock()}
+            ${this.contactBlock(settings)}
             ${this.footer()}
           </div>
         </div>`,

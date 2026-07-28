@@ -15,6 +15,8 @@ import {
   ShippingOption,
   ShippingZone,
 } from '@/lib/shippingRates';
+import { whatsappUrl, formatWhatsappDisplay } from '@/lib/settings';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 type PaymentMethod = 'mbway' | 'transfer';
 
@@ -98,6 +100,7 @@ export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const locale = useLocale();
   const router = useRouter();
+  const settings = useSettings();
   const { items, total, clearCart } = useCartStore();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mbway');
@@ -403,13 +406,13 @@ export default function CheckoutPage() {
                           Para encomendas para os Açores ou Madeira, entra em contacto connosco para calcular os portes manualmente.
                         </p>
                         <a
-                          href="https://wa.me/351911084422"
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          href={settings.whatsappEnabled ? whatsappUrl(settings.whatsappNumber) : `mailto:${settings.contactEmail}`}
+                          target={settings.whatsappEnabled ? '_blank' : undefined}
+                          rel={settings.whatsappEnabled ? 'noopener noreferrer' : undefined}
                           className="inline-flex items-center gap-1.5 mt-2 text-sm font-semibold text-amber-800 hover:underline"
                         >
                           <Phone className="w-3.5 h-3.5" />
-                          +351 911 084 422
+                          {settings.whatsappEnabled ? formatWhatsappDisplay(settings.whatsappNumber) : settings.contactEmail}
                         </a>
                       </div>
                     </div>
@@ -425,13 +428,13 @@ export default function CheckoutPage() {
                           De momento só enviamos para Portugal, Espanha e alguns países da Europa. Entra em contacto para saber mais.
                         </p>
                         <a
-                          href="https://wa.me/351911084422"
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          href={settings.whatsappEnabled ? whatsappUrl(settings.whatsappNumber) : `mailto:${settings.contactEmail}`}
+                          target={settings.whatsappEnabled ? '_blank' : undefined}
+                          rel={settings.whatsappEnabled ? 'noopener noreferrer' : undefined}
                           className="inline-flex items-center gap-1.5 mt-2 text-sm font-semibold text-red-800 hover:underline"
                         >
                           <Phone className="w-3.5 h-3.5" />
-                          +351 911 084 422
+                          {settings.whatsappEnabled ? formatWhatsappDisplay(settings.whatsappNumber) : settings.contactEmail}
                         </a>
                       </div>
                     </div>
