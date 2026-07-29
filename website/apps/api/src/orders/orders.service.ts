@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
@@ -54,40 +54,63 @@ export class OrdersService {
     const shippingCost = data.shippingCost ?? 0;
     const totalAmount = itemsTotal + shippingCost;
 
-    const order = await this.prisma.order.create({
-      data: {
-        userId:        data.userId,
-        email:         data.email,
-        firstName:     data.firstName,
-        lastName:      data.lastName,
-        phone:         data.phone,
-        street:        data.street,
-        city:          data.city,
-        postalCode:    data.postalCode,
-        country:       data.country ?? 'PT',
-        wantsInvoice:  data.wantsInvoice ?? false,
-        nif:           data.nif,
-        companyName:   data.companyName,
-        shippingMethod: data.shippingMethod,
-        shippingCost,
-        totalAmount,
-        items: {
-          create: data.items.map((item) => ({
-            productId: item.productId,
-            name:      item.name,
-            price:     item.price,
-            quantity:  item.quantity,
-            size:      item.size,
-          })),
-        },
-        payment: {
-          create: {
-            method: data.paymentMethod,
-            status: 'PENDING',
+    const order = await this.prisma.$transaction(async (tx) => {
+      // Produtos digitais (ebooks) não têm stock físico — ficam de fora da validação
+      const products = await tx.product.findMany({
+        where:  { id: { in: data.items.map((i) => i.productId) } },
+        select: { id: true, ebookFile: true },
+      });
+      const ebookIds = new Set(products.filter((p) => p.ebookFile).map((p) => p.id));
+
+      for (const item of data.items) {
+        if (ebookIds.has(item.productId)) continue;
+
+        // Decremento condicional e atómico: só desconta se ainda houver stock
+        // suficiente, evitando vender a mesma unidade a dois clientes em simultâneo.
+        const updated = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
+          data:  { stock: { decrement: item.quantity } },
+        });
+        if (updated.count === 0) {
+          throw new BadRequestException(`Sem stock suficiente para "${item.name}".`);
+        }
+      }
+
+      return tx.order.create({
+        data: {
+          userId:        data.userId,
+          email:         data.email,
+          firstName:     data.firstName,
+          lastName:      data.lastName,
+          phone:         data.phone,
+          street:        data.street,
+          city:          data.city,
+          postalCode:    data.postalCode,
+          country:       data.country ?? 'PT',
+          wantsInvoice:  data.wantsInvoice ?? false,
+          nif:           data.nif,
+          companyName:   data.companyName,
+          shippingMethod: data.shippingMethod,
+          shippingCost,
+          totalAmount,
+          items: {
+            create: data.items.map((item) => ({
+              productId: item.productId,
+              name:      item.name,
+              price:     item.price,
+              quantity:  item.quantity,
+              size:      item.size,
+            })),
+          },
+          payment: {
+            create: {
+              method: data.paymentMethod,
+              status: 'PENDING',
+            },
           },
         },
-      },
-      include: { items: true, payment: true },
+        include: { items: true, payment: true },
+      });
     });
 
     // Confirmar encomenda ao cliente em background

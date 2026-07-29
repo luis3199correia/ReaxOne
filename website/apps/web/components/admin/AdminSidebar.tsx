@@ -15,6 +15,7 @@ import {
   Menu,
   X,
   LogOut,
+  Store,
 } from 'lucide-react';
 
 export default function AdminSidebar() {
@@ -60,6 +61,14 @@ export default function AdminSidebar() {
           );
         })}
         <div className="pt-2 border-t border-white/10 mt-2">
+          <Link
+            href={`/${locale}`}
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <Store className="w-4 h-4 flex-shrink-0" />
+            Ver site
+          </Link>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-400 hover:bg-white/10 hover:text-white transition-colors w-full"
