@@ -3,19 +3,33 @@
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, User, Menu, X, Instagram, LayoutDashboard } from 'lucide-react';
+import {
+  ShoppingCart, User, Menu, X, Instagram, LayoutDashboard,
+  Package, Tag, ShoppingBag, Users, Settings,
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/cart';
 type AuthUser = { id: string; email: string; role: string } | null;
 
 export default function Navbar() {
   const t = useTranslations('nav');
+  const tAdmin = useTranslations('admin');
   const locale = useLocale();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [authUser, setAuthUser] = useState<AuthUser>(null);
   const { items } = useCartStore();
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
   const prefix = `/${locale}`;
+
+  const adminLinks = [
+    { href: `${prefix}/admin`,               label: tAdmin('dashboard'), icon: LayoutDashboard },
+    { href: `${prefix}/admin/produtos`,      label: tAdmin('products'),  icon: Package },
+    { href: `${prefix}/admin/categorias`,    label: 'Categorias',        icon: Tag },
+    { href: `${prefix}/admin/encomendas`,    label: tAdmin('orders'),    icon: ShoppingBag },
+    { href: `${prefix}/admin/clientes`,      label: tAdmin('customers'), icon: Users },
+    { href: `${prefix}/admin/configuracoes`, label: tAdmin('settings'),  icon: Settings },
+  ];
 
   useEffect(() => {
     // Usa fetch diretamente para não acionar o interceptor do axios (que redireciona em 401)
@@ -88,9 +102,35 @@ export default function Navbar() {
 
           {/* Account / Admin */}
           {authUser?.role === 'ADMIN' ? (
-            <Link href={`${prefix}/admin`} className="hover:text-brand-green transition-colors" title="Backoffice">
-              <LayoutDashboard className="w-5 h-5" />
-            </Link>
+            <div className="relative">
+              <button
+                onClick={() => setAdminMenuOpen((o) => !o)}
+                className="hover:text-brand-green transition-colors"
+                title="Backoffice"
+                aria-label="Backoffice"
+              >
+                <LayoutDashboard className="w-5 h-5" />
+              </button>
+
+              {adminMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setAdminMenuOpen(false)} />
+                  <div className="absolute right-0 mt-3 w-48 bg-white text-brand-dark rounded-lg shadow-2xl py-2 z-50">
+                    {adminLinks.map(({ href, label, icon: Icon }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setAdminMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-100 transition-colors"
+                      >
+                        <Icon className="w-4 h-4 text-gray-500" />
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           ) : authUser ? (
             <Link href={`${prefix}/conta`} className="hover:text-brand-green transition-colors" title="A minha conta">
               <User className="w-5 h-5" />
@@ -115,7 +155,6 @@ export default function Navbar() {
             { href: `${prefix}/loja`, label: t('shop') },
             { href: `${prefix}/sobre`, label: t('about') },
             { href: `${prefix}/contacto`, label: t('contact') },
-            ...(authUser?.role === 'ADMIN' ? [{ href: `${prefix}/admin`, label: t('admin') }] : []),
           ].map(({ href, label }) => (
             <Link
               key={href}
