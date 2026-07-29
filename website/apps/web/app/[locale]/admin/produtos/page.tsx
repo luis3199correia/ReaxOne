@@ -404,14 +404,14 @@ export default function AdminProductsPage() {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-brand-dark">Produtos</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {loading ? '...' : `${products.length} produto${products.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+        <button onClick={openCreate} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
           <Plus className="w-4 h-4" />
           Novo produto
         </button>

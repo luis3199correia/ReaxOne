@@ -16,6 +16,7 @@ import {
   X,
   LogOut,
   Store,
+  Home,
 } from 'lucide-react';
 
 export default function AdminSidebar() {
@@ -95,6 +96,14 @@ export default function AdminSidebar() {
         <p className="font-bold text-base flex-1">
           REAX<span className="text-brand-primary">ONE</span>
         </p>
+        <Link
+          href={`/${locale}`}
+          className="text-gray-300 hover:text-white p-1"
+          title="Ver site"
+          aria-label="Ver site"
+        >
+          <Home className="w-5 h-5" />
+        </Link>
         <button
           onClick={handleLogout}
           className="flex items-center gap-1.5 text-gray-300 hover:text-white text-sm font-medium px-2 py-1 rounded hover:bg-white/10 transition-colors"
