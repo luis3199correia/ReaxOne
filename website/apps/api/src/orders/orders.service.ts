@@ -13,6 +13,19 @@ export class OrdersService {
     private mailService: MailService,
   ) {}
 
+  /**
+   * Corre uma tarefa em background sem nunca deixar o seu erro propagar-se
+   * para o pedido em curso — mesmo que a tarefa rejeite a promise ou rebente
+   * de forma síncrona (ex.: cliente de email mal configurado).
+   */
+  private fireAndForget(task: () => Promise<unknown>, errorContext: string) {
+    try {
+      Promise.resolve(task()).catch((e) => this.logger.error(errorContext, e));
+    } catch (e) {
+      this.logger.error(errorContext, e);
+    }
+  }
+
   async create(data: {
     userId?: string;
     email: string;
@@ -78,46 +91,52 @@ export class OrdersService {
     });
 
     // Confirmar encomenda ao cliente em background
-    this.mailService.sendOrderConfirmation({
-      id:            order.id,
-      firstName:     order.firstName,
-      email:         order.email,
-      totalAmount:   order.totalAmount,
-      paymentMethod: data.paymentMethod,
-      shippingMethod: data.shippingMethod,
-      street:        order.street,
-      city:          order.city,
-      postalCode:    order.postalCode,
-      country:       order.country,
-      wantsInvoice:  order.wantsInvoice,
-      nif:           order.nif,
-      companyName:   order.companyName,
-      items:         order.items,
-    }).catch((e) => this.logger.error('[Mail] Erro ao enviar confirmação ao cliente', e));
+    this.fireAndForget(
+      () => this.mailService.sendOrderConfirmation({
+        id:            order.id,
+        firstName:     order.firstName,
+        email:         order.email,
+        totalAmount:   order.totalAmount,
+        paymentMethod: data.paymentMethod,
+        shippingMethod: data.shippingMethod,
+        street:        order.street,
+        city:          order.city,
+        postalCode:    order.postalCode,
+        country:       order.country,
+        wantsInvoice:  order.wantsInvoice,
+        nif:           order.nif,
+        companyName:   order.companyName,
+        items:         order.items,
+      }),
+      '[Mail] Erro ao enviar confirmação ao cliente',
+    );
 
     // Notificar admin por email em background
-    this.mailService.sendNewOrderNotification({
-      id:             order.id,
-      firstName:      order.firstName,
-      lastName:       order.lastName,
-      email:          order.email,
-      phone:          order.phone,
-      totalAmount:    order.totalAmount,
-      paymentMethod:  data.paymentMethod,
-      shippingMethod: data.shippingMethod,
-      street:         order.street,
-      city:           order.city,
-      postalCode:     order.postalCode,
-      country:        order.country,
-      wantsInvoice:   order.wantsInvoice,
-      nif:            order.nif,
-      companyName:    order.companyName,
-      items:          order.items,
-    }).catch((e) => this.logger.error('[Mail] Erro ao notificar admin de nova encomenda', e));
+    this.fireAndForget(
+      () => this.mailService.sendNewOrderNotification({
+        id:             order.id,
+        firstName:      order.firstName,
+        lastName:       order.lastName,
+        email:          order.email,
+        phone:          order.phone,
+        totalAmount:    order.totalAmount,
+        paymentMethod:  data.paymentMethod,
+        shippingMethod: data.shippingMethod,
+        street:         order.street,
+        city:           order.city,
+        postalCode:     order.postalCode,
+        country:        order.country,
+        wantsInvoice:   order.wantsInvoice,
+        nif:            order.nif,
+        companyName:    order.companyName,
+        items:          order.items,
+      }),
+      '[Mail] Erro ao notificar admin de nova encomenda',
+    );
 
     // Criar encomenda na Batch em background — apenas para produtos físicos
     if (process.env.BATCH_DISABLED !== 'true') {
-      this.createBatchOrder(order).catch((e) => this.logger.error('[Batch] Erro ao criar encomenda', e));
+      this.fireAndForget(() => this.createBatchOrder(order), '[Batch] Erro ao criar encomenda');
     }
 
     return order;
@@ -208,13 +227,16 @@ export class OrdersService {
     });
 
     // Notificar cliente por email em background
-    this.mailService.sendOrderStatusUpdate({
-      id:          order.id,
-      firstName:   order.firstName,
-      email:       order.email,
-      status,
-      totalAmount: order.totalAmount,
-    }).catch((e) => this.logger.error('[Mail] Erro ao notificar cliente de mudança de estado', e));
+    this.fireAndForget(
+      () => this.mailService.sendOrderStatusUpdate({
+        id:          order.id,
+        firstName:   order.firstName,
+        email:       order.email,
+        status,
+        totalAmount: order.totalAmount,
+      }),
+      '[Mail] Erro ao notificar cliente de mudança de estado',
+    );
 
     return order;
   }
@@ -255,21 +277,27 @@ export class OrdersService {
     ]);
 
     // Enviar email de pagamento confirmado com detalhes da encomenda
-    this.mailService.sendPaymentConfirmed({
-      id:            order.id,
-      firstName:     order.firstName,
-      email:         order.email,
-      totalAmount:   order.totalAmount,
-      street:        order.street,
-      city:          order.city,
-      postalCode:    order.postalCode,
-      country:       order.country,
-      shippingMethod: order.shippingMethod,
-      items:         (order as any).items ?? [],
-    }).catch((e) => this.logger.error('[Mail] Erro ao enviar confirmação de pagamento', e));
+    this.fireAndForget(
+      () => this.mailService.sendPaymentConfirmed({
+        id:            order.id,
+        firstName:     order.firstName,
+        email:         order.email,
+        totalAmount:   order.totalAmount,
+        street:        order.street,
+        city:          order.city,
+        postalCode:    order.postalCode,
+        country:       order.country,
+        shippingMethod: order.shippingMethod,
+        items:         (order as any).items ?? [],
+      }),
+      '[Mail] Erro ao enviar confirmação de pagamento',
+    );
 
     // Enviar ebooks por email em background (não bloqueia a resposta)
-    this.deliverEbooks(orderId, order.email, order.firstName).catch(() => {});
+    this.fireAndForget(
+      () => this.deliverEbooks(orderId, order.email, order.firstName),
+      '[Mail] Erro ao entregar ebooks',
+    );
 
     return [payment, order];
   }
