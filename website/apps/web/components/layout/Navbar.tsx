@@ -115,6 +115,7 @@ export default function Navbar() {
             { href: `${prefix}/loja`, label: t('shop') },
             { href: `${prefix}/sobre`, label: t('about') },
             { href: `${prefix}/contacto`, label: t('contact') },
+            ...(authUser?.role === 'ADMIN' ? [{ href: `${prefix}/admin`, label: t('admin') }] : []),
           ].map(({ href, label }) => (
             <Link
               key={href}

@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   UseGuards,
@@ -46,6 +47,13 @@ export class OrdersController {
     return this.ordersService.findById(id);
   }
 
+  // Admin: atualizar estado de várias encomendas de uma vez
+  @Patch('bulk/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  updateManyStatus(@Body('ids') ids: string[], @Body('status') status: string) {
+    return this.ordersService.updateManyStatus(ids, status);
+  }
+
   // Admin: atualizar estado da encomenda
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -58,5 +66,19 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   confirmPayment(@Param('id') id: string) {
     return this.ordersService.confirmPayment(id);
+  }
+
+  // Admin: apagar várias encomendas de uma vez
+  @Delete('bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  removeMany(@Body('ids') ids: string[]) {
+    return this.ordersService.removeMany(ids);
+  }
+
+  // Admin: apagar uma encomenda
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  remove(@Param('id') id: string) {
+    return this.ordersService.remove(id);
   }
 }

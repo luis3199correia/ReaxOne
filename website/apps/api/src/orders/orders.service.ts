@@ -219,6 +219,28 @@ export class OrdersService {
     return order;
   }
 
+  async remove(id: string) {
+    await this.prisma.$transaction([
+      this.prisma.payment.deleteMany({ where: { orderId: id } }),
+      this.prisma.orderItem.deleteMany({ where: { orderId: id } }),
+      this.prisma.order.delete({ where: { id } }),
+    ]);
+    return { id };
+  }
+
+  async removeMany(ids: string[]) {
+    await this.prisma.$transaction([
+      this.prisma.payment.deleteMany({ where: { orderId: { in: ids } } }),
+      this.prisma.orderItem.deleteMany({ where: { orderId: { in: ids } } }),
+      this.prisma.order.deleteMany({ where: { id: { in: ids } } }),
+    ]);
+    return { ids };
+  }
+
+  async updateManyStatus(ids: string[], status: string) {
+    return Promise.all(ids.map((id) => this.updateStatus(id, status)));
+  }
+
   async confirmPayment(orderId: string) {
     const [payment, order] = await this.prisma.$transaction([
       this.prisma.payment.update({
