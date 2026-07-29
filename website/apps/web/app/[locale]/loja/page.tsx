@@ -35,6 +35,7 @@ export default function ShopPage() {
   const [activeCategory, setActiveCategory] = useState<string>('__all__');
   const [sort, setSort] = useState<SortKey>('newest');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
@@ -54,7 +55,10 @@ export default function ShopPage() {
         );
         if (match) setActiveCategory(match.slug);
       }
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((err) => {
+      console.error('[Loja] Erro ao carregar produtos/categorias:', err);
+      setLoadError(true);
+    }).finally(() => setLoading(false));
   }, [initialCatSlug]);
 
   const ALL_KEY = '__all__';
@@ -180,8 +184,15 @@ export default function ShopPage() {
             </div>
           )}
 
+          {/* Erro ao carregar */}
+          {!loading && loadError && (
+            <div className="py-24 text-center text-red-500">
+              <p className="text-lg">Não foi possível carregar os produtos. Tenta atualizar a página.</p>
+            </div>
+          )}
+
           {/* Empty */}
-          {!loading && filtered.length === 0 && (
+          {!loading && !loadError && filtered.length === 0 && (
             <div className="py-24 text-center text-brand-muted">
               <p className="text-lg">{t('no_products_category')}</p>
             </div>

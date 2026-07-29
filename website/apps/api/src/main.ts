@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('CORS');
 
   // Cookie parser (para JWT em httpOnly cookies)
   app.use(cookieParser());
@@ -32,7 +33,11 @@ async function bootstrap() {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(new Error(`CORS: origem não permitida — ${origin}`));
+        // callback(null, false) em vez de callback(new Error(...)): rejeita o CORS
+        // de forma limpa (sem cabeçalho Access-Control-Allow-Origin), sem fazer o
+        // Nest tratar isto como uma exceção não apanhada e devolver 500.
+        logger.warn(`Origem não permitida: ${origin}`);
+        callback(null, false);
       }
     },
     credentials: true, // necessário para cookies httpOnly
