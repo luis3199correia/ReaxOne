@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCartStore } from '@/store/cart';
 
 export default function CartPage() {
@@ -28,8 +29,16 @@ export default function CartPage() {
         {/* Cart items */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
-            <div key={`${item.id}-${item.size}`} className="card p-4 flex gap-4">
-              <div className="w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0" />
+            <div key={`${item.id}-${item.size}`} className="card p-4 flex flex-col sm:flex-row gap-4">
+              <div className="relative w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                <Image
+                  src={item.image ?? '/images/placeholder.png'}
+                  alt={item.name}
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                />
+              </div>
               <div className="flex-1">
                 <h3 className="font-semibold">{item.name}</h3>
                 {item.size && (
@@ -41,24 +50,24 @@ export default function CartPage() {
                   €{(item.price * item.quantity).toFixed(2)}
                 </p>
               </div>
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-2">
                 <button
                   onClick={() => removeItem(item.id, item.size)}
-                  className="text-gray-400 hover:text-red-500 text-sm"
+                  className="text-gray-400 hover:text-red-500 text-sm whitespace-nowrap shrink-0"
                 >
                   {t('remove')}
                 </button>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => updateQuantity(item.id, item.size, item.quantity - 1)}
-                    className="border rounded w-8 h-8 flex items-center justify-center"
+                    className="border rounded w-8 h-8 flex items-center justify-center shrink-0"
                   >
                     -
                   </button>
                   <span>{item.quantity}</span>
                   <button
                     onClick={() => updateQuantity(item.id, item.size, item.quantity + 1)}
-                    className="border rounded w-8 h-8 flex items-center justify-center"
+                    className="border rounded w-8 h-8 flex items-center justify-center shrink-0"
                   >
                     +
                   </button>
