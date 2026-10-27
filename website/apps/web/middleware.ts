@@ -25,7 +25,7 @@ export default function middleware(request: NextRequest) {
     const isComingSoonPage = /^\/(pt|en)\/coming-soon/.test(pathname);
     const isAdminRoute     = /^\/(pt|en)\/admin/.test(pathname);
     const isAuthRoute      = /^\/(pt|en)\/auth/.test(pathname);
-    const isStatic         = pathname.startsWith('/_next') || pathname.startsWith('/images') || pathname === '/favicon.ico';
+    const isStatic         = pathname.startsWith('/_next') || pathname.startsWith('/images') || pathname === '/favicon.ico' || pathname === '/apple-icon.png';
     const hasPreview       = request.cookies.get('reaxone_preview')?.value === '1';
 
     // Qualquer utilizador com sessão válida bypassa a landing
@@ -79,5 +79,5 @@ export default function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|images|sitemap.xml|robots.txt).*)'],
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|apple-icon.png|images|sitemap.xml|robots.txt).*)'],
 };
