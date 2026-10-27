@@ -7,11 +7,10 @@ import { locales } from '@/i18n/config';
 import ConditionalShell from '@/components/layout/ConditionalShell';
 import { SettingsProvider } from '@/components/providers/SettingsProvider';
 import { fetchPublicSettings } from '@/lib/settings';
+import { BASE_URL } from '@/lib/seo';
 import '../globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
-
-const BASE_URL = 'https://reaxone.com';
 
 export async function generateMetadata({
   params,
@@ -36,14 +35,7 @@ export async function generateMetadata({
     ],
     authors: [{ name: 'ReaxOne', url: BASE_URL }],
     creator: 'ReaxOne',
-    alternates: {
-      canonical: `${BASE_URL}/${locale}`,
-      languages: {
-        'pt': `${BASE_URL}/pt`,
-        'en': `${BASE_URL}/en`,
-        'x-default': `${BASE_URL}/pt`,
-      },
-    },
+    // canonical/hreflang definidos em cada página indexável (ver lib/seo.ts)
     openGraph: {
       type: 'website',
       locale: isPt ? 'pt_PT' : 'en_US',

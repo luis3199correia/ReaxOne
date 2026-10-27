@@ -1,10 +1,11 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { ShoppingCart } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCartStore } from '@/store/cart';
+import { useCategoryLabel } from '@/lib/category';
 
 export interface Product {
   id: string;
@@ -14,6 +15,7 @@ export interface Product {
   price: number;
   images: string[];
   category?: string;
+  categoryEn?: string;
   categorySlug?: string;
   stock: number;
   badge?: string;
@@ -26,6 +28,7 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const locale = useLocale();
+  const categoryLabel = useCategoryLabel();
   const t = useTranslations('shop');
   const addItem = useCartStore((s) => s.addItem);
 
@@ -48,7 +51,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Link
-      href={`/${locale}/loja/${product.slug}`}
+      href={{ pathname: '/loja/[slug]', params: { slug: product.slug } }}
       className="group relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden flex flex-col"
     >
       {/* Image */}
@@ -78,7 +81,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       <div className="p-4 flex flex-col flex-1">
         {product.category && (
           <span className="text-xs text-brand-muted uppercase tracking-wider mb-1">
-            {product.category}
+            {categoryLabel(product.category, product.categorySlug, product.categoryEn)}
           </span>
         )}
         <h3 className="font-semibold text-brand-dark leading-snug mb-2 flex-1">

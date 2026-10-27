@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { LogOut, ShoppingBag, User } from 'lucide-react';
 
@@ -12,12 +12,12 @@ export default function ContaLayout({ children }: { children: React.ReactNode })
 
   async function handleLogout() {
     try { await api.post('/auth/logout'); } catch {}
-    router.push(`/${locale}/auth`);
+    router.push('/auth');
   }
 
   const links = [
-    { href: `/${locale}/conta`,        label: 'Encomendas', icon: ShoppingBag },
-    { href: `/${locale}/conta/perfil`, label: 'Perfil',     icon: User },
+    { href: '/conta',        label: 'Encomendas', icon: ShoppingBag },
+    { href: '/conta/perfil', label: 'Perfil',     icon: User },
   ];
 
   return (

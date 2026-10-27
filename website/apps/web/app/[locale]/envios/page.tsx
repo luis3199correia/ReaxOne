@@ -1,5 +1,5 @@
 import { getLocale } from 'next-intl/server';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { whatsappUrl, formatWhatsappDisplay, fetchPublicSettings } from '@/lib/settings';
 
 export default async function EnviosPage() {
@@ -48,7 +48,7 @@ export default async function EnviosPage() {
       </div>
 
       <div className="mt-12">
-        <Link href={`/${locale}/loja`} className="btn-primary inline-block">
+        <Link href="/loja" className="btn-primary inline-block">
           Voltar à loja
         </Link>
       </div>

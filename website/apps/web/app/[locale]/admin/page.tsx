@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { Package, ShoppingBag, Users, TrendingUp, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -88,7 +88,7 @@ export default function AdminDashboard() {
       <div className="card overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="text-base font-semibold text-brand-dark">Encomendas recentes</h2>
-          <Link href={`/${locale}/admin/encomendas`} className="text-sm text-brand-primary hover:underline">
+          <Link href="/admin/encomendas" className="text-sm text-brand-primary hover:underline">
             Ver todas →
           </Link>
         </div>

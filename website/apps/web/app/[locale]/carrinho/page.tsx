@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cart';
 
@@ -14,7 +14,7 @@ export default function CartPage() {
     return (
       <div className="max-w-7xl mx-auto px-6 py-24 text-center">
         <p className="text-xl text-gray-500 mb-8">{t('empty')}</p>
-        <Link href={`/${locale}/loja`} className="btn-primary">
+        <Link href="/loja" className="btn-primary">
           {t('continue_shopping')}
         </Link>
       </div>
@@ -91,7 +91,7 @@ export default function CartPage() {
             <span>{t('total')}</span>
             <span>€{total.toFixed(2)}</span>
           </div>
-          <Link href={`/${locale}/checkout`} className="btn-primary w-full text-center block">
+          <Link href="/checkout" className="btn-primary w-full text-center block">
             {t('checkout')}
           </Link>
         </div>

@@ -7,12 +7,13 @@ import { api } from '@/lib/api';
 interface Category {
   id: string;
   name: string;
+  nameEn?: string | null;
   slug: string;
   visible: boolean;
   _count: { products: number };
 }
 
-const EMPTY_FORM = { name: '', slug: '' };
+const EMPTY_FORM = { name: '', nameEn: '', slug: '' };
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -44,7 +45,7 @@ export default function AdminCategoriesPage() {
 
   function openEdit(c: Category) {
     setEditing(c);
-    setForm({ name: c.name, slug: c.slug });
+    setForm({ name: c.name, nameEn: c.nameEn ?? '', slug: c.slug });
     setModal('edit');
   }
 
@@ -57,6 +58,7 @@ export default function AdminCategoriesPage() {
 
   function handleName(value: string) {
     setForm((f) => ({
+      ...f,
       name: value,
       slug: modal === 'create'
         ? value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-')
@@ -69,9 +71,9 @@ export default function AdminCategoriesPage() {
     setSaving(true);
     try {
       if (modal === 'create') {
-        await api.post('/categories', { name: form.name, slug: form.slug });
+        await api.post('/categories', { name: form.name, nameEn: form.nameEn.trim() || undefined, slug: form.slug });
       } else if (editing) {
-        await api.patch(`/categories/${editing.id}`, { name: form.name, slug: form.slug });
+        await api.patch(`/categories/${editing.id}`, { name: form.name, nameEn: form.nameEn.trim() || null, slug: form.slug });
       }
       setSaved(true);
       setTimeout(() => { closeModal(); fetchCategories(); }, 800);
@@ -167,6 +169,7 @@ export default function AdminCategoriesPage() {
                   <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-4">
                       <p className="text-sm font-semibold text-brand-dark">{c.name}</p>
+                      <p className="text-xs text-gray-400">🇬🇧 {c.nameEn || <span className="italic">sem tradução</span>}</p>
                     </td>
                     <td className="px-4 py-4 hidden md:table-cell">
                       <code className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{c.slug}</code>
@@ -263,7 +266,7 @@ export default function AdminCategoriesPage() {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome * <span className="text-gray-400 font-normal">(Português)</span></label>
                 <input
                   type="text"
                   value={form.name}
@@ -271,6 +274,18 @@ export default function AdminCategoriesPage() {
                   className="input"
                   placeholder="Ex: Acessórios"
                   autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome <span className="text-gray-400 font-normal">(English)</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.nameEn}
+                  onChange={(e) => setForm((f) => ({ ...f, nameEn: e.target.value }))}
+                  className="input"
+                  placeholder="Ex: Accessories"
                 />
               </div>
               <div>

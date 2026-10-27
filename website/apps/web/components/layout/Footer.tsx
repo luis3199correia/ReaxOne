@@ -1,12 +1,11 @@
 import { useLocale, useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { Instagram } from 'lucide-react';
 
 
 export default function Footer() {
   const locale = useLocale();
-  const prefix = `/${locale}`;
   const t = useTranslations('footer');
 
   return (
@@ -38,26 +37,26 @@ export default function Footer() {
           <div>
             <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">{t('shop_heading')}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href={`${prefix}/loja`} className="hover:text-brand-green transition-colors">{t('all_products')}</Link></li>
-              <li><Link href={`${prefix}/loja?categoria=material-desportivo`} className="hover:text-brand-green transition-colors">{t('equipment')}</Link></li>
-              <li><Link href={`${prefix}/loja?categoria=ebooks`} className="hover:text-brand-green transition-colors">{t('ebooks')}</Link></li>
+              <li><Link href="/loja" className="hover:text-brand-green transition-colors">{t('all_products')}</Link></li>
+              <li><Link href={{ pathname: '/loja', query: { categoria: 'material-desportivo' } }} className="hover:text-brand-green transition-colors">{t('equipment')}</Link></li>
+              <li><Link href={{ pathname: '/loja', query: { categoria: 'ebooks' } }} className="hover:text-brand-green transition-colors">{t('ebooks')}</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">{t('company_heading')}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href={`${prefix}/sobre`} className="hover:text-brand-green transition-colors">{t('about')}</Link></li>
-              <li><Link href={`${prefix}/contacto`} className="hover:text-brand-green transition-colors">{t('contact')}</Link></li>
+              <li><Link href="/sobre" className="hover:text-brand-green transition-colors">{t('about')}</Link></li>
+              <li><Link href="/contacto" className="hover:text-brand-green transition-colors">{t('contact')}</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">{t('support_heading')}</h3>
             <ul className="space-y-2 text-sm">
-              <li><Link href={`${prefix}/envios`} className="hover:text-brand-green transition-colors">{t('shipping_returns')}</Link></li>
-              <li><Link href={`${prefix}/privacidade`} className="hover:text-brand-green transition-colors">{t('privacy')}</Link></li>
-              <li><Link href={`${prefix}/termos`} className="hover:text-brand-green transition-colors">{t('terms')}</Link></li>
+              <li><Link href="/envios" className="hover:text-brand-green transition-colors">{t('shipping_returns')}</Link></li>
+              <li><Link href="/privacidade" className="hover:text-brand-green transition-colors">{t('privacy')}</Link></li>
+              <li><Link href="/termos" className="hover:text-brand-green transition-colors">{t('terms')}</Link></li>
             </ul>
           </div>
         </div>

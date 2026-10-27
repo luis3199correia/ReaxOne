@@ -1,10 +1,9 @@
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 export default async function SobrePage() {
   const locale = await getLocale();
-  const prefix = `/${locale}`;
   const t = await getTranslations('about');
 
   const reactionItems = [
@@ -220,7 +219,7 @@ export default async function SobrePage() {
                 </li>
               ))}
             </ul>
-            <Link href={`${prefix}/loja`} className="btn-primary inline-block">
+            <Link href="/loja" className="btn-primary inline-block">
               {t('view_products')}
             </Link>
           </div>
@@ -260,7 +259,7 @@ export default async function SobrePage() {
                 <span key={i}>{line}{i === 0 && <br />}</span>
               ))}
             </h2>
-            <Link href={`${prefix}/loja`} className="btn-green text-lg px-10 py-4 inline-block">
+            <Link href="/loja" className="btn-green text-lg px-10 py-4 inline-block">
               {t('cta_btn')}
             </Link>
           </div>

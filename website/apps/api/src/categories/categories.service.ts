@@ -21,11 +21,11 @@ export class CategoriesService {
     });
   }
 
-  async create(data: { name: string; slug: string }) {
+  async create(data: { name: string; nameEn?: string; slug: string }) {
     return this.prisma.category.create({ data });
   }
 
-  async update(id: string, data: { name?: string; slug?: string; visible?: boolean }) {
+  async update(id: string, data: { name?: string; nameEn?: string | null; slug?: string; visible?: boolean }) {
     const cat = await this.prisma.category.findUnique({ where: { id } });
     if (!cat) throw new NotFoundException('Categoria não encontrada');
     return this.prisma.category.update({ where: { id }, data });

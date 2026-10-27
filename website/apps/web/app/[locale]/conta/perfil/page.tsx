@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useForm } from 'react-hook-form';
 import { api } from '@/lib/api';
 import { Loader2, Check } from 'lucide-react';
@@ -35,7 +35,7 @@ export default function PerfilPage() {
           phone:     data.phone     ?? '',
         });
       })
-      .catch(() => router.replace(`/${locale}/auth`))
+      .catch(() => router.replace('/auth'))
       .finally(() => setLoading(false));
   }, [locale, router, reset]);
 

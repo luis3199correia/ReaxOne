@@ -2,7 +2,7 @@
 
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { CheckCircle, Smartphone, Building2, ArrowRight } from 'lucide-react';
 import { whatsappUrl, formatWhatsappDisplay } from '@/lib/settings';
@@ -91,7 +91,7 @@ function ConfirmacaoContent() {
       )}
 
       <Link
-        href={`/${locale}/loja`}
+        href="/loja"
         className="btn-primary inline-flex items-center gap-2"
       >
         Continuar a comprar

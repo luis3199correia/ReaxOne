@@ -1,11 +1,13 @@
 import { Metadata } from 'next';
+import { localeAlternates } from '@/lib/seo';
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params;
+  const { locale, slug } = await params;
+  const alternates = localeAlternates(locale, `/loja/${slug}`);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
   try {
@@ -16,6 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: p.name,
       description: p.description ?? `${p.name} — €${p.price.toFixed(2)}. Encomenda agora na ReaxOne.`,
+      alternates,
       openGraph: {
         title: `${p.name} | ReaxOne`,
         description: p.description ?? `${p.name} — €${p.price.toFixed(2)}`,
@@ -25,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       },
     };
   } catch {
-    return { title: 'Produto | ReaxOne' };
+    return { title: 'Produto | ReaxOne', alternates };
   }
 }
 

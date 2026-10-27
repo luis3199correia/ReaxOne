@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from 'next-intl';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { Loader2, Truck, Check, Calculator, AlertTriangle, Phone, BookOpen } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import { api } from '@/lib/api';
@@ -205,7 +205,7 @@ export default function CheckoutPage() {
         method: paymentMethod,
         email:  data.email,
       });
-      router.push(`/${locale}/checkout/confirmacao?${params.toString()}`);
+      router.push({ pathname: '/checkout/confirmacao', query: Object.fromEntries(params) });
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao criar encomenda. Tenta novamente.');
     } finally {

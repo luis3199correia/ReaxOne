@@ -1,25 +1,33 @@
 import { Metadata } from 'next';
 import { getTranslations, getLocale } from 'next-intl/server';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { fetchPublicSettings } from '@/lib/settings';
+import { localeAlternates } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'ReaxOne — Treino de Reação',
-  description:
-    'Bolas de reação, packs de treino e ebooks para atletas de todos os níveis. Treina mais rápido, reage melhor. Envio para Portugal e Europa.',
-  openGraph: {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  return {
     title: 'ReaxOne — Treino de Reação',
-    description: 'Equipamento de treino de reação para atletas de todos os níveis.',
-    images: [{ url: '/images/og/og-default.jpg', width: 1200, height: 630, alt: 'ReaxOne' }],
-  },
-};
+    description:
+      'Bolas de reação, packs de treino e ebooks para atletas de todos os níveis. Treina mais rápido, reage melhor. Envio para Portugal e Europa.',
+    alternates: localeAlternates(locale),
+    openGraph: {
+      title: 'ReaxOne — Treino de Reação',
+      description: 'Equipamento de treino de reação para atletas de todos os níveis.',
+      images: [{ url: '/images/og/og-default.jpg', width: 1200, height: 630, alt: 'ReaxOne' }],
+    },
+  };
+}
 
 export default async function HomePage() {
   const t = await getTranslations('home');
   const tp = await getTranslations('products');
   const locale = await getLocale();
-  const prefix = `/${locale}`;
   const settings = await fetchPublicSettings();
 
   // Buscar produtos marcados como destaque no backoffice
@@ -96,10 +104,10 @@ export default async function HomePage() {
               {t('hero_subtitle')}
             </p>
             <div className="flex gap-4 flex-wrap">
-              <Link href={`${prefix}/loja`} className="btn-primary text-lg px-8 py-4">
+              <Link href="/loja" className="btn-primary text-lg px-8 py-4">
                 {t('shop_now')}
               </Link>
-              <Link href={`${prefix}/sobre`} className="btn-secondary text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-brand-dark">
+              <Link href="/sobre" className="btn-secondary text-lg px-8 py-4 border-white text-white hover:bg-white hover:text-brand-dark">
                 {t('about_us')}
               </Link>
             </div>
@@ -140,7 +148,7 @@ export default async function HomePage() {
             </h2>
           </div>
           <Link
-            href={`${prefix}/loja`}
+            href="/loja"
             className="text-sm font-semibold text-brand-primary hover:underline hidden md:block"
           >
             {t('see_all')}
@@ -151,7 +159,7 @@ export default async function HomePage() {
           {featuredProducts.map((product) => (
             <Link
               key={product.id}
-              href={`${prefix}/loja/${product.id}`}
+              href={{ pathname: '/loja/[slug]', params: { slug: product.id } }}
               className="group card hover:shadow-lg transition-shadow duration-300"
             >
               <div className="relative aspect-square overflow-hidden bg-brand-dark">
@@ -224,7 +232,7 @@ export default async function HomePage() {
             <p className="text-gray-400 mb-8 leading-relaxed">
               {t('lifestyle_desc')}
             </p>
-            <Link href={`${prefix}/sobre`} className="btn-green inline-block">
+            <Link href="/sobre" className="btn-green inline-block">
               {t('know_brand')}
             </Link>
           </div>

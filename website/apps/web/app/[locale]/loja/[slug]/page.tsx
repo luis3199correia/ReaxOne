@@ -2,12 +2,13 @@
 
 import { useState, useEffect, use } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useLocale, useTranslations, useMessages } from 'next-intl';
 import { ShoppingCart, ChevronLeft, Check, Shield, Truck, Loader2 } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { api } from '@/lib/api';
+import { useCategoryLabel } from '@/lib/category';
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
@@ -27,6 +28,7 @@ function toProduct(p: any): FullProduct {
     price: p.price,
     images: p.images ?? [],
     category: p.category?.name ?? undefined,
+    categoryEn: p.category?.nameEn ?? undefined,
     categorySlug: p.category?.slug ?? undefined,
     stock: p.stock,
     description: p.description ?? '',
@@ -38,6 +40,7 @@ function toProduct(p: any): FullProduct {
 export default function ProductPage({ params: paramsPromise }: Props) {
   const { slug } = use(paramsPromise);
   const locale = useLocale();
+  const categoryLabel = useCategoryLabel();
   const t = useTranslations('shop');
   const messages = useMessages() as any;
   const addItem = useCartStore((s) => s.addItem);
@@ -108,7 +111,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-24 text-center">
         <p className="text-xl text-gray-500 mb-6">{t('product_not_found')}</p>
-        <Link href={`/${locale}/loja`} className="btn-primary">
+        <Link href="/loja" className="btn-primary">
           {t('see_all_shop')}
         </Link>
       </div>
@@ -123,7 +126,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-brand-muted mb-8">
-          <Link href={`/${locale}/loja`} className="hover:text-brand-primary flex items-center gap-1 transition-colors">
+          <Link href="/loja" className="hover:text-brand-primary flex items-center gap-1 transition-colors">
             <ChevronLeft className="w-4 h-4" /> {t('back_to_shop')}
           </Link>
           <span>/</span>
@@ -170,7 +173,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
           <div className="flex flex-col">
             {product.category && (
               <span className="text-xs font-bold uppercase tracking-widest text-brand-muted mb-2">
-                {product.category}
+                {categoryLabel(product.category, product.categorySlug, product.categoryEn)}
               </span>
             )}
             <h1 className="text-3xl lg:text-4xl font-bold text-brand-dark mb-4 leading-tight">

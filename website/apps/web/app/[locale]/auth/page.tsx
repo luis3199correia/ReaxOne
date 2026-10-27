@@ -2,7 +2,7 @@
 
 import { useLocale } from 'next-intl';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useForm } from 'react-hook-form';
 import { api } from '@/lib/api';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function AuthPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.role) {
-          router.replace(data.role === 'ADMIN' ? `/${locale}/admin` : `/${locale}/conta`);
+          router.replace(data.role === 'ADMIN' ? '/admin' : '/conta');
         } else {
           setCheckingAuth(false);
         }
@@ -49,7 +49,7 @@ export default function AuthPage() {
     setError('');
     try {
       const res = await api.post('/auth/login', data);
-      router.push(res.data.role === 'ADMIN' ? `/${locale}/admin` : `/${locale}/conta`);
+      router.push(res.data.role === 'ADMIN' ? '/admin' : '/conta');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Credenciais inválidas. Tenta novamente.');
     }
@@ -69,7 +69,7 @@ export default function AuthPage() {
         email:     data.email,
         password:  data.password,
       });
-      router.push(res.data.role === 'ADMIN' ? `/${locale}/admin` : `/${locale}/conta`);
+      router.push(res.data.role === 'ADMIN' ? '/admin' : '/conta');
     } catch (err: any) {
       const msg = err.response?.data?.message;
       setError(

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
@@ -27,7 +27,7 @@ export default function AccountPage() {
     fetch(`${apiUrl}/auth/me`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (!data) { router.replace(`/${locale}/auth`); return; }
+        if (!data) { router.replace('/auth'); return; }
         setUserName(data.firstName ?? data.email);
         return api.get('/orders/mine');
       })

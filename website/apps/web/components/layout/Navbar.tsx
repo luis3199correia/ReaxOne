@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/navigation';
 import Image from 'next/image';
 import {
   ShoppingCart, User, Menu, X, Instagram, LayoutDashboard,
@@ -9,26 +10,28 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useCartStore } from '@/store/cart';
+import type { StaticPathname } from '@/i18n/routing';
 type AuthUser = { id: string; email: string; role: string } | null;
 
 export default function Navbar() {
   const t = useTranslations('nav');
   const tAdmin = useTranslations('admin');
   const locale = useLocale();
+  const pathname = usePathname();
+  const params = useParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [authUser, setAuthUser] = useState<AuthUser>(null);
   const { items } = useCartStore();
   const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
-  const prefix = `/${locale}`;
 
-  const adminLinks = [
-    { href: `${prefix}/admin`,               label: tAdmin('dashboard'), icon: LayoutDashboard },
-    { href: `${prefix}/admin/produtos`,      label: tAdmin('products'),  icon: Package },
-    { href: `${prefix}/admin/categorias`,    label: 'Categorias',        icon: Tag },
-    { href: `${prefix}/admin/encomendas`,    label: tAdmin('orders'),    icon: ShoppingBag },
-    { href: `${prefix}/admin/clientes`,      label: tAdmin('customers'), icon: Users },
-    { href: `${prefix}/admin/configuracoes`, label: tAdmin('settings'),  icon: Settings },
+  const adminLinks: { href: StaticPathname; label: string; icon: typeof Package }[] = [
+    { href: '/admin',               label: tAdmin('dashboard'), icon: LayoutDashboard },
+    { href: '/admin/produtos',      label: tAdmin('products'),  icon: Package },
+    { href: '/admin/categorias',    label: 'Categorias',        icon: Tag },
+    { href: '/admin/encomendas',    label: tAdmin('orders'),    icon: ShoppingBag },
+    { href: '/admin/clientes',      label: tAdmin('customers'), icon: Users },
+    { href: '/admin/configuracoes', label: tAdmin('settings'),  icon: Settings },
   ];
 
   useEffect(() => {
@@ -45,7 +48,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
 
         {/* Logo */}
-        <Link href={`${prefix}/`} className="flex items-center">
+        <Link href="/" className="flex items-center">
           <Image
             src="/images/identidade/texto-branco.svg"
             alt="ReaxOne"
@@ -58,13 +61,13 @@ export default function Navbar() {
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8">
-          <Link href={`${prefix}/loja`} className="text-sm font-medium hover:text-brand-green transition-colors">
+          <Link href="/loja" className="text-sm font-medium hover:text-brand-green transition-colors">
             {t('shop')}
           </Link>
-          <Link href={`${prefix}/sobre`} className="text-sm font-medium hover:text-brand-green transition-colors">
+          <Link href="/sobre" className="text-sm font-medium hover:text-brand-green transition-colors">
             {t('about')}
           </Link>
-          <Link href={`${prefix}/contacto`} className="text-sm font-medium hover:text-brand-green transition-colors">
+          <Link href="/contacto" className="text-sm font-medium hover:text-brand-green transition-colors">
             {t('contact')}
           </Link>
         </nav>
@@ -72,8 +75,12 @@ export default function Navbar() {
         {/* Actions */}
         <div className="flex items-center gap-5">
           {/* Language switcher */}
+          {/* Mantém a página atual, com o URL traduzido do outro idioma */}
           <Link
-            href={locale === 'pt' ? '/en' : '/pt'}
+            // pathname é a rota interna (ex: '/loja/[slug]') e params traz o slug
+            // @ts-expect-error -- combinação pathname/params resolvida em runtime
+            href={{ pathname, params }}
+            locale={locale === 'pt' ? 'en' : 'pt'}
             className="text-xs text-gray-500 hover:text-white uppercase tracking-widest transition-colors"
           >
             {locale === 'pt' ? 'EN' : 'PT'}
@@ -91,7 +98,7 @@ export default function Navbar() {
           </a>
 
           {/* Cart */}
-          <Link href={`${prefix}/carrinho`} className="relative hover:text-brand-green transition-colors">
+          <Link href="/carrinho" className="relative hover:text-brand-green transition-colors">
             <ShoppingCart className="w-5 h-5" />
             {cartCount > 0 && (
               <span className="absolute -top-2 -right-2 bg-brand-primary text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold">
@@ -132,11 +139,11 @@ export default function Navbar() {
               )}
             </div>
           ) : authUser ? (
-            <Link href={`${prefix}/conta`} className="hover:text-brand-green transition-colors" title="A minha conta">
+            <Link href="/conta" className="hover:text-brand-green transition-colors" title="A minha conta">
               <User className="w-5 h-5" />
             </Link>
           ) : (
-            <Link href={`${prefix}/auth`} className="hover:text-brand-green transition-colors" title="Entrar">
+            <Link href="/auth" className="hover:text-brand-green transition-colors" title="Entrar">
               <User className="w-5 h-5" />
             </Link>
           )}
@@ -151,11 +158,11 @@ export default function Navbar() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden bg-brand-gray border-t border-white/10 px-6 py-4 space-y-1">
-          {[
-            { href: `${prefix}/loja`, label: t('shop') },
-            { href: `${prefix}/sobre`, label: t('about') },
-            { href: `${prefix}/contacto`, label: t('contact') },
-          ].map(({ href, label }) => (
+          {([
+            { href: '/loja', label: t('shop') },
+            { href: '/sobre', label: t('about') },
+            { href: '/contacto', label: t('contact') },
+          ] satisfies { href: StaticPathname; label: string }[]).map(({ href, label }) => (
             <Link
               key={href}
               href={href}

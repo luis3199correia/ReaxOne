@@ -2,10 +2,11 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useTranslations, useMessages } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useCategoryLabel } from '@/lib/category';
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc';
 
@@ -18,6 +19,7 @@ function toProduct(p: any): Product {
     price: p.price,
     images: p.images ?? [],
     category: p.category?.name ?? undefined,
+    categoryEn: p.category?.nameEn ?? undefined,
     categorySlug: p.category?.slug ?? undefined,
     stock: p.stock,
     isEbook: p.category?.slug === 'ebooks' || !!p.ebookFile,
@@ -29,9 +31,9 @@ export default function ShopPage() {
   const searchParams = useSearchParams();
   const initialCatSlug = searchParams.get('categoria') ?? '';
 
-  const messages = useMessages() as any;
+  const categoryLabel = useCategoryLabel();
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<{ name: string; slug: string }[]>([]);
+  const [categories, setCategories] = useState<{ name: string; nameEn?: string; slug: string }[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('__all__');
   const [sort, setSort] = useState<SortKey>('newest');
   const [loading, setLoading] = useState(true);
@@ -46,7 +48,7 @@ export default function ShopPage() {
     ]).then(([prodRes, catRes]) => {
       setProducts(prodRes.data.map(toProduct));
 
-      setCategories(catRes.data.map((c: any) => ({ name: c.name, slug: c.slug })));
+      setCategories(catRes.data.map((c: any) => ({ name: c.name, nameEn: c.nameEn ?? undefined, slug: c.slug })));
 
       // Resolve a categoria inicial da querystring
       if (initialCatSlug) {
@@ -63,9 +65,6 @@ export default function ShopPage() {
 
   const ALL_KEY = '__all__';
 
-  function translateCategory(name: string, slug: string): string {
-    return messages?.category_names?.[slug] ?? name;
-  }
 
   const allCategories = [ALL_KEY, ...categories.map((c) => c.slug)];
 
@@ -101,7 +100,7 @@ export default function ShopPage() {
             <ul className="space-y-1">
               {allCategories.map((slug) => {
                 const catObj = categories.find((c) => c.slug === slug);
-                const label = catObj ? translateCategory(catObj.name, catObj.slug) : t('all_categories');
+                const label = catObj ? categoryLabel(catObj.name, catObj.slug, catObj.nameEn) : t('all_categories');
                 return (
                   <li key={slug}>
                     <button
@@ -158,7 +157,7 @@ export default function ShopPage() {
             <div className="md:hidden flex flex-wrap gap-2 mb-6">
               {allCategories.map((slug) => {
                 const catObj = categories.find((c) => c.slug === slug);
-                const label = catObj ? translateCategory(catObj.name, catObj.slug) : t('all_categories');
+                const label = catObj ? categoryLabel(catObj.name, catObj.slug, catObj.nameEn) : t('all_categories');
                 return (
                   <button
                     key={slug}

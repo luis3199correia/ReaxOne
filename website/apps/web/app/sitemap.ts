@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
-
-const BASE_URL = 'https://reaxone.com';
-const locales = ['pt', 'en'] as const;
+import { locales } from '@/i18n/config';
+import { BASE_URL, hreflangLanguages } from '@/lib/seo';
+import { localizePath } from '@/i18n/routing';
 
 // Rotas públicas indexáveis
 const staticRoutes = [
@@ -20,15 +20,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Páginas estáticas — uma entrada por locale, com alternates hreflang
   const staticEntries: MetadataRoute.Sitemap = staticRoutes.flatMap(({ path, priority, changeFrequency }) =>
     locales.map((locale) => ({
-      url: `${BASE_URL}/${locale}${path}`,
+      url: `${BASE_URL}${localizePath(locale, path)}`,
       lastModified: now,
       changeFrequency,
       priority,
-      alternates: {
-        languages: Object.fromEntries(
-          locales.map((l) => [l, `${BASE_URL}/${l}${path}`])
-        ),
-      },
+      alternates: { languages: hreflangLanguages(path) },
     })),
   );
 
@@ -41,15 +37,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const products: { slug: string; updatedAt: string }[] = await res.json();
       productEntries = locales.flatMap((locale) =>
         products.map((p) => ({
-          url: `${BASE_URL}/${locale}/loja/${p.slug}`,
+          url: `${BASE_URL}${localizePath(locale, `/loja/${p.slug}`)}`,
           lastModified: new Date(p.updatedAt),
           changeFrequency: 'weekly' as const,
           priority: 0.8,
-          alternates: {
-            languages: Object.fromEntries(
-              locales.map((l) => [l, `${BASE_URL}/${l}/loja/${p.slug}`])
-            ),
-          },
+          alternates: { languages: hreflangLanguages(`/loja/${p.slug}`) },
         })),
       );
     }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { ShoppingCart, X, Check } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
@@ -80,7 +80,7 @@ export default function CartToast() {
           {t('continue')}
         </button>
         <Link
-          href={`/${locale}/carrinho`}
+          href="/carrinho"
           onClick={() => { setVisible(false); clearLastAdded(); }}
           className="flex-1 btn-primary py-2 text-sm flex items-center justify-center gap-1.5"
         >

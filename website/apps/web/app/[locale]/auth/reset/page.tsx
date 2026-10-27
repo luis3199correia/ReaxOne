@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
 import { api } from '@/lib/api';
 import { Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -37,7 +38,7 @@ function ResetForm() {
     try {
       await api.post('/auth/reset-password', { token, password });
       setStatus('success');
-      setTimeout(() => router.push(`/${locale}/auth`), 2500);
+      setTimeout(() => router.push('/auth'), 2500);
     } catch (err: any) {
       setErrorMsg(err?.response?.data?.message ?? 'Link expirado ou inválido. Pede um novo link.');
       setStatus('error');

@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link } from '@/i18n/navigation';
+import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
+import type { StaticPathname } from '@/i18n/routing';
 import {
   LayoutDashboard,
   Package,
@@ -28,16 +29,16 @@ export default function AdminSidebar() {
 
   async function handleLogout() {
     try { await api.post('/auth/logout'); } catch {}
-    router.push(`/${locale}/auth`);
+    router.push('/auth');
   }
 
-  const links = [
-    { href: `/${locale}/admin`,               label: t('dashboard'), icon: LayoutDashboard },
-    { href: `/${locale}/admin/produtos`,      label: t('products'),  icon: Package },
-    { href: `/${locale}/admin/categorias`,    label: 'Categorias',   icon: Tag },
-    { href: `/${locale}/admin/encomendas`,    label: t('orders'),    icon: ShoppingBag },
-    { href: `/${locale}/admin/clientes`,      label: t('customers'), icon: Users },
-    { href: `/${locale}/admin/configuracoes`, label: t('settings'),  icon: Settings },
+  const links: { href: StaticPathname; label: string; icon: typeof Package }[] = [
+    { href: '/admin',               label: t('dashboard'), icon: LayoutDashboard },
+    { href: '/admin/produtos',      label: t('products'),  icon: Package },
+    { href: '/admin/categorias',    label: 'Categorias',   icon: Tag },
+    { href: '/admin/encomendas',    label: t('orders'),    icon: ShoppingBag },
+    { href: '/admin/clientes',      label: t('customers'), icon: Users },
+    { href: '/admin/configuracoes', label: t('settings'),  icon: Settings },
   ];
 
   function NavLinks() {
@@ -63,7 +64,7 @@ export default function AdminSidebar() {
         })}
         <div className="pt-2 border-t border-white/10 mt-2">
           <Link
-            href={`/${locale}`}
+            href="/"
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
           >
@@ -97,7 +98,7 @@ export default function AdminSidebar() {
           REAX<span className="text-brand-primary">ONE</span>
         </p>
         <Link
-          href={`/${locale}`}
+          href="/"
           className="text-gray-300 hover:text-white p-1"
           title="Ver site"
           aria-label="Ver site"

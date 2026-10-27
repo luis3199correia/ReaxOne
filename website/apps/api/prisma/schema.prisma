@@ -56,6 +56,7 @@ model Address {
 model Category {
   id       String    @id @default(cuid())
   name     String
+  nameEn   String?
   slug     String    @unique
   visible  Boolean   @default(true)
   products Product[]
