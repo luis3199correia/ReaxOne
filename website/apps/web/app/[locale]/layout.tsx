@@ -27,8 +27,8 @@ export async function generateMetadata({
       template: '%s | ReaxOne',
     },
     description: isPt
-      ? 'Equipamento de treino de reação para atletas de todos os níveis. Bolas de reação, packs de treino e ebooks. Envio para Portugal e Europa.'
-      : 'Reaction training equipment for athletes of all levels. Reaction balls, training packs and ebooks. Shipping to Portugal and Europe.',
+      ? 'Equipamento de treino de reação para atletas de todos os níveis. Bolas de reação, packs de treino e meias. Envio para Portugal e Europa.'
+      : 'Reaction training equipment for athletes of all levels. Reaction balls, training packs and socks. Shipping to Portugal and Europe.',
     keywords: [
       'bola de reação', 'treino de reação', 'reaction ball', 'equipamento desportivo',
       'treino funcional', 'desporto portugal', 'reaxone',
@@ -43,8 +43,8 @@ export async function generateMetadata({
       siteName: 'ReaxOne',
       title: isPt ? 'ReaxOne — Treino de Reação' : 'ReaxOne — Reaction Training',
       description: isPt
-        ? 'Equipamento de treino de reação para atletas de todos os níveis. Bolas de reação, packs e ebooks.'
-        : 'Reaction training equipment for athletes of all levels. Reaction balls, packs and ebooks.',
+        ? 'Equipamento de treino de reação para atletas de todos os níveis. Bolas de reação, packs e meias.'
+        : 'Reaction training equipment for athletes of all levels. Reaction balls, packs and socks.',
       images: [
         {
           url: '/images/og/og-default.jpg',

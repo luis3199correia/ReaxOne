@@ -11,14 +11,19 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
+  const isPt = locale === 'pt';
+  const title = isPt ? 'ReaxOne — Treino de Reação' : 'ReaxOne — Reaction Training';
   return {
-    title: 'ReaxOne — Treino de Reação',
-    description:
-      'Bolas de reação, packs de treino e ebooks para atletas de todos os níveis. Treina mais rápido, reage melhor. Envio para Portugal e Europa.',
+    title,
+    description: isPt
+      ? 'Bolas de reação, packs de treino e meias para atletas de todos os níveis. Treina mais rápido, reage melhor. Envio para Portugal e Europa.'
+      : 'Reaction balls, training packs and socks for athletes of all levels. Train faster, react better. Shipping to Portugal and Europe.',
     alternates: localeAlternates(locale),
     openGraph: {
-      title: 'ReaxOne — Treino de Reação',
-      description: 'Equipamento de treino de reação para atletas de todos os níveis.',
+      title,
+      description: isPt
+        ? 'Equipamento de treino de reação para atletas de todos os níveis.'
+        : 'Reaction training equipment for athletes of all levels.',
       images: [{ url: '/images/og/og-default.jpg', width: 1200, height: 630, alt: 'ReaxOne' }],
     },
   };
