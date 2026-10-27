@@ -218,6 +218,9 @@ export default async function HomePage() {
                 className="object-contain"
               />
             </div>
+            <h2 className="text-xl md:text-2xl font-bold mb-4">
+              {t('lifestyle_title')}
+            </h2>
             <p className="text-gray-400 mb-8 leading-relaxed">
               {t('lifestyle_desc')}
             </p>
