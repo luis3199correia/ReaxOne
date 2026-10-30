@@ -83,7 +83,7 @@ export default async function HomePage() {
       <section className="relative h-[90vh] min-h-[600px] flex items-center overflow-hidden">
         <Image
           src="/images/hero/joao-bola-verde-closeup-mao.jpg"
-          alt="ReaxOne — Treino de reação"
+          alt={locale === 'en' ? 'ReaxOne — Reaction training' : 'ReaxOne — Treino de reação'}
           fill
           priority
           className="object-cover object-top"
@@ -215,7 +215,7 @@ export default async function HomePage() {
         <div className="relative min-h-[400px]">
           <Image
             src="/images/hero/joao-corrida-exterior-bola-verde.jpg"
-            alt="Treino exterior com ReaxOne"
+            alt={locale === 'en' ? 'Outdoor training with ReaxOne' : 'Treino exterior com ReaxOne'}
             fill
             className="object-cover"
           />

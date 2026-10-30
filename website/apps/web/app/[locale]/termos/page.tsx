@@ -1,4 +1,5 @@
 import { getLocale } from 'next-intl/server';
+import { Link } from '@/i18n/navigation';
 import { fetchPublicSettings, formatEuro } from '@/lib/settings';
 
 const linkClass = 'text-brand-primary hover:underline';
@@ -41,7 +42,8 @@ function TermosPt({ freeShippingThreshold }: { freeShippingThreshold: number }) 
 
         <section>
           <h2 className={h2Class}>5. Entregas</h2>
-          <p>As encomendas são processadas em 1 a 2 dias úteis após a confirmação do pagamento e entregues em Portugal Continental em 2 a 4 dias úteis. Os portes têm o custo de 4,93 € (IVA incluído){freeShippingThreshold > 0 && ` e são gratuitos em encomendas a partir de ${formatEuro(freeShippingThreshold, 'pt')}`}. Para entregas nas Regiões Autónomas ou noutros países, contacte-nos antes de encomendar.</p>
+          <p>As encomendas são processadas em 1 a 2 dias úteis após a confirmação do pagamento e entregues em Portugal Continental em 2 a 4 dias úteis. Os portes para Portugal Continental têm o custo de 4,93 € (IVA incluído){freeShippingThreshold > 0 && ` e são gratuitos em encomendas a partir de ${formatEuro(freeShippingThreshold, 'pt')}`}.</p>
+          <p className="mt-3">Enviamos também para Espanha e para vários países da União Europeia. Os prazos e os portes de cada destino constam da página <Link href="/envios" className={linkClass}>Envios e devoluções</Link> e são indicados no checkout antes de concluir a encomenda. Para entregas nas Regiões Autónomas (Açores e Madeira), contacte-nos antes de encomendar.</p>
         </section>
 
         <section>
@@ -130,7 +132,8 @@ function TermosEn({ freeShippingThreshold }: { freeShippingThreshold: number }) 
 
         <section>
           <h2 className={h2Class}>5. Delivery</h2>
-          <p>Orders are processed within 1 to 2 business days after payment confirmation and delivered in mainland Portugal within 2 to 4 business days. Shipping costs €4.93 (VAT included){freeShippingThreshold > 0 && ` and is free on orders of ${formatEuro(freeShippingThreshold, 'en')} or more`}. For deliveries to the Azores, Madeira or other countries, please contact us before ordering.</p>
+          <p>Orders are processed within 1 to 2 business days after payment confirmation and delivered in mainland Portugal within 2 to 4 business days. Shipping to mainland Portugal costs €4.93 (VAT included){freeShippingThreshold > 0 && ` and is free on orders of ${formatEuro(freeShippingThreshold, 'en')} or more`}.</p>
+          <p className="mt-3">We also ship to Spain and to several European Union countries. Delivery times and shipping costs for each destination are listed on the <Link href="/envios" className={linkClass}>Shipping &amp; Returns</Link> page and shown at checkout before you complete your order. For deliveries to the Azores and Madeira, please contact us before ordering.</p>
         </section>
 
         <section>

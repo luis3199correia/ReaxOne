@@ -75,7 +75,7 @@ export default async function ComingSoonPage() {
         </main>
 
         <footer className="px-8 pb-8 text-center text-xs text-gray-700">
-          © {new Date().getFullYear()} ReaxOne® — Feito em Portugal 🇵🇹
+          © {new Date().getFullYear()} ReaxOne® — Marca portuguesa 🇵🇹
         </footer>
       </div>
     </div>

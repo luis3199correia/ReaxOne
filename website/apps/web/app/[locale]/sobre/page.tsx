@@ -40,7 +40,7 @@ export default async function SobrePage() {
       <section className="relative h-[80vh] min-h-[560px] flex items-end overflow-hidden">
         <Image
           src="/images/lifestyle/joao-treino-reacao-indoor-agachamento.jpg"
-          alt="ReaxOne — Performance Primeiro"
+          alt={locale === 'en' ? 'ReaxOne — Performance First' : 'ReaxOne — Performance Primeiro'}
           fill
           priority
           className="object-cover object-center"
