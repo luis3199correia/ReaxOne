@@ -50,9 +50,16 @@ function addIVA(opts: Omit<ShippingOption, 'price'>[]): ShippingOption[] {
   }));
 }
 
-export function getShippingOptions(zone: ShippingZone): ShippingOption[] {
+// Portes grátis em Portugal Continental a partir deste subtotal (IVA incluído)
+export const FREE_SHIPPING_THRESHOLD = 35;
+
+export function getShippingOptions(zone: ShippingZone, subtotal = 0): ShippingOption[] {
   if (zone === 'BLOCKED') return [];
-  return addIVA(RAW[zone]);
+  const opts = addIVA(RAW[zone]);
+  if (zone === 'PT_CONTINENTAL' && subtotal >= FREE_SHIPPING_THRESHOLD) {
+    return opts.map((o) => ({ ...o, price: 0 }));
+  }
+  return opts;
 }
 
 // Países por zona

@@ -17,7 +17,7 @@
     "featured_products": "Featured products",
     "categories": "Categories",
     "about_us": "About us",
-    "trust_shipping": "Ships in 24h",
+    "trust_shipping": "Ships in 1–2 business days",
     "trust_tech": "Exclusive technology",
     "trust_athletes": "Made for athletes",
     "trust_motto": "React First. Win More.",
@@ -56,7 +56,7 @@
     "product_plural": "products",
     "in_stock": "In stock",
     "units": "units",
-    "shipping_free": "Free shipping on orders over €50",
+    "shipping_free": "Free shipping on orders from €35",
     "secure_payment": "Secure payment via MB Way or bank transfer",
     "related_products": "You may also like",
     "back_to_shop": "Shop",
@@ -267,7 +267,13 @@
     "privacy": "Privacy",
     "terms": "Terms",
     "rights": "All rights reserved.",
-    "made_in": "Made in Portugal"
+    "made_in": "Made in Portugal",
+    "legal_brand": "ReaxOne® is a brand of Quimera Pragmática, Lda.",
+    "registered_office": "Registered office",
+    "company_id": "Tax ID and registration no.",
+    "share_capital": "Share capital",
+    "complaints_book": "Electronic Complaints Book",
+    "dispute_resolution": "Alternative dispute resolution"
   },
   "whatsapp": {
     "tooltip": "Need help? Chat with us!",

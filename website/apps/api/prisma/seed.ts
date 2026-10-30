@@ -57,8 +57,8 @@ async function main() {
     { key: 'store_email', value: 'geral@reaxone.com' },
     { key: 'mbway_phone', value: '' },
     { key: 'iban', value: '' },
-    { key: 'shipping_free_above', value: '50' },
-    { key: 'shipping_flat_rate', value: '3.99' },
+    { key: 'shipping_free_above', value: '35' },
+    { key: 'shipping_flat_rate', value: '4.93' },
   ];
 
   for (const s of settings) {

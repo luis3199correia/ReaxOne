@@ -61,6 +61,29 @@ export default function Footer() {
           </div>
         </div>
 
+        <div className="border-t border-white/10 pt-6 mb-6 space-y-1 text-xs leading-relaxed text-gray-500">
+          <p>{t('legal_brand')}</p>
+          <p>
+            {t('registered_office')}: Rua Gago Coutinho e Sacadura Cabral, n.º 16, 1.º Esq., 2745-112 Queluz
+            {' · '}{t('company_id')}: 519180976
+            {' · '}{t('share_capital')}: 500 €
+          </p>
+          <p>
+            {t('contact')}:{' '}
+            <a href="mailto:contact@reaxone.com" className="hover:text-brand-green transition-colors">contact@reaxone.com</a>
+            {' · '}
+            <a href="tel:+351928456870" className="hover:text-brand-green transition-colors">+351 928 456 870</a>
+          </p>
+          <p>
+            {t('complaints_book')}:{' '}
+            <a href="https://www.livroreclamacoes.pt" target="_blank" rel="noopener noreferrer" className="hover:text-brand-green transition-colors">www.livroreclamacoes.pt</a>
+          </p>
+          <p>
+            {t('dispute_resolution')}: CNIACC –{' '}
+            <a href="https://www.cniacc.pt" target="_blank" rel="noopener noreferrer" className="hover:text-brand-green transition-colors">www.cniacc.pt</a>
+          </p>
+        </div>
+
         <div className="border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-gray-600">
           <p>© {new Date().getFullYear()} ReaxOne®. {t('rights')}</p>
           <p>🇵🇹 {t('made_in')}</p>

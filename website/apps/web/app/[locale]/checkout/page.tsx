@@ -135,7 +135,7 @@ export default function CheckoutPage() {
   /* ── Calcular portes ── */
   function calculateShipping() {
     const zone = detectZone(activeCountry, activeZip);
-    const opts = getShippingOptions(zone);
+    const opts = getShippingOptions(zone, total);
     setShippingZone(zone);
     setShippingOptions(opts);
     setShippingCalculated(true);
@@ -466,7 +466,9 @@ export default function CheckoutPage() {
                             </div>
                           </div>
                           <span className="font-bold text-brand-dark whitespace-nowrap">
-                            €{opt.price.toFixed(2)}
+                            {opt.price === 0
+                              ? <span className="text-brand-green">Grátis</span>
+                              : `€${opt.price.toFixed(2)}`}
                           </span>
                         </label>
                       ))}
@@ -542,7 +544,7 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-sm">
                 <span>Envio</span>
                 <span className="text-gray-400">
-                  {isAllEbooks
+                  {isAllEbooks || (shippingCalculated && selectedShipping && shippingCost === 0)
                     ? <span className="text-brand-green font-medium">Grátis</span>
                     : !shippingCalculated
                     ? <span className="italic text-xs">a calcular</span>

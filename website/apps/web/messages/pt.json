@@ -17,7 +17,7 @@
     "featured_products": "Produtos em destaque",
     "categories": "Categorias",
     "about_us": "Sobre nós",
-    "trust_shipping": "Envio em 24h",
+    "trust_shipping": "Envio em 1 a 2 dias úteis",
     "trust_tech": "Tecnologia exclusiva",
     "trust_athletes": "Feito para atletas",
     "trust_motto": "React First. Win More.",
@@ -56,7 +56,7 @@
     "product_plural": "produtos",
     "in_stock": "Em stock",
     "units": "unidades",
-    "shipping_free": "Envio grátis em encomendas acima de €50",
+    "shipping_free": "Portes grátis em encomendas a partir de €35",
     "secure_payment": "Pagamento seguro via MB Way ou transferência",
     "related_products": "Também podes gostar",
     "back_to_shop": "Loja",
@@ -267,7 +267,13 @@
     "privacy": "Privacidade",
     "terms": "Termos",
     "rights": "Todos os direitos reservados.",
-    "made_in": "Feito em Portugal"
+    "made_in": "Feito em Portugal",
+    "legal_brand": "ReaxOne® é uma marca de Quimera Pragmática, Lda.",
+    "registered_office": "Sede",
+    "company_id": "NIPC e n.º de matrícula",
+    "share_capital": "Capital social",
+    "complaints_book": "Livro de Reclamações Eletrónico",
+    "dispute_resolution": "Resolução alternativa de litígios"
   },
   "whatsapp": {
     "tooltip": "Precisas de ajuda? Fala connosco!",
