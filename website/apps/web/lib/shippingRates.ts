@@ -1,4 +1,5 @@
 // Tabela de preços derivada de tabela_precos.csv
+// A API recalcula os portes em apps/api/src/orders/shipping-rates.ts — manter em sincronia.
 // Preços base sem IVA — IVA (23%) adicionado em getShippingOptions()
 
 export const IVA_RATE = 0.23;
@@ -50,13 +51,12 @@ function addIVA(opts: Omit<ShippingOption, 'price'>[]): ShippingOption[] {
   }));
 }
 
-// Portes grátis em Portugal Continental a partir deste subtotal (IVA incluído)
-export const FREE_SHIPPING_THRESHOLD = 35;
-
-export function getShippingOptions(zone: ShippingZone, subtotal = 0): ShippingOption[] {
+// freeAbove: subtotal a partir do qual os portes em Portugal Continental são
+// grátis (configurado no backoffice); 0 desativa.
+export function getShippingOptions(zone: ShippingZone, subtotal = 0, freeAbove = 0): ShippingOption[] {
   if (zone === 'BLOCKED') return [];
   const opts = addIVA(RAW[zone]);
-  if (zone === 'PT_CONTINENTAL' && subtotal >= FREE_SHIPPING_THRESHOLD) {
+  if (zone === 'PT_CONTINENTAL' && freeAbove > 0 && subtotal >= freeAbove) {
     return opts.map((o) => ({ ...o, price: 0 }));
   }
   return opts;

@@ -56,7 +56,7 @@
     "product_plural": "products",
     "in_stock": "In stock",
     "units": "units",
-    "shipping_free": "Free shipping on orders from €35",
+    "shipping_free": "Free shipping on orders from {amount}",
     "secure_payment": "Secure payment via MB Way or bank transfer",
     "related_products": "You may also like",
     "back_to_shop": "Shop",

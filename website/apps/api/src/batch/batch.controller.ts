@@ -1,5 +1,6 @@
 import { Controller, Post, Get, Body, Param, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
 import { BatchService } from './batch.service';
 
 @Controller('shipping')
@@ -16,7 +17,7 @@ export class BatchController {
 
   // Debug — resposta em bruto do zipcode/methods (admin apenas)
   @Post('methods/raw')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   async getMethodsRaw(@Body() body: { zipcode: string }) {
     const headers = await (this as any).batchService.authHeader();
     const FormData = require('form-data');
@@ -31,21 +32,21 @@ export class BatchController {
 
   // Admin — listar lojas Batch
   @Get('stores')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   getStores() {
     return this.batchService.getStores();
   }
 
   // Admin — estado de uma encomenda Batch
   @Post('order/:batchNumber/status')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   getStatus(@Param('batchNumber') batchNumber: string) {
     return this.batchService.getOrderStatus(batchNumber);
   }
 
   // Admin — tracking de uma encomenda Batch
   @Post('order/:batchNumber/tracking')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   getTracking(@Param('batchNumber') batchNumber: string) {
     return this.batchService.getOrderTracking(batchNumber);
   }

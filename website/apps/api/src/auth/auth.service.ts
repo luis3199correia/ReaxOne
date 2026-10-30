@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -44,7 +45,7 @@ export class AuthService {
     if (!user) return { ok: true };
 
     const token = this.jwtService.sign(
-      { sub: user.id, type: 'password-reset' },
+      { sub: user.id, type: 'password-reset', pwh: this.passwordFingerprint(user.password) },
       { expiresIn: '15m' },
     );
 
@@ -61,7 +62,7 @@ export class AuthService {
   }
 
   async resetPassword(token: string, newPassword: string) {
-    let payload: { sub: string; type: string };
+    let payload: { sub: string; type: string; pwh?: string };
     try {
       payload = this.jwtService.verify(token);
     } catch {
@@ -72,6 +73,15 @@ export class AuthService {
       throw new BadRequestException('Token inválido');
     }
 
+    // Token de uso único: deixa de ser válido assim que a password muda
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { password: true },
+    });
+    if (!user || !payload.pwh || payload.pwh !== this.passwordFingerprint(user.password)) {
+      throw new BadRequestException('Link expirado ou inválido');
+    }
+
     const hashed = await bcrypt.hash(newPassword, 10);
     await this.prisma.user.update({
       where: { id: payload.sub },
@@ -79,6 +89,11 @@ export class AuthService {
     });
 
     return { ok: true };
+  }
+
+  /** Impressão digital do hash atual da password (não revela o hash) */
+  private passwordFingerprint(passwordHash: string) {
+    return createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
   }
 
   private signToken(user: { id: string; email: string; role: string }) {

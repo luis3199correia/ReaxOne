@@ -1,12 +1,38 @@
 import { Injectable } from '@nestjs/common';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Resend } from 'resend';
 import { SettingsService } from '../settings/settings.service';
 
-export interface ContactDto {
+// Classe (e não interface) para o ValidationPipe global validar o body
+export class ContactDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
   name: string;
+
+  @IsEmail()
+  @MaxLength(254)
   email: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
   subject: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(5000)
   message: string;
+}
+
+/** Escapa HTML para não injetar markup do utilizador nos emails */
+function escapeHtml(value: string | undefined): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 @Injectable()
@@ -21,6 +47,11 @@ export class ContactService {
   }
 
   async sendContactEmail(dto: ContactDto) {
+    const name    = escapeHtml(dto.name);
+    const email   = escapeHtml(dto.email);
+    const subject = escapeHtml(dto.subject);
+    const message = escapeHtml(dto.message);
+
     const settings     = await this.settingsService.getPublicSettings();
     const contactEmail = settings.contactEmail;
     const whatsappLine = settings.whatsappEnabled
@@ -33,7 +64,7 @@ export class ContactService {
       from:    this.from,
       to:      [contactEmail],
       replyTo: dto.email,
-      subject: `[Contacto] ${dto.subject}`,
+      subject: `[Contacto] ${(dto.subject ?? '').replace(/\s+/g, ' ')}`,
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
           <div style="background:#0F0F0F;padding:24px;border-radius:8px 8px 0 0;">
@@ -41,13 +72,13 @@ export class ContactService {
           </div>
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
             <table style="width:100%;border-collapse:collapse;">
-              <tr><td style="padding:8px 0;color:#666;font-size:14px;width:100px;"><strong>Nome:</strong></td><td style="padding:8px 0;font-size:14px;">${dto.name}</td></tr>
-              <tr><td style="padding:8px 0;color:#666;font-size:14px;"><strong>Email:</strong></td><td style="padding:8px 0;font-size:14px;"><a href="mailto:${dto.email}" style="color:#E8322A;">${dto.email}</a></td></tr>
-              <tr><td style="padding:8px 0;color:#666;font-size:14px;"><strong>Assunto:</strong></td><td style="padding:8px 0;font-size:14px;">${dto.subject}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:14px;width:100px;"><strong>Nome:</strong></td><td style="padding:8px 0;font-size:14px;">${name}</td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:14px;"><strong>Email:</strong></td><td style="padding:8px 0;font-size:14px;"><a href="mailto:${email}" style="color:#E8322A;">${email}</a></td></tr>
+              <tr><td style="padding:8px 0;color:#666;font-size:14px;"><strong>Assunto:</strong></td><td style="padding:8px 0;font-size:14px;">${subject}</td></tr>
             </table>
             <hr style="border:none;border-top:1px solid #e5e5e5;margin:16px 0;" />
             <p style="color:#666;font-size:14px;margin:0 0 8px;"><strong>Mensagem:</strong></p>
-            <p style="font-size:15px;line-height:1.6;white-space:pre-wrap;margin:0;">${dto.message}</p>
+            <p style="font-size:15px;line-height:1.6;white-space:pre-wrap;margin:0;">${message}</p>
           </div>
         </div>`,
     });
@@ -63,7 +94,7 @@ export class ContactService {
             <h1 style="color:#88C900;margin:0;font-size:20px;">Recebemos a tua mensagem!</h1>
           </div>
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
-            <p style="font-size:15px;line-height:1.6;">Olá <strong>${dto.name}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${name}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">Obrigado pelo teu contacto. A nossa equipa irá responder em breve.</p>
             ${whatsappLine ? `<p style="font-size:14px;color:#666;line-height:1.6;">${whatsappLine}</p>` : ''}
             <hr style="border:none;border-top:1px solid #e5e5e5;margin:16px 0;" />

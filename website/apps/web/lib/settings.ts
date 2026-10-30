@@ -4,6 +4,8 @@ export interface PublicSettings {
   contactEmail: string;
   iban: string;
   ibanHolder: string;
+  // Portes grátis (Portugal Continental) a partir deste subtotal; 0 desativa
+  freeShippingThreshold: number;
 }
 
 // Usado apenas se a API estiver indisponível
@@ -13,6 +15,7 @@ export const DEFAULT_SETTINGS: PublicSettings = {
   contactEmail: 'contatos@reaxone.com',
   iban: process.env.NEXT_PUBLIC_BANK_IBAN || '',
   ibanHolder: '',
+  freeShippingThreshold: 35,
 };
 
 export async function fetchPublicSettings(): Promise<PublicSettings> {
@@ -25,6 +28,15 @@ export async function fetchPublicSettings(): Promise<PublicSettings> {
   } catch {
     return DEFAULT_SETTINGS;
   }
+}
+
+// "35 €" em PT, "€35" em EN; casas decimais só quando necessárias
+export function formatEuro(amount: number, locale: string): string {
+  return new Intl.NumberFormat(locale === 'en' ? 'en-IE' : 'pt-PT', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+  }).format(amount);
 }
 
 export function whatsappUrl(number: string, text?: string): string {

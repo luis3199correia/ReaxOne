@@ -30,7 +30,10 @@ export class UsersService {
   }
 
   async update(id: string, data: { firstName?: string; lastName?: string; phone?: string }) {
-    return this.prisma.user.update({ where: { id }, data });
+    // Escolher explicitamente os campos editáveis — o body chega sem validação e
+    // não pode alterar role, email ou password.
+    const { firstName, lastName, phone } = data ?? {};
+    return this.prisma.user.update({ where: { id }, data: { firstName, lastName, phone } });
   }
 
   async findAll() {

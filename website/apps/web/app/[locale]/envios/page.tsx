@@ -1,6 +1,6 @@
 import { getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { whatsappUrl, formatWhatsappDisplay, fetchPublicSettings } from '@/lib/settings';
+import { whatsappUrl, formatWhatsappDisplay, fetchPublicSettings, formatEuro } from '@/lib/settings';
 
 const linkClass = 'text-brand-primary hover:underline';
 const h2Class = 'text-xl font-bold text-brand-dark mb-3';
@@ -8,13 +8,16 @@ const h2Class = 'text-xl font-bold text-brand-dark mb-3';
 const emailLink = <a href="mailto:contact@reaxone.com" className={linkClass}>contact@reaxone.com</a>;
 const whatsappLink = <a href="https://wa.me/351928456870" target="_blank" rel="noopener noreferrer" className={linkClass}>+351 928 456 870</a>;
 
-function EnviosPt() {
+function EnviosPt({ freeShippingThreshold }: { freeShippingThreshold: number }) {
   return (
     <>
       <section>
         <h2 className={h2Class}>Envios</h2>
         <p>Processamos as encomendas em 1 a 2 dias úteis após a confirmação do pagamento. A entrega em Portugal Continental demora <strong>2 a 4 dias úteis</strong>.</p>
-        <p className="mt-3">Portes: <strong>4,93 €</strong> (IVA incluído). <strong>Grátis</strong> em encomendas a partir de <strong>35 €</strong>.</p>
+        <p className="mt-3">
+          Portes: <strong>4,93 €</strong> (IVA incluído).
+          {freeShippingThreshold > 0 && <> <strong>Grátis</strong> em encomendas a partir de <strong>{formatEuro(freeShippingThreshold, 'pt')}</strong>.</>}
+        </p>
       </section>
 
       <section>
@@ -36,13 +39,16 @@ function EnviosPt() {
   );
 }
 
-function EnviosEn() {
+function EnviosEn({ freeShippingThreshold }: { freeShippingThreshold: number }) {
   return (
     <>
       <section>
         <h2 className={h2Class}>Shipping</h2>
         <p>We process orders within 1 to 2 business days after payment confirmation. Delivery in mainland Portugal takes <strong>2 to 4 business days</strong>.</p>
-        <p className="mt-3">Shipping: <strong>€4.93</strong> (VAT included). <strong>Free</strong> on orders of <strong>€35</strong> or more.</p>
+        <p className="mt-3">
+          Shipping: <strong>€4.93</strong> (VAT included).
+          {freeShippingThreshold > 0 && <> <strong>Free</strong> on orders of <strong>{formatEuro(freeShippingThreshold, 'en')}</strong> or more.</>}
+        </p>
       </section>
 
       <section>
@@ -78,7 +84,9 @@ export default async function EnviosPage() {
 
       <div className="space-y-10 text-gray-700 leading-relaxed">
 
-        {isEn ? <EnviosEn /> : <EnviosPt />}
+        {isEn
+          ? <EnviosEn freeShippingThreshold={settings.freeShippingThreshold} />
+          : <EnviosPt freeShippingThreshold={settings.freeShippingThreshold} />}
 
         <section>
           <h2 className={h2Class}>{isEn ? 'Contact' : 'Contacto'}</h2>

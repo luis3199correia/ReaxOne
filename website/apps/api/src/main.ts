@@ -1,10 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Falha logo no arranque se faltar o segredo dos JWT (sem ele os tokens seriam inseguros/inválidos)
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET não definido — a API não pode arrancar sem ele.');
+  }
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Atrás de proxy (Docker/hosting) o IP real vem no X-Forwarded-For — necessário
+  // para o rate limiting funcionar por cliente. TRUST_PROXY=0 desativa.
+  app.set('trust proxy', Number(process.env.TRUST_PROXY ?? 1));
   const logger = new Logger('CORS');
 
   // Cookie parser (para JWT em httpOnly cookies)

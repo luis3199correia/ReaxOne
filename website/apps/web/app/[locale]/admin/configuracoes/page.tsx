@@ -12,6 +12,7 @@ const EMPTY_FORM: PublicSettings = {
   contactEmail: '',
   iban: '',
   ibanHolder: '',
+  freeShippingThreshold: 0,
 };
 
 export default function AdminSettingsPage() {
@@ -106,6 +107,27 @@ export default function AdminSettingsPage() {
                 onChange={(e) => update('contactEmail', e.target.value)}
               />
             </div>
+          </div>
+        </div>
+
+        {/* Envios */}
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold mb-4">Envios</h2>
+          <div>
+            <label className="block text-sm font-medium mb-1">Portes grátis a partir de (€)</label>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              className="input"
+              placeholder="35"
+              value={form.freeShippingThreshold}
+              onChange={(e) => update('freeShippingThreshold', e.target.value === '' ? 0 : Number(e.target.value))}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Encomendas para Portugal Continental com subtotal igual ou superior a este valor não pagam portes. Use 0 para desativar.
+              O valor aparece automaticamente na página de produto, em Envios e nos Termos.
+            </p>
           </div>
         </div>
 

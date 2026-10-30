@@ -1,23 +1,30 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateProductDto, UpdateProductDto } from './product.dto';
 
-interface CreateProductDto {
-  name: string;
-  nameEn?: string;
-  slug: string;
-  description?: string;
-  descriptionEn?: string;
-  price: number;
-  images?: string[];
-  stock?: number;
-  categoryId?: string;
-  ebookFile?: string; // caminho para o PDF (apenas para ebooks)
-  featured?: boolean;
+/**
+ * Versão pública do produto: nunca expõe o caminho do ficheiro do ebook
+ * (seria um download grátis). Indica apenas se é ebook.
+ */
+function toPublic<T extends { ebookFile?: string | null }>(product: T) {
+  const { ebookFile, ...rest } = product;
+  return { ...rest, isEbook: !!ebookFile };
 }
 
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
+
+  // Pública — produtos ativos, sem ebookFile
+  async findAllPublic(featured?: boolean) {
+    const products = await this.findAll(true, featured);
+    return products.map(toPublic);
+  }
+
+  // Pública — produto por slug, sem ebookFile
+  async findBySlugPublic(slug: string) {
+    return toPublic(await this.findBySlug(slug));
+  }
 
   async findAll(active = true, featured?: boolean) {
     return this.prisma.product.findMany({
@@ -52,7 +59,7 @@ export class ProductsService {
     return this.prisma.product.create({ data });
   }
 
-  async update(id: string, data: Partial<CreateProductDto> & { active?: boolean }) {
+  async update(id: string, data: UpdateProductDto) {
     return this.prisma.product.update({ where: { id }, data });
   }
 

@@ -42,7 +42,7 @@ export class OrdersController {
 
   // Admin: detalhes de uma encomenda
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   findOne(@Param('id') id: string) {
     return this.ordersService.findById(id);
   }

@@ -9,6 +9,8 @@ import { useCartStore } from '@/store/cart';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { api } from '@/lib/api';
 import { useCategoryLabel } from '@/lib/category';
+import { formatEuro } from '@/lib/settings';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
@@ -33,13 +35,14 @@ function toProduct(p: any): FullProduct {
     stock: p.stock,
     description: p.description ?? '',
     descriptionEn: p.descriptionEn ?? undefined,
-    isEbook: p.category?.slug === 'ebooks' || !!p.ebookFile,
+    isEbook: p.category?.slug === 'ebooks' || !!p.isEbook,
   };
 }
 
 export default function ProductPage({ params: paramsPromise }: Props) {
   const { slug } = use(paramsPromise);
   const locale = useLocale();
+  const settings = useSettings();
   const categoryLabel = useCategoryLabel();
   const t = useTranslations('shop');
   const messages = useMessages() as any;
@@ -242,10 +245,12 @@ export default function ProductPage({ params: paramsPromise }: Props) {
 
             {/* Trust badges */}
             <div className="flex flex-col gap-3 pt-6 border-t border-gray-100">
-              <div className="flex items-center gap-3 text-sm text-gray-600">
-                <Truck className="w-4 h-4 text-brand-green flex-shrink-0" />
-                <span>{t('shipping_free')}</span>
-              </div>
+              {settings.freeShippingThreshold > 0 && (
+                <div className="flex items-center gap-3 text-sm text-gray-600">
+                  <Truck className="w-4 h-4 text-brand-green flex-shrink-0" />
+                  <span>{t('shipping_free', { amount: formatEuro(settings.freeShippingThreshold, locale) })}</span>
+                </div>
+              )}
               <div className="flex items-center gap-3 text-sm text-gray-600">
                 <Shield className="w-4 h-4 text-brand-green flex-shrink-0" />
                 <span>{t('secure_payment')}</span>

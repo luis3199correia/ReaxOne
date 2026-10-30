@@ -22,7 +22,7 @@ function toProduct(p: any): Product {
     categoryEn: p.category?.nameEn ?? undefined,
     categorySlug: p.category?.slug ?? undefined,
     stock: p.stock,
-    isEbook: p.category?.slug === 'ebooks' || !!p.ebookFile,
+    isEbook: p.category?.slug === 'ebooks' || !!p.isEbook,
   };
 }
 

@@ -2,6 +2,17 @@ import { Injectable, Logger, NotFoundException, BadRequestException } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
+import { SettingsService } from '../settings/settings.service';
+import { detectZone, shippingPrice } from './shipping-rates';
+
+const MAX_QUANTITY_PER_ITEM = 100;
+
+function roundCents(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+// Campos do cliente que podem ir para o backoffice (nunca a password)
+const USER_PUBLIC_FIELDS = { id: true, email: true, firstName: true, lastName: true, phone: true } as const;
 
 @Injectable()
 export class OrdersService {
@@ -11,6 +22,7 @@ export class OrdersService {
     private prisma: PrismaService,
     private batchService: BatchService,
     private mailService: MailService,
+    private settingsService: SettingsService,
   ) {}
 
   /**
@@ -41,29 +53,33 @@ export class OrdersService {
     companyName?: string;
     paymentMethod: 'MBWAY' | 'BANK_TRANSFER';
     shippingMethod?: string;
-    shippingCost?: number;
+    // price, name e shippingCost podem vir no body mas são ignorados — recalculados no servidor
     items: Array<{
       productId: string;
-      name: string;
-      price: number;
       quantity: number;
       size?: string;
     }>;
   }) {
-    const itemsTotal = data.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
-    const shippingCost = data.shippingCost ?? 0;
-    const totalAmount = itemsTotal + shippingCost;
+    const { items, itemsTotal } = await this.priceItems(data.items);
+    const isAllDigital = items.every((i) => i.isEbook);
+    const country = data.country ?? 'PT';
+
+    let shippingCost = 0;
+    if (!isAllDigital) {
+      const { freeShippingThreshold } = await this.settingsService.getPublicSettings();
+      const zone = detectZone(country, data.postalCode);
+      const price = shippingPrice(zone, data.shippingMethod, itemsTotal, freeShippingThreshold);
+      if (price === null) {
+        throw new BadRequestException('Método de envio indisponível para esta morada.');
+      }
+      shippingCost = price;
+    }
+    const shippingMethod = isAllDigital ? 'digital' : data.shippingMethod;
+    const totalAmount = roundCents(itemsTotal + shippingCost);
 
     const order = await this.prisma.$transaction(async (tx) => {
-      // Produtos digitais (ebooks) não têm stock físico — ficam de fora da validação
-      const products = await tx.product.findMany({
-        where:  { id: { in: data.items.map((i) => i.productId) } },
-        select: { id: true, ebookFile: true },
-      });
-      const ebookIds = new Set(products.filter((p) => p.ebookFile).map((p) => p.id));
-
-      for (const item of data.items) {
-        if (ebookIds.has(item.productId)) continue;
+      for (const item of items) {
+        if (item.isEbook) continue;
 
         // Decremento condicional e atómico: só desconta se ainda houver stock
         // suficiente, evitando vender a mesma unidade a dois clientes em simultâneo.
@@ -86,15 +102,15 @@ export class OrdersService {
           street:        data.street,
           city:          data.city,
           postalCode:    data.postalCode,
-          country:       data.country ?? 'PT',
+          country,
           wantsInvoice:  data.wantsInvoice ?? false,
           nif:           data.nif,
           companyName:   data.companyName,
-          shippingMethod: data.shippingMethod,
+          shippingMethod,
           shippingCost,
           totalAmount,
           items: {
-            create: data.items.map((item) => ({
+            create: items.map((item) => ({
               productId: item.productId,
               name:      item.name,
               price:     item.price,
@@ -121,7 +137,7 @@ export class OrdersService {
         email:         order.email,
         totalAmount:   order.totalAmount,
         paymentMethod: data.paymentMethod,
-        shippingMethod: data.shippingMethod,
+        shippingMethod,
         street:        order.street,
         city:          order.city,
         postalCode:    order.postalCode,
@@ -144,7 +160,7 @@ export class OrdersService {
         phone:          order.phone,
         totalAmount:    order.totalAmount,
         paymentMethod:  data.paymentMethod,
-        shippingMethod: data.shippingMethod,
+        shippingMethod,
         street:         order.street,
         city:           order.city,
         postalCode:     order.postalCode,
@@ -163,6 +179,42 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  /**
+   * Preço, nome e tipo de cada linha vêm da base de dados — do browser só se
+   * aproveitam o produto, a quantidade e o tamanho.
+   */
+  private async priceItems(rawItems: Array<{ productId: string; quantity: number; size?: string }>) {
+    if (!Array.isArray(rawItems) || rawItems.length === 0) {
+      throw new BadRequestException('A encomenda não tem produtos.');
+    }
+    for (const i of rawItems) {
+      if (!Number.isInteger(i?.quantity) || i.quantity < 1 || i.quantity > MAX_QUANTITY_PER_ITEM) {
+        throw new BadRequestException('Quantidade inválida.');
+      }
+    }
+
+    const products = await this.prisma.product.findMany({
+      where:  { id: { in: rawItems.map((i) => i.productId) }, active: true },
+      select: { id: true, name: true, price: true, ebookFile: true },
+    });
+    const byId = new Map(products.map((p) => [p.id, p]));
+
+    const items = rawItems.map((i) => {
+      const product = byId.get(i.productId);
+      if (!product) throw new BadRequestException('Um dos produtos já não está disponível.');
+      return {
+        productId: product.id,
+        name:      product.name,
+        price:     product.price,
+        quantity:  i.quantity,
+        size:      typeof i.size === 'string' ? i.size : undefined,
+        isEbook:   !!product.ebookFile,
+      };
+    });
+    const itemsTotal = roundCents(items.reduce((acc, i) => acc + i.price * i.quantity, 0));
+    return { items, itemsTotal };
   }
 
   private async createBatchOrder(order: any) {
@@ -229,7 +281,7 @@ export class OrdersService {
 
   async findAll() {
     return this.prisma.order.findMany({
-      include: { items: true, payment: true, user: true },
+      include: { items: true, payment: true, user: { select: USER_PUBLIC_FIELDS } },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -237,7 +289,7 @@ export class OrdersService {
   async findById(id: string) {
     const order = await this.prisma.order.findUnique({
       where:   { id },
-      include: { items: true, payment: true, user: true },
+      include: { items: true, payment: true, user: { select: USER_PUBLIC_FIELDS } },
     });
     if (!order) throw new NotFoundException('Encomenda não encontrada');
     return order;

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface PublicSettings {
@@ -7,6 +7,8 @@ export interface PublicSettings {
   contactEmail: string;
   iban: string;
   ibanHolder: string;
+  // Portes grátis (Portugal Continental) a partir deste subtotal; 0 desativa
+  freeShippingThreshold: number;
 }
 
 const KEYS = {
@@ -15,6 +17,7 @@ const KEYS = {
   contactEmail: 'contact_email',
   iban: 'iban',
   ibanHolder: 'iban_holder',
+  freeShippingThreshold: 'shipping_free_above',
 } as const;
 
 const DEFAULTS: PublicSettings = {
@@ -23,7 +26,13 @@ const DEFAULTS: PublicSettings = {
   contactEmail: process.env.CONTACT_EMAIL ?? 'contatos@reaxone.com',
   iban: process.env.BANK_IBAN ?? '',
   ibanHolder: '',
+  freeShippingThreshold: 35,
 };
+
+function parseThreshold(value: string | undefined): number {
+  const n = Number(value);
+  return value !== undefined && value !== '' && Number.isFinite(n) && n >= 0 ? n : DEFAULTS.freeShippingThreshold;
+}
 
 @Injectable()
 export class SettingsService {
@@ -43,6 +52,7 @@ export class SettingsService {
       contactEmail: map.get(KEYS.contactEmail) || DEFAULTS.contactEmail,
       iban: map.get(KEYS.iban) || DEFAULTS.iban,
       ibanHolder: map.get(KEYS.ibanHolder) || DEFAULTS.ibanHolder,
+      freeShippingThreshold: parseThreshold(map.get(KEYS.freeShippingThreshold)),
     };
   }
 
@@ -53,6 +63,13 @@ export class SettingsService {
     if (dto.contactEmail !== undefined) entries.push([KEYS.contactEmail, dto.contactEmail]);
     if (dto.iban !== undefined) entries.push([KEYS.iban, dto.iban]);
     if (dto.ibanHolder !== undefined) entries.push([KEYS.ibanHolder, dto.ibanHolder]);
+    if (dto.freeShippingThreshold !== undefined) {
+      const n = Number(dto.freeShippingThreshold);
+      if (!Number.isFinite(n) || n < 0) {
+        throw new BadRequestException('O valor para portes grátis tem de ser um número igual ou superior a 0.');
+      }
+      entries.push([KEYS.freeShippingThreshold, String(Math.round(n * 100) / 100)]);
+    }
 
     await Promise.all(
       entries.map(([key, value]) =>

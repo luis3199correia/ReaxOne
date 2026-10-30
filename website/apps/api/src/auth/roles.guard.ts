@@ -12,9 +12,11 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!requiredRoles) return true;
+    // Sem @Roles explícito, o guard exige ADMIN — antes deixava passar qualquer
+    // utilizador autenticado, o que abria as rotas de backoffice a clientes.
+    const roles = requiredRoles ?? ['ADMIN'];
 
     const { user } = context.switchToHttp().getRequest();
-    return requiredRoles.includes(user?.role);
+    return roles.includes(user?.role);
   }
 }

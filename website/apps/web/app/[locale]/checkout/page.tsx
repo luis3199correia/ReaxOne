@@ -135,7 +135,7 @@ export default function CheckoutPage() {
   /* ── Calcular portes ── */
   function calculateShipping() {
     const zone = detectZone(activeCountry, activeZip);
-    const opts = getShippingOptions(zone, total);
+    const opts = getShippingOptions(zone, total, settings.freeShippingThreshold);
     setShippingZone(zone);
     setShippingOptions(opts);
     setShippingCalculated(true);
