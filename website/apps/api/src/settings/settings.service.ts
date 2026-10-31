@@ -7,9 +7,14 @@ export interface PublicSettings {
   contactEmail: string;
   iban: string;
   ibanHolder: string;
-  // Portes grátis (Portugal Continental) a partir deste subtotal; 0 desativa
-  freeShippingThreshold: number;
+  // Portes grátis a partir destes subtotais; 0 desativa
+  freeShippingThreshold: number;   // Portugal Continental
+  freeShippingThresholdEs: number; // Espanha (continental, Baleares e Canárias)
+  freeShippingThresholdEu: number; // Restantes países da UE
 }
+
+type ThresholdField = 'freeShippingThreshold' | 'freeShippingThresholdEs' | 'freeShippingThresholdEu';
+const THRESHOLD_FIELDS: ThresholdField[] = ['freeShippingThreshold', 'freeShippingThresholdEs', 'freeShippingThresholdEu'];
 
 const KEYS = {
   whatsappNumber: 'whatsapp_number',
@@ -18,6 +23,8 @@ const KEYS = {
   iban: 'iban',
   ibanHolder: 'iban_holder',
   freeShippingThreshold: 'shipping_free_above',
+  freeShippingThresholdEs: 'shipping_free_above_es',
+  freeShippingThresholdEu: 'shipping_free_above_eu',
 } as const;
 
 const DEFAULTS: PublicSettings = {
@@ -27,11 +34,13 @@ const DEFAULTS: PublicSettings = {
   iban: process.env.BANK_IBAN ?? '',
   ibanHolder: '',
   freeShippingThreshold: 35,
+  freeShippingThresholdEs: 50,
+  freeShippingThresholdEu: 70,
 };
 
-function parseThreshold(value: string | undefined): number {
+function parseThreshold(value: string | undefined, fallback: number): number {
   const n = Number(value);
-  return value !== undefined && value !== '' && Number.isFinite(n) && n >= 0 ? n : DEFAULTS.freeShippingThreshold;
+  return value !== undefined && value !== '' && Number.isFinite(n) && n >= 0 ? n : fallback;
 }
 
 @Injectable()
@@ -52,7 +61,9 @@ export class SettingsService {
       contactEmail: map.get(KEYS.contactEmail) || DEFAULTS.contactEmail,
       iban: map.get(KEYS.iban) || DEFAULTS.iban,
       ibanHolder: map.get(KEYS.ibanHolder) || DEFAULTS.ibanHolder,
-      freeShippingThreshold: parseThreshold(map.get(KEYS.freeShippingThreshold)),
+      freeShippingThreshold: parseThreshold(map.get(KEYS.freeShippingThreshold), DEFAULTS.freeShippingThreshold),
+      freeShippingThresholdEs: parseThreshold(map.get(KEYS.freeShippingThresholdEs), DEFAULTS.freeShippingThresholdEs),
+      freeShippingThresholdEu: parseThreshold(map.get(KEYS.freeShippingThresholdEu), DEFAULTS.freeShippingThresholdEu),
     };
   }
 
@@ -63,12 +74,13 @@ export class SettingsService {
     if (dto.contactEmail !== undefined) entries.push([KEYS.contactEmail, dto.contactEmail]);
     if (dto.iban !== undefined) entries.push([KEYS.iban, dto.iban]);
     if (dto.ibanHolder !== undefined) entries.push([KEYS.ibanHolder, dto.ibanHolder]);
-    if (dto.freeShippingThreshold !== undefined) {
-      const n = Number(dto.freeShippingThreshold);
+    for (const field of THRESHOLD_FIELDS) {
+      if (dto[field] === undefined) continue;
+      const n = Number(dto[field]);
       if (!Number.isFinite(n) || n < 0) {
         throw new BadRequestException('O valor para portes grátis tem de ser um número igual ou superior a 0.');
       }
-      entries.push([KEYS.freeShippingThreshold, String(Math.round(n * 100) / 100)]);
+      entries.push([KEYS[field], String(Math.round(n * 100) / 100)]);
     }
 
     await Promise.all(

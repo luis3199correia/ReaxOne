@@ -4,9 +4,10 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
-import { CheckCircle, Smartphone, Building2, ArrowRight } from 'lucide-react';
+import { CheckCircle, Smartphone, Building2, ArrowRight, MapPin, HandCoins } from 'lucide-react';
 import { whatsappUrl, formatWhatsappDisplay } from '@/lib/settings';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import { PICKUP_ADDRESS } from '@/lib/pickup';
 
 function ConfirmacaoContent() {
   const params   = useSearchParams();
@@ -16,6 +17,7 @@ function ConfirmacaoContent() {
   const total    = params.get('total') ?? '0.00';
   const method   = params.get('method') ?? 'mbway';
   const email    = params.get('email') ?? '';
+  const isPickup = params.get('delivery') === 'pickup';
 
   const shortId = orderId.slice(-8).toUpperCase();
 
@@ -32,9 +34,36 @@ function ConfirmacaoContent() {
         Referência: <span className="font-semibold text-brand-dark">#{shortId}</span>
       </p>
 
+      {/* Levantamento — marcação por WhatsApp */}
+      {isPickup && (
+        <div className="card p-6 text-left mb-6 border-l-4 border-amber-400">
+          <div className="flex items-center gap-3 mb-3">
+            <MapPin className="w-5 h-5 text-brand-primary flex-shrink-0" />
+            <h2 className="font-semibold text-brand-dark">Levantamento da encomenda</h2>
+          </div>
+          <p className="text-sm text-gray-600 leading-relaxed">
+            Local: <strong>{PICKUP_ADDRESS}</strong>
+          </p>
+          <p className="text-sm text-gray-600 leading-relaxed mt-2">
+            O levantamento é feito <strong>mediante marcação</strong>. Vamos contactar-te por WhatsApp, para o número
+            indicado na encomenda, para combinarmos o dia e a hora.
+          </p>
+        </div>
+      )}
+
       {/* Instruções de pagamento */}
       <div className="card p-6 text-left mb-6">
-        {method === 'mbway' ? (
+        {method === 'cash' ? (
+          <>
+            <div className="flex items-center gap-3 mb-4">
+              <HandCoins className="w-5 h-5 text-brand-primary flex-shrink-0" />
+              <h2 className="font-semibold text-brand-dark">Pagamento em mão</h2>
+            </div>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Pagas <strong>€{total}</strong> no momento do levantamento. Indica a referência <strong>#{shortId}</strong>.
+            </p>
+          </>
+        ) : method === 'mbway' ? (
           <>
             <div className="flex items-center gap-3 mb-4">
               <Smartphone className="w-5 h-5 text-brand-primary flex-shrink-0" />

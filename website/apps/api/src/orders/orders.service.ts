@@ -4,8 +4,12 @@ import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
 import { SettingsService } from '../settings/settings.service';
 import { detectZone, shippingPrice } from './shipping-rates';
+import { PICKUP_METHOD_ID } from './pickup';
 
 const MAX_QUANTITY_PER_ITEM = 100;
+
+const PAYMENT_METHODS = ['MBWAY', 'BANK_TRANSFER', 'CASH'] as const;
+type PaymentMethodInput = (typeof PAYMENT_METHODS)[number];
 
 function roundCents(value: number) {
   return Math.round(value * 100) / 100;
@@ -51,7 +55,7 @@ export class OrdersService {
     wantsInvoice?: boolean;
     nif?: string;
     companyName?: string;
-    paymentMethod: 'MBWAY' | 'BANK_TRANSFER';
+    paymentMethod: PaymentMethodInput;
     shippingMethod?: string;
     // price, name e shippingCost podem vir no body mas são ignorados — recalculados no servidor
     items: Array<{
@@ -63,12 +67,25 @@ export class OrdersService {
     const { items, itemsTotal } = await this.priceItems(data.items);
     const isAllDigital = items.every((i) => i.isEbook);
     const country = data.country ?? 'PT';
+    const isPickup = !isAllDigital && data.shippingMethod === PICKUP_METHOD_ID;
 
+    if (!PAYMENT_METHODS.includes(data.paymentMethod)) {
+      throw new BadRequestException('Método de pagamento inválido.');
+    }
+    if (data.paymentMethod === 'CASH' && !isPickup) {
+      throw new BadRequestException('O pagamento em mão só está disponível com levantamento da encomenda.');
+    }
+
+    // Levantamento não tem portes
     let shippingCost = 0;
-    if (!isAllDigital) {
-      const { freeShippingThreshold } = await this.settingsService.getPublicSettings();
+    if (!isAllDigital && !isPickup) {
+      const settings = await this.settingsService.getPublicSettings();
       const zone = detectZone(country, data.postalCode);
-      const price = shippingPrice(zone, data.shippingMethod, itemsTotal, freeShippingThreshold);
+      const price = shippingPrice(zone, data.shippingMethod, itemsTotal, {
+        pt: settings.freeShippingThreshold,
+        es: settings.freeShippingThresholdEs,
+        eu: settings.freeShippingThresholdEu,
+      });
       if (price === null) {
         throw new BadRequestException('Método de envio indisponível para esta morada.');
       }
@@ -173,8 +190,9 @@ export class OrdersService {
       '[Mail] Erro ao notificar admin de nova encomenda',
     );
 
-    // Criar encomenda na Batch em background — apenas para produtos físicos
-    if (process.env.BATCH_DISABLED !== 'true') {
+    // Criar encomenda na Batch em background — apenas para produtos físicos enviados
+    // por transportadora (o levantamento é entregue em mão)
+    if (process.env.BATCH_DISABLED !== 'true' && !isPickup) {
       this.fireAndForget(() => this.createBatchOrder(order), '[Batch] Erro ao criar encomenda');
     }
 

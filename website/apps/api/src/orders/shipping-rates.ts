@@ -40,16 +40,39 @@ export function detectZone(country: string, zip: string): ShippingZone {
   return 'BLOCKED';
 }
 
+// Subtotais (configurados no backoffice) a partir dos quais os portes são grátis; 0 desativa
+export interface FreeShippingThresholds {
+  pt: number; // Portugal Continental
+  es: number; // Espanha (continental, Baleares e Canárias)
+  eu: number; // Restantes países da UE
+}
+
+// Açores e Madeira não têm portes grátis (envio sob consulta)
+export function freeShippingThresholdFor(zone: ShippingZone, thresholds: FreeShippingThresholds): number {
+  switch (zone) {
+    case 'PT_CONTINENTAL': return thresholds.pt;
+    case 'ES_CONTINENTAL':
+    case 'ES_ILHAS': return thresholds.es;
+    case 'ZONA2':
+    case 'ZONA3': return thresholds.eu;
+    default: return 0;
+  }
+}
+
 /**
  * Preço (IVA incluído) do método de envio escolhido, ou null se o método não
  * existir para a zona. Ilhas portuguesas e países bloqueados não têm envio online.
- * `freeAbove` é o subtotal (configurado no backoffice) a partir do qual os portes
- * em Portugal Continental são grátis; 0 desativa.
  */
-export function shippingPrice(zone: ShippingZone, methodId: string, subtotal: number, freeAbove: number): number | null {
+export function shippingPrice(
+  zone: ShippingZone,
+  methodId: string,
+  subtotal: number,
+  thresholds: FreeShippingThresholds,
+): number | null {
   if (zone === 'BLOCKED' || zone === 'PT_ILHAS') return null;
   const rate = RATES[zone].find((r) => r.id === methodId);
   if (!rate) return null;
-  if (zone === 'PT_CONTINENTAL' && freeAbove > 0 && subtotal >= freeAbove) return 0;
+  const freeAbove = freeShippingThresholdFor(zone, thresholds);
+  if (freeAbove > 0 && subtotal >= freeAbove) return 0;
   return Math.round(rate.priceBase * (1 + IVA_RATE) * 100) / 100;
 }

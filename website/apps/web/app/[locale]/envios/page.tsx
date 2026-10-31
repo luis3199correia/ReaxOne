@@ -1,7 +1,10 @@
 import { getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import ShippingRatesTable from '@/components/shop/ShippingRatesTable';
-import { whatsappUrl, formatWhatsappDisplay, fetchPublicSettings, formatEuro } from '@/lib/settings';
+import FreeShippingList from '@/components/shop/FreeShippingList';
+import { PICKUP_ADDRESS } from '@/lib/pickup';
+import type { FreeShippingThresholds } from '@/lib/shippingRates';
+import { whatsappUrl, formatWhatsappDisplay, fetchPublicSettings, getFreeShippingThresholds } from '@/lib/settings';
 
 const linkClass = 'text-brand-primary hover:underline';
 const h2Class = 'text-xl font-bold text-brand-dark mb-3';
@@ -9,28 +12,27 @@ const h2Class = 'text-xl font-bold text-brand-dark mb-3';
 const emailLink = <a href="mailto:contact@reaxone.com" className={linkClass}>contact@reaxone.com</a>;
 const whatsappLink = <a href="https://wa.me/351928456870" target="_blank" rel="noopener noreferrer" className={linkClass}>+351 928 456 870</a>;
 
-function EnviosPt({ freeShippingThreshold }: { freeShippingThreshold: number }) {
+function EnviosPt({ thresholds }: { thresholds: FreeShippingThresholds }) {
   return (
     <>
       <section>
         <h2 className={h2Class}>Envios</h2>
         <p>Processamos as encomendas em 1 a 2 dias úteis após a confirmação do pagamento. A entrega em Portugal Continental demora <strong>2 a 4 dias úteis</strong>. Também enviamos para Espanha e para vários países da União Europeia.</p>
-        <p className="mt-3">
-          Portes: <strong>4,93 €</strong> (IVA incluído).
-          {freeShippingThreshold > 0 && <> <strong>Grátis</strong> em encomendas para Portugal Continental a partir de <strong>{formatEuro(freeShippingThreshold, 'pt')}</strong>.</>}
-        </p>
+        <p className="mt-3">Portes para Portugal Continental: <strong>4,93 €</strong> (IVA incluído). Os portes para os restantes destinos constam da tabela abaixo.</p>
         <ShippingRatesTable locale="pt" />
-        <p className="mt-3">Para os Açores e a Madeira, contacte-nos antes de encomendar para calcularmos os portes.</p>
+        <p className="mt-4"><strong>Portes grátis</strong> (subtotal da encomenda):</p>
+        <FreeShippingList thresholds={thresholds} locale="pt" />
+        <p className="mt-4"><strong>Levantamento:</strong> pode também levantar a encomenda, sem portes, em {PICKUP_ADDRESS}. O levantamento é feito mediante marcação: após a encomenda, contactamo-lo por WhatsApp para combinar o dia e a hora.</p>
       </section>
 
       <section>
         <h2 className={h2Class}>Métodos de pagamento</h2>
-        <p>Aceitamos pagamento por <strong>MB Way</strong> e <strong>transferência bancária</strong>. Após a confirmação da encomenda, receberá as instruções de pagamento por email.</p>
+        <p>Aceitamos pagamento por <strong>MB Way</strong> e <strong>transferência bancária</strong>. Após a confirmação da encomenda, receberá as instruções de pagamento por email. Se escolher levantar a encomenda, pode também pagar em mão no momento do levantamento.</p>
       </section>
 
       <section>
         <h2 className={h2Class}>Devoluções</h2>
-        <p>Tem <strong>14 dias</strong> a contar da receção para devolver qualquer produto, sem indicar motivo. Contacte-nos por email ({emailLink}) ou WhatsApp ({whatsappLink}) com o número da encomenda e enviamos-lhe por email as instruções e a morada de devolução. Os portes de devolução são por nossa conta.</p>
+        <p>Tem <strong>14 dias</strong> a contar da receção para devolver qualquer produto, sem indicar motivo. Contacte-nos por email ({emailLink}) ou WhatsApp ({whatsappLink}) com o número da encomenda e enviamos-lhe por email as instruções e a morada de devolução. Em Portugal Continental, os portes de devolução são por nossa conta. Nos restantes países, os portes de devolução são suportados pelo cliente.</p>
         <p className="mt-3">O reembolso é feito no prazo máximo de 14 dias, pelo mesmo meio de pagamento.</p>
       </section>
 
@@ -42,28 +44,27 @@ function EnviosPt({ freeShippingThreshold }: { freeShippingThreshold: number }) 
   );
 }
 
-function EnviosEn({ freeShippingThreshold }: { freeShippingThreshold: number }) {
+function EnviosEn({ thresholds }: { thresholds: FreeShippingThresholds }) {
   return (
     <>
       <section>
         <h2 className={h2Class}>Shipping</h2>
         <p>We process orders within 1 to 2 business days after payment confirmation. Delivery in mainland Portugal takes <strong>2 to 4 business days</strong>. We also ship to Spain and to several European Union countries.</p>
-        <p className="mt-3">
-          Shipping: <strong>€4.93</strong> (VAT included).
-          {freeShippingThreshold > 0 && <> <strong>Free</strong> on orders to mainland Portugal of <strong>{formatEuro(freeShippingThreshold, 'en')}</strong> or more.</>}
-        </p>
+        <p className="mt-3">Shipping to mainland Portugal: <strong>€4.93</strong> (VAT included). Shipping costs for other destinations are listed in the table below.</p>
         <ShippingRatesTable locale="en" />
-        <p className="mt-3">For the Azores and Madeira, please contact us before ordering so we can quote the shipping cost.</p>
+        <p className="mt-4"><strong>Free shipping</strong> (order subtotal):</p>
+        <FreeShippingList thresholds={thresholds} locale="en" />
+        <p className="mt-4"><strong>Pickup:</strong> you can also collect your order free of charge at {PICKUP_ADDRESS}. Pickup is by appointment only: after you place your order, we will contact you on WhatsApp to arrange the day and time.</p>
       </section>
 
       <section>
         <h2 className={h2Class}>Payment methods</h2>
-        <p>We accept <strong>MB Way</strong> and <strong>bank transfer</strong>. Once your order is confirmed, you will receive the payment instructions by email.</p>
+        <p>We accept <strong>MB Way</strong> and <strong>bank transfer</strong>. Once your order is confirmed, you will receive the payment instructions by email. If you choose to collect your order, you can also pay in person on pickup.</p>
       </section>
 
       <section>
         <h2 className={h2Class}>Returns</h2>
-        <p>You have <strong>14 days</strong> from receipt to return any product, without giving a reason. Contact us by email ({emailLink}) or WhatsApp ({whatsappLink}) with your order number and we will email you the return instructions and address. Return shipping is on us.</p>
+        <p>You have <strong>14 days</strong> from receipt to return any product, without giving a reason. Contact us by email ({emailLink}) or WhatsApp ({whatsappLink}) with your order number and we will email you the return instructions and address. In mainland Portugal, return shipping is on us. In other countries, return shipping is paid by the customer.</p>
         <p className="mt-3">Refunds are made within 14 days at most, using the same payment method.</p>
       </section>
 
@@ -90,8 +91,8 @@ export default async function EnviosPage() {
       <div className="space-y-10 text-gray-700 leading-relaxed">
 
         {isEn
-          ? <EnviosEn freeShippingThreshold={settings.freeShippingThreshold} />
-          : <EnviosPt freeShippingThreshold={settings.freeShippingThreshold} />}
+          ? <EnviosEn thresholds={getFreeShippingThresholds(settings)} />
+          : <EnviosPt thresholds={getFreeShippingThresholds(settings)} />}
 
         <section>
           <h2 className={h2Class}>{isEn ? 'Contact' : 'Contacto'}</h2>

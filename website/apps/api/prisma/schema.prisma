@@ -25,6 +25,7 @@ enum OrderStatus {
 enum PaymentMethod {
   MBWAY
   BANK_TRANSFER
+  CASH // pagamento em mão, só com levantamento
 }
 
 model User {

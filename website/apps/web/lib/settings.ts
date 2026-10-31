@@ -1,11 +1,15 @@
+import type { FreeShippingThresholds } from './shippingRates';
+
 export interface PublicSettings {
   whatsappNumber: string;
   whatsappEnabled: boolean;
   contactEmail: string;
   iban: string;
   ibanHolder: string;
-  // Portes grátis (Portugal Continental) a partir deste subtotal; 0 desativa
-  freeShippingThreshold: number;
+  // Portes grátis a partir destes subtotais; 0 desativa
+  freeShippingThreshold: number;   // Portugal Continental
+  freeShippingThresholdEs: number; // Espanha (continental, Baleares e Canárias)
+  freeShippingThresholdEu: number; // Restantes países da UE
 }
 
 // Usado apenas se a API estiver indisponível
@@ -16,7 +20,13 @@ export const DEFAULT_SETTINGS: PublicSettings = {
   iban: process.env.NEXT_PUBLIC_BANK_IBAN || '',
   ibanHolder: '',
   freeShippingThreshold: 35,
+  freeShippingThresholdEs: 50,
+  freeShippingThresholdEu: 70,
 };
+
+export function getFreeShippingThresholds(s: PublicSettings): FreeShippingThresholds {
+  return { pt: s.freeShippingThreshold, es: s.freeShippingThresholdEs, eu: s.freeShippingThresholdEu };
+}
 
 export async function fetchPublicSettings(): Promise<PublicSettings> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';

@@ -3,6 +3,24 @@ import { Resend } from 'resend';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SettingsService, PublicSettings } from '../settings/settings.service';
+import { PICKUP_ADDRESS, PICKUP_METHOD_ID, customerWhatsappUrl } from '../orders/pickup';
+
+const PAYMENT_LABELS: Record<string, string> = {
+  MBWAY:         'MB Way',
+  BANK_TRANSFER: 'Transferência Bancária',
+  CASH:          'Pagamento em mão (no levantamento)',
+};
+
+// Bloco com a morada de levantamento e o aviso de marcação prévia
+function pickupBlock(): string {
+  return `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
+    <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">LEVANTAMENTO</p>
+    <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
+      ${PICKUP_ADDRESS}<br>
+      <strong>O levantamento é feito mediante marcação.</strong> Vamos contactar-te por WhatsApp, para o número indicado na encomenda, para combinarmos o dia e a hora.
+    </p>
+  </div>`;
+}
 
 @Injectable()
 export class MailService {
@@ -115,7 +133,17 @@ export class MailService {
     const settings   = await this.settingsService.getPublicSettings();
     const mbwayPhone = process.env.MBWAY_PHONE ?? '';
 
-    const paymentInstructions = order.paymentMethod === 'MBWAY'
+    const isPickup = order.shippingMethod === PICKUP_METHOD_ID;
+
+    const paymentInstructions = order.paymentMethod === 'CASH'
+      ? `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
+           <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">PAGAMENTO — EM MÃO</p>
+           <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
+             Pagas <strong>€${order.totalAmount.toFixed(2)}</strong> no momento do levantamento.<br>
+             Referência: <strong>#${shortId}</strong>
+           </p>
+         </div>`
+      : order.paymentMethod === 'MBWAY'
       ? `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
            <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">PAGAMENTO — MB WAY</p>
            <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
@@ -159,6 +187,8 @@ export class MailService {
                   : `O teu ebook é <strong>gratuito</strong> — vamos enviá-lo diretamente para o teu email em breve. 📲`
                 : order.shippingMethod === 'digital'
                 ? 'A tua compra é um produto digital — <strong>não há portes de envio</strong>. Receberás o teu ebook no email assim que confirmarmos o pagamento. 📚'
+                : isPickup
+                ? 'Escolheste <strong>levantar a encomenda</strong>. Vamos contactar-te por <strong>WhatsApp</strong> para agendarmos o levantamento.'
                 : 'Assim que confirmarmos o pagamento, tratamos do envio!'
               }
             </p>
@@ -177,7 +207,7 @@ export class MailService {
               </tr></tfoot>
             </table>
 
-            ${order.shippingMethod !== 'digital' ? `
+            ${isPickup ? pickupBlock() : order.shippingMethod !== 'digital' ? `
             <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
               <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">MORADA DE ENTREGA</p>
               <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
@@ -261,6 +291,7 @@ export class MailService {
               </tr></tfoot>
             </table>
 
+            ${order.shippingMethod === PICKUP_METHOD_ID ? pickupBlock() : `
             <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
               <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">MORADA DE ENTREGA</p>
               <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
@@ -269,7 +300,7 @@ export class MailService {
                 ${order.country}
                 ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${order.shippingMethod}</span>` : ''}
               </p>
-            </div>
+            </div>`}
 
             ${this.contactBlock(settings)}
             ${this.footer()}
@@ -305,8 +336,15 @@ export class MailService {
     if (!adminEmail) return;
 
     const shortId      = order.id.slice(-8).toUpperCase();
-    const paymentLabel = order.paymentMethod === 'MBWAY' ? 'MB Way' : 'Transferência Bancária';
+    const paymentLabel = PAYMENT_LABELS[order.paymentMethod ?? ''] ?? order.paymentMethod ?? '—';
     const frontendUrl  = process.env.FRONTEND_URL ?? 'https://reaxone.com';
+    const isPickup     = order.shippingMethod === PICKUP_METHOD_ID;
+    const scheduleUrl  = isPickup
+      ? customerWhatsappUrl(order.phone, `Olá ${order.firstName}! Recebemos a sua encomenda #${shortId} na ReaxOne. Quando lhe dá jeito levantá-la em ${PICKUP_ADDRESS}?`)
+      : null;
+    const pickupRow    = isPickup
+      ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Entrega</td><td style="padding:6px 0;"><strong>Levantamento — agendar com o cliente</strong>${scheduleUrl ? `<br><a href="${scheduleUrl}" style="color:#E8322A;">Enviar WhatsApp ao cliente →</a>` : ''}</td></tr>`
+      : '';
 
     const itemsHtml = order.items.map((i) =>
       `<tr>
@@ -331,7 +369,7 @@ export class MailService {
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Email</td><td style="padding:6px 0;"><a href="mailto:${order.email}" style="color:#E8322A;">${order.email}</a></td></tr>
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Telefone</td><td style="padding:6px 0;">${order.phone}</td></tr>
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Pagamento</td><td style="padding:6px 0;">${paymentLabel}</td></tr>
-              ${order.shippingMethod ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Envio</td><td style="padding:6px 0;">${order.shippingMethod}</td></tr>` : ''}
+              ${isPickup ? pickupRow : order.shippingMethod ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Envio</td><td style="padding:6px 0;">${order.shippingMethod}</td></tr>` : ''}
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Morada</td><td style="padding:6px 0;">${order.street}, ${order.postalCode} ${order.city}, ${order.country}</td></tr>
               ${order.wantsInvoice && order.nif ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">NIF</td><td style="padding:6px 0;">${order.companyName ? `${order.companyName} — ` : ''}${order.nif}</td></tr>` : ''}
             </table>

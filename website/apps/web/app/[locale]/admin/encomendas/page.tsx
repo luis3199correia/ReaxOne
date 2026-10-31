@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { ChevronDown, ChevronUp, CheckCircle, Loader2, RefreshCw, XCircle, Trash2, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle, Loader2, RefreshCw, XCircle, Trash2, AlertCircle, MessageCircle } from 'lucide-react';
+import { PICKUP_ADDRESS, PICKUP_METHOD_ID, customerWhatsappUrl } from '@/lib/pickup';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:   'Pendente',
@@ -23,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 const PAYMENT_LABELS: Record<string, string> = {
   MBWAY:         'MB Way',
   BANK_TRANSFER: 'Transferência',
+  CASH:          'Em mão',
 };
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
@@ -349,7 +351,7 @@ export default function AdminEncomendas() {
                                   ))}
                                   {order.shippingMethod && (
                                     <div className="flex justify-between text-sm text-gray-500 pt-1 border-t">
-                                      <span>{order.shippingMethod}</span>
+                                      <span>{order.shippingMethod === PICKUP_METHOD_ID ? 'Levantamento' : order.shippingMethod}</span>
                                       <span>€{(order.shippingCost ?? 0).toFixed(2)}</span>
                                     </div>
                                   )}
@@ -367,6 +369,10 @@ export default function AdminEncomendas() {
                                   </p>
                                   <p className="text-sm text-gray-500 mt-1">{order.phone}</p>
                                 </div>
+
+                                {order.shippingMethod === PICKUP_METHOD_ID && (
+                                  <PickupScheduling order={order} />
+                                )}
 
                                 <div className="flex flex-col gap-2">
                                   {isPending && (
@@ -489,6 +495,34 @@ export default function AdminEncomendas() {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+// Levantamento: o cliente tem de ser contactado por WhatsApp para agendar a recolha
+function PickupScheduling({ order }: { order: Order }) {
+  const shortId = order.id.slice(-8).toUpperCase();
+  const url = customerWhatsappUrl(
+    order.phone,
+    `Olá ${order.firstName}! Recebemos a sua encomenda #${shortId} na ReaxOne. Quando lhe dá jeito levantá-la em ${PICKUP_ADDRESS}?`,
+  );
+
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+      <p className="font-semibold">Levantamento — agendar com o cliente</p>
+      <p className="text-xs mt-0.5">{PICKUP_ADDRESS}</p>
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 mt-2 font-semibold text-green-700 hover:underline"
+        >
+          <MessageCircle className="w-4 h-4" /> Enviar WhatsApp ao cliente
+        </a>
+      ) : (
+        <p className="text-xs mt-2">Telefone inválido — contacte o cliente por email.</p>
       )}
     </div>
   );

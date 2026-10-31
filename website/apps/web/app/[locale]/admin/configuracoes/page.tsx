@@ -13,7 +13,17 @@ const EMPTY_FORM: PublicSettings = {
   iban: '',
   ibanHolder: '',
   freeShippingThreshold: 0,
+  freeShippingThresholdEs: 0,
+  freeShippingThresholdEu: 0,
 };
+
+type ThresholdField = 'freeShippingThreshold' | 'freeShippingThresholdEs' | 'freeShippingThresholdEu';
+
+const FREE_SHIPPING_FIELDS: { field: ThresholdField; label: string; placeholder: string }[] = [
+  { field: 'freeShippingThreshold', label: 'Portugal Continental', placeholder: '35' },
+  { field: 'freeShippingThresholdEs', label: 'Espanha (continental, Baleares e Canárias)', placeholder: '50' },
+  { field: 'freeShippingThresholdEu', label: 'Restantes países da UE', placeholder: '70' },
+];
 
 export default function AdminSettingsPage() {
   const t = useTranslations('admin');
@@ -26,7 +36,7 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     api.get('/settings')
-      .then((res) => setForm(res.data))
+      .then((res) => setForm({ ...EMPTY_FORM, ...res.data }))
       .catch(() => setError('Erro ao carregar configurações.'))
       .finally(() => setLoading(false));
   }, []);
@@ -113,22 +123,27 @@ export default function AdminSettingsPage() {
         {/* Envios */}
         <div className="card p-6">
           <h2 className="text-lg font-semibold mb-4">Envios</h2>
-          <div>
-            <label className="block text-sm font-medium mb-1">Portes grátis a partir de (€)</label>
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              className="input"
-              placeholder="35"
-              value={form.freeShippingThreshold}
-              onChange={(e) => update('freeShippingThreshold', e.target.value === '' ? 0 : Number(e.target.value))}
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Encomendas para Portugal Continental com subtotal igual ou superior a este valor não pagam portes. Use 0 para desativar.
-              O valor aparece automaticamente na página de produto, em Envios e nos Termos.
-            </p>
+          <p className="text-sm font-medium mb-3">Portes grátis a partir de (€)</p>
+          <div className="space-y-4">
+            {FREE_SHIPPING_FIELDS.map(({ field, label, placeholder }) => (
+              <div key={field}>
+                <label className="block text-sm mb-1">{label}</label>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  className="input"
+                  placeholder={placeholder}
+                  value={form[field]}
+                  onChange={(e) => update(field, e.target.value === '' ? 0 : Number(e.target.value))}
+                />
+              </div>
+            ))}
           </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Encomendas com subtotal igual ou superior ao valor da zona não pagam portes. Use 0 para desativar.
+            Açores e Madeira não têm portes grátis. Os valores aparecem automaticamente na página de produto, em Envios e nos Termos.
+          </p>
         </div>
 
         {/* Transferência Bancária */}

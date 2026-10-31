@@ -58,6 +58,8 @@ async function main() {
     { key: 'mbway_phone', value: '' },
     { key: 'iban', value: '' },
     { key: 'shipping_free_above', value: '35' },
+    { key: 'shipping_free_above_es', value: '50' },
+    { key: 'shipping_free_above_eu', value: '70' },
     { key: 'shipping_flat_rate', value: '4.93' },
   ];
 

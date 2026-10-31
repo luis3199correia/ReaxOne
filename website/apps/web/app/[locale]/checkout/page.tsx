@@ -1,10 +1,10 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from '@/i18n/navigation';
-import { Loader2, Truck, Check, Calculator, AlertTriangle, Phone, BookOpen } from 'lucide-react';
+import { Loader2, Truck, Check, Calculator, AlertTriangle, Phone, BookOpen, MapPin } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import { api } from '@/lib/api';
 import {
@@ -15,10 +15,18 @@ import {
   ShippingOption,
   ShippingZone,
 } from '@/lib/shippingRates';
-import { whatsappUrl, formatWhatsappDisplay } from '@/lib/settings';
+import { whatsappUrl, formatWhatsappDisplay, getFreeShippingThresholds } from '@/lib/settings';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import { PICKUP_ADDRESS, PICKUP_METHOD_ID } from '@/lib/pickup';
 
-type PaymentMethod = 'mbway' | 'transfer';
+type PaymentMethod = 'mbway' | 'transfer' | 'cash';
+type DeliveryMode = 'ship' | 'pickup';
+
+const PAYMENT_METHOD_API: Record<PaymentMethod, string> = {
+  mbway:    'MBWAY',
+  transfer: 'BANK_TRANSFER',
+  cash:     'CASH',
+};
 
 interface CheckoutForm {
   firstName: string;
@@ -108,8 +116,8 @@ export default function CheckoutPage() {
   const [differentAddress, setDifferentAddress] = useState(false);
 
   // Envio
-  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
-  const [selectedShipping, setSelectedShipping] = useState<ShippingOption | null>(null);
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('ship');
+  const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null);
   const [shippingZone, setShippingZone] = useState<ShippingZone | null>(null);
   const [shippingCalculated, setShippingCalculated] = useState(false);
 
@@ -132,38 +140,56 @@ export default function CheckoutPage() {
   const activeZip     = differentAddress ? shipPostalCode : postalCode;
   const canCalculate  = !!activeCountry && activeZip.replace(/\D/g, '').length >= 4;
 
+  // As opções são sempre derivadas da zona, do subtotal atual e dos limites de
+  // portes grátis por zona (backoffice) — nunca ficam com valores desatualizados.
+  const shippingOptions: ShippingOption[] = useMemo(
+    () => (shippingZone ? getShippingOptions(shippingZone, total, getFreeShippingThresholds(settings)) : []),
+    [shippingZone, total, settings],
+  );
+  const selectedShipping = shippingOptions.find((o) => o.id === selectedShippingId) ?? shippingOptions[0] ?? null;
+
   /* ── Calcular portes ── */
   function calculateShipping() {
-    const zone = detectZone(activeCountry, activeZip);
-    const opts = getShippingOptions(zone, total, settings.freeShippingThreshold);
-    setShippingZone(zone);
-    setShippingOptions(opts);
+    setShippingZone(detectZone(activeCountry, activeZip));
+    setSelectedShippingId(null);
     setShippingCalculated(true);
-    setSelectedShipping(opts.length > 0 ? opts[0] : null);
   }
 
   // Resetar portes quando morada muda
   function resetShipping() {
-    setShippingOptions([]);
-    setSelectedShipping(null);
+    setSelectedShippingId(null);
     setShippingZone(null);
     setShippingCalculated(false);
   }
 
+  function changeDeliveryMode(mode: DeliveryMode) {
+    setDeliveryMode(mode);
+    // No levantamento não há morada de entrega
+    if (mode === 'pickup') setDifferentAddress(false);
+    // Pagamento em mão só existe com levantamento
+    if (mode === 'ship' && paymentMethod === 'cash') setPaymentMethod('mbway');
+  }
+
   // Detetar se todos os itens são ebooks (entrega digital, sem portes)
   const isAllEbooks = items.length > 0 && items.every((i) => i.isEbook);
+  const isPickup    = !isAllEbooks && deliveryMode === 'pickup';
+  const needsShippingQuote = !isAllEbooks && !isPickup;
 
-  const shippingCost = isAllEbooks ? 0 : (selectedShipping?.price ?? 0);
+  const shippingCost = needsShippingQuote ? (selectedShipping?.price ?? 0) : 0;
   const orderTotal   = total + shippingCost;
 
   /* ── Submit ── */
   const onSubmit = async (data: CheckoutForm) => {
-    if (!isAllEbooks && !shippingCalculated) {
+    if (needsShippingQuote && !shippingCalculated) {
       setError('Calcula os portes antes de finalizar a encomenda.');
       return;
     }
-    if (!isAllEbooks && (shippingZone === 'PT_ILHAS' || shippingZone === 'BLOCKED' || !selectedShipping)) {
+    if (needsShippingQuote && (shippingZone === 'PT_ILHAS' || shippingZone === 'BLOCKED' || !selectedShipping)) {
       setError('Não é possível enviar para esta localização. Entra em contacto connosco.');
+      return;
+    }
+    if (paymentMethod === 'cash' && !isPickup) {
+      setError('O pagamento em mão só está disponível com levantamento da encomenda.');
       return;
     }
 
@@ -184,12 +210,11 @@ export default function CheckoutPage() {
         city,
         postalCode,
         country: orderCountry,
-        paymentMethod: paymentMethod === 'mbway' ? 'MBWAY' : 'BANK_TRANSFER',
+        paymentMethod: PAYMENT_METHOD_API[paymentMethod],
         wantsInvoice,
         nif:            data.nif,
         companyName:    data.companyName,
-        shippingMethod: isAllEbooks ? 'digital' : selectedShipping!.id,
-        shippingCost:   isAllEbooks ? 0 : shippingCost,
+        shippingMethod: isAllEbooks ? 'digital' : isPickup ? PICKUP_METHOD_ID : selectedShipping!.id,
         items: items.map((i) => ({
           productId: i.id,
           name:      i.name,
@@ -199,11 +224,14 @@ export default function CheckoutPage() {
         })),
       });
       clearCart();
+      // Total calculado pelo servidor (fonte de verdade para os portes)
+      const serverTotal = Number(res.data.totalAmount);
       const params = new URLSearchParams({
         order:  res.data.id,
-        total:  orderTotal.toFixed(2),
+        total:  (Number.isFinite(serverTotal) ? serverTotal : orderTotal).toFixed(2),
         method: paymentMethod,
         email:  data.email,
+        ...(isPickup ? { delivery: 'pickup' } : {}),
       });
       router.push({ pathname: '/checkout/confirmacao', query: Object.fromEntries(params) });
     } catch (err: any) {
@@ -279,6 +307,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* Checkbox morada de entrega diferente */}
+              {!isPickup && (
               <div className="mt-5 pt-4 border-t border-gray-100">
                 <label className="flex items-center gap-3 cursor-pointer select-none">
                   <input
@@ -295,10 +324,11 @@ export default function CheckoutPage() {
                   </span>
                 </label>
               </div>
+              )}
             </div>
 
             {/* ── Morada de entrega alternativa ── */}
-            {differentAddress && (
+            {differentAddress && !isPickup && (
               <div className="card p-6 border-l-4 border-brand-primary">
                 <h2 className="text-lg font-semibold mb-4">Morada de entrega</h2>
                 <div className="grid grid-cols-2 gap-4">
@@ -358,11 +388,57 @@ export default function CheckoutPage() {
             <div className="card p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Truck className="w-5 h-5 text-brand-primary" />
-                Envio
+                Entrega
               </h2>
 
+              {/* Envio por transportadora ou levantamento */}
+              <div className="grid sm:grid-cols-2 gap-3 mb-5">
+                {([
+                  { mode: 'ship', icon: Truck, title: 'Envio por transportadora', hint: 'Portes calculados pela morada' },
+                  { mode: 'pickup', icon: MapPin, title: 'Levantamento', hint: 'Rio de Mouro · sem portes' },
+                ] as const).map(({ mode, icon: Icon, title, hint }) => (
+                  <label
+                    key={mode}
+                    className={`flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                      deliveryMode === mode ? 'border-brand-primary bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="deliveryMode"
+                      checked={deliveryMode === mode}
+                      onChange={() => changeDeliveryMode(mode)}
+                      className="accent-brand-primary mt-1"
+                    />
+                    <div>
+                      <p className="font-medium text-sm flex items-center gap-1.5"><Icon className="w-4 h-4" /> {title}</p>
+                      <p className="text-xs text-gray-500">{hint}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {isPickup && (
+                <div className="space-y-3">
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700">
+                    <p className="font-semibold text-brand-dark mb-1">Local de levantamento</p>
+                    <p>{PICKUP_ADDRESS}</p>
+                  </div>
+                  <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-800">
+                      <p className="font-semibold">O levantamento tem de ser agendado</p>
+                      <p className="mt-1">
+                        Depois de fazeres a encomenda, vamos contactar-te por <strong>WhatsApp</strong>, para o telefone indicado acima,
+                        para combinarmos o dia e a hora. Não te desloques sem marcação.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Botão calcular */}
-              {!shippingCalculated && (
+              {!isPickup && !shippingCalculated && (
                 <div className="mb-4">
                   <p className="text-sm text-gray-500 mb-3">
                     Preenche o código postal e o país para calcular os portes.
@@ -380,7 +456,7 @@ export default function CheckoutPage() {
               )}
 
               {/* Resultado do cálculo */}
-              {shippingCalculated && (
+              {!isPickup && shippingCalculated && (
                 <>
                   {/* Zona detectada */}
                   <div className="flex items-center justify-between mb-3">
@@ -457,7 +533,7 @@ export default function CheckoutPage() {
                               type="radio"
                               name="shipping"
                               checked={selectedShipping?.id === opt.id}
-                              onChange={() => setSelectedShipping(opt)}
+                              onChange={() => setSelectedShippingId(opt.id)}
                               className="accent-brand-primary"
                             />
                             <div>
@@ -491,6 +567,12 @@ export default function CheckoutPage() {
                   <input type="radio" value="transfer" checked={paymentMethod === 'transfer'} onChange={() => setPaymentMethod('transfer')} className="accent-brand-primary" />
                   <span className="font-medium">{t('payment_transfer')}</span>
                 </label>
+                {isPickup && (
+                  <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === 'cash' ? 'border-brand-primary bg-red-50' : 'border-gray-200'}`}>
+                    <input type="radio" value="cash" checked={paymentMethod === 'cash'} onChange={() => setPaymentMethod('cash')} className="accent-brand-primary" />
+                    <span className="font-medium">{t('payment_cash')}</span>
+                  </label>
+                )}
               </div>
               {paymentMethod === 'mbway' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
@@ -500,6 +582,11 @@ export default function CheckoutPage() {
               {paymentMethod === 'transfer' && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
                   {t('transfer_instructions')}
+                </div>
+              )}
+              {paymentMethod === 'cash' && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                  {t('cash_instructions')}
                 </div>
               )}
             </div>
@@ -542,9 +629,9 @@ export default function CheckoutPage() {
                 <span>€{total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Envio</span>
+                <span>{isPickup ? 'Levantamento' : 'Envio'}</span>
                 <span className="text-gray-400">
-                  {isAllEbooks || (shippingCalculated && selectedShipping && shippingCost === 0)
+                  {isAllEbooks || isPickup || (shippingCalculated && selectedShipping && shippingCost === 0)
                     ? <span className="text-brand-green font-medium">Grátis</span>
                     : !shippingCalculated
                     ? <span className="italic text-xs">a calcular</span>
@@ -561,7 +648,7 @@ export default function CheckoutPage() {
             </div>
             <button
               type="submit"
-              disabled={submitting || items.length === 0 || (!isAllEbooks && (!shippingCalculated || !selectedShipping))}
+              disabled={submitting || items.length === 0 || (needsShippingQuote && (!shippingCalculated || !selectedShipping))}
               className="btn-primary w-full mt-6 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting
@@ -569,7 +656,7 @@ export default function CheckoutPage() {
                 : <><Check className="w-4 h-4" /> {t('place_order')}</>
               }
             </button>
-            {!isAllEbooks && !shippingCalculated && (
+            {needsShippingQuote && !shippingCalculated && (
               <p className="text-xs text-gray-400 text-center mt-2">Calcula os portes para continuar</p>
             )}
           </div>

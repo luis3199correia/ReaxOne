@@ -51,12 +51,36 @@ function addIVA(opts: Omit<ShippingOption, 'price'>[]): ShippingOption[] {
   }));
 }
 
-// freeAbove: subtotal a partir do qual os portes em Portugal Continental são
-// grátis (configurado no backoffice); 0 desativa.
-export function getShippingOptions(zone: ShippingZone, subtotal = 0, freeAbove = 0): ShippingOption[] {
+// Subtotais (configurados no backoffice) a partir dos quais os portes são grátis; 0 desativa
+export interface FreeShippingThresholds {
+  pt: number; // Portugal Continental
+  es: number; // Espanha (continental, Baleares e Canárias)
+  eu: number; // Restantes países da UE
+}
+
+const NO_FREE_SHIPPING: FreeShippingThresholds = { pt: 0, es: 0, eu: 0 };
+
+// Açores e Madeira não têm portes grátis (envio sob consulta)
+export function freeShippingThresholdFor(zone: ShippingZone, thresholds: FreeShippingThresholds): number {
+  switch (zone) {
+    case 'PT_CONTINENTAL': return thresholds.pt;
+    case 'ES_CONTINENTAL':
+    case 'ES_ILHAS': return thresholds.es;
+    case 'ZONA2':
+    case 'ZONA3': return thresholds.eu;
+    default: return 0;
+  }
+}
+
+export function getShippingOptions(
+  zone: ShippingZone,
+  subtotal = 0,
+  thresholds: FreeShippingThresholds = NO_FREE_SHIPPING,
+): ShippingOption[] {
   if (zone === 'BLOCKED') return [];
   const opts = addIVA(RAW[zone]);
-  if (zone === 'PT_CONTINENTAL' && freeAbove > 0 && subtotal >= freeAbove) {
+  const freeAbove = freeShippingThresholdFor(zone, thresholds);
+  if (freeAbove > 0 && subtotal >= freeAbove) {
     return opts.map((o) => ({ ...o, price: 0 }));
   }
   return opts;

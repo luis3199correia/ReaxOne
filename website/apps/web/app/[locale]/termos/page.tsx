@@ -1,6 +1,9 @@
 import { getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import { fetchPublicSettings, formatEuro } from '@/lib/settings';
+import FreeShippingList from '@/components/shop/FreeShippingList';
+import { PICKUP_ADDRESS } from '@/lib/pickup';
+import { fetchPublicSettings, getFreeShippingThresholds } from '@/lib/settings';
+import type { FreeShippingThresholds } from '@/lib/shippingRates';
 
 const linkClass = 'text-brand-primary hover:underline';
 const h2Class = 'text-xl font-bold text-brand-dark mb-3';
@@ -9,11 +12,11 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
   return <a href={href} target="_blank" rel="noopener noreferrer" className={linkClass}>{children}</a>;
 }
 
-function TermosPt({ freeShippingThreshold }: { freeShippingThreshold: number }) {
+function TermosPt({ thresholds }: { thresholds: FreeShippingThresholds }) {
   return (
     <>
       <h1 className="text-4xl font-black text-brand-dark mb-2">Termos e Condições</h1>
-      <p className="text-brand-muted mb-10">Última atualização: outubro de 2026</p>
+      <p className="text-brand-muted mb-10">Última atualização: novembro de 2026</p>
 
       <div className="space-y-10 text-gray-700 leading-relaxed">
 
@@ -38,12 +41,16 @@ function TermosPt({ freeShippingThreshold }: { freeShippingThreshold: number }) 
         <section>
           <h2 className={h2Class}>4. Pagamento</h2>
           <p>Aceitamos pagamento por MB Way e transferência bancária. As instruções de pagamento são enviadas por email após a encomenda. A encomenda é cancelada caso o pagamento não seja recebido em 48 horas.</p>
+          <p className="mt-3">Nas encomendas com levantamento, pode também optar por pagar em mão no momento do levantamento.</p>
         </section>
 
         <section>
           <h2 className={h2Class}>5. Entregas</h2>
-          <p>As encomendas são processadas em 1 a 2 dias úteis após a confirmação do pagamento e entregues em Portugal Continental em 2 a 4 dias úteis. Os portes para Portugal Continental têm o custo de 4,93 € (IVA incluído){freeShippingThreshold > 0 && ` e são gratuitos em encomendas a partir de ${formatEuro(freeShippingThreshold, 'pt')}`}.</p>
+          <p>As encomendas são processadas em 1 a 2 dias úteis após a confirmação do pagamento e entregues em Portugal Continental em 2 a 4 dias úteis. Os portes para Portugal Continental têm o custo de 4,93 € (IVA incluído).</p>
+          <p className="mt-3">Portes grátis, em função do subtotal da encomenda:</p>
+          <FreeShippingList thresholds={thresholds} locale="pt" />
           <p className="mt-3">Enviamos também para Espanha e para vários países da União Europeia. Os prazos e os portes de cada destino constam da página <Link href="/envios" className={linkClass}>Envios e devoluções</Link> e são indicados no checkout antes de concluir a encomenda. Para entregas nas Regiões Autónomas (Açores e Madeira), contacte-nos antes de encomendar.</p>
+          <p className="mt-3">Pode também levantar a encomenda, sem portes, em {PICKUP_ADDRESS}. O levantamento é feito mediante marcação: após a encomenda, contactamo-lo por WhatsApp para combinar o dia e a hora.</p>
         </section>
 
         <section>
@@ -54,7 +61,7 @@ function TermosPt({ freeShippingThreshold }: { freeShippingThreshold: number }) 
         <section>
           <h2 className={h2Class}>7. Direito de livre resolução</h2>
           <p>Tem o direito de resolver o contrato no prazo de 14 dias a contar da receção dos produtos, sem necessidade de indicar qualquer motivo (Decreto-Lei n.º 24/2014). Para exercer este direito, envie-nos uma declaração inequívoca por email ou WhatsApp, ou utilize o <a href="#formulario-livre-resolucao" className={linkClass}>formulário de livre resolução</a> disponível nesta página.</p>
-          <p className="mt-3">Os custos de devolução são suportados pela ReaxOne. Reembolsamos todos os pagamentos recebidos, incluindo os portes de envio iniciais, no prazo máximo de 14 dias a contar da data em que formos informados da sua decisão, utilizando o mesmo meio de pagamento, salvo acordo em contrário. Podemos reter o reembolso até recebermos os produtos ou até nos ser apresentada prova do seu envio.</p>
+          <p className="mt-3">Em encomendas entregues em Portugal Continental, os custos de devolução são suportados pela ReaxOne. Em encomendas entregues noutros países, os custos diretos de devolução são suportados pelo consumidor. Reembolsamos todos os pagamentos recebidos, incluindo os portes de envio iniciais, no prazo máximo de 14 dias a contar da data em que formos informados da sua decisão, utilizando o mesmo meio de pagamento, salvo acordo em contrário. Podemos reter o reembolso até recebermos os produtos ou até nos ser apresentada prova do seu envio.</p>
           <p className="mt-3">O consumidor é responsável pela depreciação dos produtos que resulte de uma utilização que exceda o necessário para verificar a sua natureza, características e funcionamento.</p>
         </section>
 
@@ -99,11 +106,11 @@ function TermosPt({ freeShippingThreshold }: { freeShippingThreshold: number }) 
   );
 }
 
-function TermosEn({ freeShippingThreshold }: { freeShippingThreshold: number }) {
+function TermosEn({ thresholds }: { thresholds: FreeShippingThresholds }) {
   return (
     <>
       <h1 className="text-4xl font-black text-brand-dark mb-2">Terms and Conditions</h1>
-      <p className="text-brand-muted mb-10">Last updated: October 2026</p>
+      <p className="text-brand-muted mb-10">Last updated: November 2026</p>
 
       <div className="space-y-10 text-gray-700 leading-relaxed">
 
@@ -128,12 +135,16 @@ function TermosEn({ freeShippingThreshold }: { freeShippingThreshold: number }) 
         <section>
           <h2 className={h2Class}>4. Payment</h2>
           <p>We accept payment by MB Way and bank transfer. Payment instructions are sent by email after the order is placed. The order is cancelled if payment is not received within 48 hours.</p>
+          <p className="mt-3">For orders collected in person, you may also choose to pay on pickup.</p>
         </section>
 
         <section>
           <h2 className={h2Class}>5. Delivery</h2>
-          <p>Orders are processed within 1 to 2 business days after payment confirmation and delivered in mainland Portugal within 2 to 4 business days. Shipping to mainland Portugal costs €4.93 (VAT included){freeShippingThreshold > 0 && ` and is free on orders of ${formatEuro(freeShippingThreshold, 'en')} or more`}.</p>
+          <p>Orders are processed within 1 to 2 business days after payment confirmation and delivered in mainland Portugal within 2 to 4 business days. Shipping to mainland Portugal costs €4.93 (VAT included).</p>
+          <p className="mt-3">Free shipping, based on the order subtotal:</p>
+          <FreeShippingList thresholds={thresholds} locale="en" />
           <p className="mt-3">We also ship to Spain and to several European Union countries. Delivery times and shipping costs for each destination are listed on the <Link href="/envios" className={linkClass}>Shipping &amp; Returns</Link> page and shown at checkout before you complete your order. For deliveries to the Azores and Madeira, please contact us before ordering.</p>
+          <p className="mt-3">You can also collect your order free of charge at {PICKUP_ADDRESS}. Pickup is by appointment only: after you place your order, we will contact you on WhatsApp to arrange the day and time.</p>
         </section>
 
         <section>
@@ -144,7 +155,7 @@ function TermosEn({ freeShippingThreshold }: { freeShippingThreshold: number }) 
         <section>
           <h2 className={h2Class}>7. Right of withdrawal</h2>
           <p>You have the right to withdraw from the contract within 14 days of receiving the products, without giving any reason (Decree-Law no. 24/2014). To exercise this right, send us a clear statement by email or WhatsApp, or use the <a href="#withdrawal-form" className={linkClass}>withdrawal form</a> available on this page.</p>
-          <p className="mt-3">Return costs are borne by ReaxOne. We will refund all payments received, including the original shipping costs, within 14 days of being informed of your decision, using the same payment method, unless otherwise agreed. We may withhold the refund until we have received the products or you have provided proof of having sent them.</p>
+          <p className="mt-3">For orders delivered in mainland Portugal, return costs are borne by ReaxOne. For orders delivered to other countries, the direct cost of returning the goods is borne by the consumer. We will refund all payments received, including the original shipping costs, within 14 days of being informed of your decision, using the same payment method, unless otherwise agreed. We may withhold the refund until we have received the products or you have provided proof of having sent them.</p>
           <p className="mt-3">The consumer is liable for any diminished value of the products resulting from handling beyond what is necessary to establish their nature, characteristics and functioning.</p>
         </section>
 
@@ -191,13 +202,13 @@ function TermosEn({ freeShippingThreshold }: { freeShippingThreshold: number }) 
 
 export default async function TermosPage() {
   const locale = await getLocale();
-  const { freeShippingThreshold } = await fetchPublicSettings();
+  const thresholds = getFreeShippingThresholds(await fetchPublicSettings());
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-16">
       {locale === 'en'
-        ? <TermosEn freeShippingThreshold={freeShippingThreshold} />
-        : <TermosPt freeShippingThreshold={freeShippingThreshold} />}
+        ? <TermosEn thresholds={thresholds} />
+        : <TermosPt thresholds={thresholds} />}
     </div>
   );
 }
