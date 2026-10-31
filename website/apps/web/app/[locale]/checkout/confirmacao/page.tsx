@@ -7,7 +7,7 @@ import { useLocale } from 'next-intl';
 import { CheckCircle, Smartphone, Building2, ArrowRight, MapPin, HandCoins } from 'lucide-react';
 import { whatsappUrl, formatWhatsappDisplay } from '@/lib/settings';
 import { useSettings } from '@/components/providers/SettingsProvider';
-import { PICKUP_ADDRESS } from '@/lib/pickup';
+import PickupInfo from '@/components/shop/PickupInfo';
 
 function ConfirmacaoContent() {
   const params   = useSearchParams();
@@ -41,13 +41,7 @@ function ConfirmacaoContent() {
             <MapPin className="w-5 h-5 text-brand-primary flex-shrink-0" />
             <h2 className="font-semibold text-brand-dark">Levantamento da encomenda</h2>
           </div>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            Local: <strong>{PICKUP_ADDRESS}</strong>
-          </p>
-          <p className="text-sm text-gray-600 leading-relaxed mt-2">
-            O levantamento é feito <strong>mediante marcação</strong>. Vamos contactar-te por WhatsApp, para o número
-            indicado na encomenda, para combinarmos o dia e a hora.
-          </p>
+          <PickupInfo reference={shortId} />
         </div>
       )}
 

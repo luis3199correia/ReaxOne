@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { ChevronDown, ChevronUp, CheckCircle, Loader2, RefreshCw, XCircle, Trash2, AlertCircle, MessageCircle } from 'lucide-react';
-import { PICKUP_ADDRESS, PICKUP_METHOD_ID, customerWhatsappUrl } from '@/lib/pickup';
+import { PICKUP_ADDRESS, PICKUP_METHOD_ID, PICKUP_PLACE, customerWhatsappUrl } from '@/lib/pickup';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:   'Pendente',
@@ -505,13 +505,13 @@ function PickupScheduling({ order }: { order: Order }) {
   const shortId = order.id.slice(-8).toUpperCase();
   const url = customerWhatsappUrl(
     order.phone,
-    `Olá ${order.firstName}! Recebemos a sua encomenda #${shortId} na ReaxOne. Quando lhe dá jeito levantá-la em ${PICKUP_ADDRESS}?`,
+    `Olá ${order.firstName}! Recebemos a sua encomenda #${shortId} na ReaxOne. O levantamento é no ${PICKUP_PLACE} (${PICKUP_ADDRESS}). Que dia e hora lhe dão jeito?`,
   );
 
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
       <p className="font-semibold">Levantamento — agendar com o cliente</p>
-      <p className="text-xs mt-0.5">{PICKUP_ADDRESS}</p>
+      <p className="text-xs mt-0.5">{PICKUP_PLACE} — {PICKUP_ADDRESS}</p>
       {url ? (
         <a
           href={url}

@@ -17,7 +17,8 @@ import {
 } from '@/lib/shippingRates';
 import { whatsappUrl, formatWhatsappDisplay, getFreeShippingThresholds } from '@/lib/settings';
 import { useSettings } from '@/components/providers/SettingsProvider';
-import { PICKUP_ADDRESS, PICKUP_METHOD_ID } from '@/lib/pickup';
+import { PICKUP_METHOD_ID, PICKUP_PLACE } from '@/lib/pickup';
+import PickupInfo from '@/components/shop/PickupInfo';
 
 type PaymentMethod = 'mbway' | 'transfer' | 'cash';
 type DeliveryMode = 'ship' | 'pickup';
@@ -395,7 +396,7 @@ export default function CheckoutPage() {
               <div className="grid sm:grid-cols-2 gap-3 mb-5">
                 {([
                   { mode: 'ship', icon: Truck, title: 'Envio por transportadora', hint: 'Portes calculados pela morada' },
-                  { mode: 'pickup', icon: MapPin, title: 'Levantamento', hint: 'Rio de Mouro · sem portes' },
+                  { mode: 'pickup', icon: MapPin, title: 'Levantamento', hint: `${PICKUP_PLACE}, Rio de Mouro · sem portes` },
                 ] as const).map(({ mode, icon: Icon, title, hint }) => (
                   <label
                     key={mode}
@@ -418,24 +419,7 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
-              {isPickup && (
-                <div className="space-y-3">
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700">
-                    <p className="font-semibold text-brand-dark mb-1">Local de levantamento</p>
-                    <p>{PICKUP_ADDRESS}</p>
-                  </div>
-                  <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                    <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-amber-800">
-                      <p className="font-semibold">O levantamento tem de ser agendado</p>
-                      <p className="mt-1">
-                        Depois de fazeres a encomenda, vamos contactar-te por <strong>WhatsApp</strong>, para o telefone indicado acima,
-                        para combinarmos o dia e a hora. Não te desloques sem marcação.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {isPickup && <PickupInfo />}
 
               {/* Botão calcular */}
               {!isPickup && !shippingCalculated && (

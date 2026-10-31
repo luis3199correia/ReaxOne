@@ -1,7 +1,7 @@
 import { getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import FreeShippingList from '@/components/shop/FreeShippingList';
-import { PICKUP_ADDRESS } from '@/lib/pickup';
+import { PICKUP_ADDRESS, PICKUP_PLACE } from '@/lib/pickup';
 import { fetchPublicSettings, getFreeShippingThresholds } from '@/lib/settings';
 import type { FreeShippingThresholds } from '@/lib/shippingRates';
 
@@ -50,7 +50,7 @@ function TermosPt({ thresholds }: { thresholds: FreeShippingThresholds }) {
           <p className="mt-3">Portes grátis, em função do subtotal da encomenda:</p>
           <FreeShippingList thresholds={thresholds} locale="pt" />
           <p className="mt-3">Enviamos também para Espanha e para vários países da União Europeia. Os prazos e os portes de cada destino constam da página <Link href="/envios" className={linkClass}>Envios e devoluções</Link> e são indicados no checkout antes de concluir a encomenda. Para entregas nas Regiões Autónomas (Açores e Madeira), contacte-nos antes de encomendar.</p>
-          <p className="mt-3">Pode também levantar a encomenda, sem portes, em {PICKUP_ADDRESS}. O levantamento é feito mediante marcação: após a encomenda, contactamo-lo por WhatsApp para combinar o dia e a hora.</p>
+          <p className="mt-3">Pode também levantar a encomenda, sem portes, no {PICKUP_PLACE}, {PICKUP_ADDRESS}. O levantamento é feito mediante marcação: após a encomenda, contactamo-lo por WhatsApp para combinar o dia e a hora.</p>
         </section>
 
         <section>
@@ -144,7 +144,7 @@ function TermosEn({ thresholds }: { thresholds: FreeShippingThresholds }) {
           <p className="mt-3">Free shipping, based on the order subtotal:</p>
           <FreeShippingList thresholds={thresholds} locale="en" />
           <p className="mt-3">We also ship to Spain and to several European Union countries. Delivery times and shipping costs for each destination are listed on the <Link href="/envios" className={linkClass}>Shipping &amp; Returns</Link> page and shown at checkout before you complete your order. For deliveries to the Azores and Madeira, please contact us before ordering.</p>
-          <p className="mt-3">You can also collect your order free of charge at {PICKUP_ADDRESS}. Pickup is by appointment only: after you place your order, we will contact you on WhatsApp to arrange the day and time.</p>
+          <p className="mt-3">You can also collect your order free of charge at {PICKUP_PLACE}, {PICKUP_ADDRESS}. Pickup is by appointment only: after you place your order, we will contact you on WhatsApp to arrange the day and time.</p>
         </section>
 
         <section>

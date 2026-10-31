@@ -3,7 +3,7 @@ import { Resend } from 'resend';
 import * as fs from 'fs';
 import * as path from 'path';
 import { SettingsService, PublicSettings } from '../settings/settings.service';
-import { PICKUP_ADDRESS, PICKUP_METHOD_ID, customerWhatsappUrl } from '../orders/pickup';
+import { PICKUP_ADDRESS, PICKUP_MAPS_URL, PICKUP_METHOD_ID, PICKUP_PLACE, customerWhatsappUrl } from '../orders/pickup';
 
 const PAYMENT_LABELS: Record<string, string> = {
   MBWAY:         'MB Way',
@@ -16,8 +16,9 @@ function pickupBlock(): string {
   return `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
     <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">LEVANTAMENTO</p>
     <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
-      ${PICKUP_ADDRESS}<br>
-      <strong>O levantamento é feito mediante marcação.</strong> Vamos contactar-te por WhatsApp, para o número indicado na encomenda, para combinarmos o dia e a hora.
+      <strong>${PICKUP_PLACE}</strong><br>
+      ${PICKUP_ADDRESS} · <a href="${PICKUP_MAPS_URL}" style="color:#E8322A;">ver no mapa</a><br><br>
+      <strong>O levantamento é feito apenas mediante marcação.</strong> Vamos contactar-te por WhatsApp, para o número indicado na encomenda, para combinarmos o dia e a hora. Por favor, não te desloques ao clube sem marcação.
     </p>
   </div>`;
 }
@@ -340,7 +341,7 @@ export class MailService {
     const frontendUrl  = process.env.FRONTEND_URL ?? 'https://reaxone.com';
     const isPickup     = order.shippingMethod === PICKUP_METHOD_ID;
     const scheduleUrl  = isPickup
-      ? customerWhatsappUrl(order.phone, `Olá ${order.firstName}! Recebemos a sua encomenda #${shortId} na ReaxOne. Quando lhe dá jeito levantá-la em ${PICKUP_ADDRESS}?`)
+      ? customerWhatsappUrl(order.phone, `Olá ${order.firstName}! Recebemos a sua encomenda #${shortId} na ReaxOne. O levantamento é no ${PICKUP_PLACE} (${PICKUP_ADDRESS}). Que dia e hora lhe dão jeito?`)
       : null;
     const pickupRow    = isPickup
       ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Entrega</td><td style="padding:6px 0;"><strong>Levantamento — agendar com o cliente</strong>${scheduleUrl ? `<br><a href="${scheduleUrl}" style="color:#E8322A;">Enviar WhatsApp ao cliente →</a>` : ''}</td></tr>`

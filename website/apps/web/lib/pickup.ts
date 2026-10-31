@@ -1,7 +1,9 @@
 // Levantamento em mão — sem portes, mediante marcação prévia por WhatsApp.
 // A API usa os mesmos valores em apps/api/src/orders/pickup.ts — manter em sincronia.
 export const PICKUP_METHOD_ID = 'pickup';
+export const PICKUP_PLACE = 'Clube SpinPadel';
 export const PICKUP_ADDRESS = 'Praça Clube, 2635-453 Rio de Mouro';
+export const PICKUP_MAPS_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`SpinPadel, ${PICKUP_ADDRESS}`)}`;
 
 // Link wa.me para contactar o cliente; números PT de 9 dígitos ganham o indicativo 351
 export function customerWhatsappUrl(phone: string, text?: string): string | null {

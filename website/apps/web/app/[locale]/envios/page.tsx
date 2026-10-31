@@ -2,7 +2,7 @@ import { getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
 import ShippingRatesTable from '@/components/shop/ShippingRatesTable';
 import FreeShippingList from '@/components/shop/FreeShippingList';
-import { PICKUP_ADDRESS } from '@/lib/pickup';
+import { PICKUP_ADDRESS, PICKUP_MAPS_URL, PICKUP_PLACE } from '@/lib/pickup';
 import type { FreeShippingThresholds } from '@/lib/shippingRates';
 import { whatsappUrl, formatWhatsappDisplay, fetchPublicSettings, getFreeShippingThresholds } from '@/lib/settings';
 
@@ -22,7 +22,7 @@ function EnviosPt({ thresholds }: { thresholds: FreeShippingThresholds }) {
         <ShippingRatesTable locale="pt" />
         <p className="mt-4"><strong>Portes grátis</strong> (subtotal da encomenda):</p>
         <FreeShippingList thresholds={thresholds} locale="pt" />
-        <p className="mt-4"><strong>Levantamento:</strong> pode também levantar a encomenda, sem portes, em {PICKUP_ADDRESS}. O levantamento é feito mediante marcação: após a encomenda, contactamo-lo por WhatsApp para combinar o dia e a hora.</p>
+        <p className="mt-4"><strong>Levantamento (sem portes):</strong> pode levantar a encomenda no <strong>{PICKUP_PLACE}</strong>, {PICKUP_ADDRESS} (<a href={PICKUP_MAPS_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>ver no mapa</a>). O levantamento é feito <strong>apenas mediante marcação</strong>: após a encomenda, contactamo-lo por WhatsApp, para o telefone indicado, para combinar o dia e a hora. Por favor, não se desloque ao clube sem marcação. Nas encomendas com levantamento pode pagar em mão no momento da entrega.</p>
       </section>
 
       <section>
@@ -54,7 +54,7 @@ function EnviosEn({ thresholds }: { thresholds: FreeShippingThresholds }) {
         <ShippingRatesTable locale="en" />
         <p className="mt-4"><strong>Free shipping</strong> (order subtotal):</p>
         <FreeShippingList thresholds={thresholds} locale="en" />
-        <p className="mt-4"><strong>Pickup:</strong> you can also collect your order free of charge at {PICKUP_ADDRESS}. Pickup is by appointment only: after you place your order, we will contact you on WhatsApp to arrange the day and time.</p>
+        <p className="mt-4"><strong>Pickup (free):</strong> you can collect your order at <strong>{PICKUP_PLACE}</strong>, {PICKUP_ADDRESS} (<a href={PICKUP_MAPS_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>view on map</a>). Pickup is <strong>by appointment only</strong>: after you place your order, we will contact you on WhatsApp, at the phone number provided, to arrange the day and time. Please do not go to the club without an appointment. Pickup orders can be paid in person on collection.</p>
       </section>
 
       <section>
