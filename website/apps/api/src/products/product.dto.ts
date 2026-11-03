@@ -37,6 +37,21 @@ export class CreateProductDto {
   @IsString()
   descriptionEn?: string;
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  color?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  colorEn?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  groupId?: string;
+
   @IsNumber()
   @Min(0)
   price: number;

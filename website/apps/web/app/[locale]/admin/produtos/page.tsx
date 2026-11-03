@@ -15,6 +15,9 @@ interface Product {
   slug: string;
   description: string;
   descriptionEn?: string;
+  color?: string;
+  colorEn?: string;
+  groupId?: string;
   price: number;
   stock: number;
   category?: { id: string; name: string; slug: string };
@@ -40,6 +43,9 @@ const EMPTY_FORM = {
   slug: '',
   description: '',
   descriptionEn: '',
+  color: '',
+  colorEn: '',
+  groupId: '',
   price: '',
   stock: '',
   categoryId: '',
@@ -260,6 +266,9 @@ export default function AdminProductsPage() {
       slug: p.slug,
       description: p.description ?? '',
       descriptionEn: p.descriptionEn ?? '',
+      color: p.color ?? '',
+      colorEn: p.colorEn ?? '',
+      groupId: p.groupId ?? '',
       price: String(p.price),
       stock: String(p.stock),
       categoryId: p.category?.id ?? '',
@@ -325,6 +334,9 @@ export default function AdminProductsPage() {
       slug: form.slug,
       description: form.description,
       descriptionEn: form.descriptionEn || undefined,
+      color: form.color.trim(),
+      colorEn: form.colorEn.trim(),
+      groupId: form.groupId.trim(),
       price,
       stock,
       images: form.images,
@@ -672,6 +684,44 @@ export default function AdminProductsPage() {
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  {langTab === 'pt' ? (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Cor <span className="text-gray-400 font-normal">(Português)</span></label>
+                      <input
+                        type="text"
+                        value={form.color}
+                        onChange={(e) => handleField('color', e.target.value)}
+                        className="input"
+                        placeholder="Branco/Preto"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Color <span className="text-gray-400 font-normal">(English)</span></label>
+                      <input
+                        type="text"
+                        value={form.colorEn}
+                        onChange={(e) => handleField('colorEn', e.target.value)}
+                        className="input"
+                        placeholder="White/Black"
+                      />
+                    </>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Grupo de cores <span className="text-gray-400 font-normal">(Google Shopping)</span></label>
+                  <input
+                    type="text"
+                    value={form.groupId}
+                    onChange={(e) => handleField('groupId', e.target.value)}
+                    className="input text-sm font-mono"
+                    placeholder="meias-reaxone-performance-casual"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Igual em todas as cores do mesmo produto.</p>
                 </div>
 
                 <div>

@@ -70,6 +70,9 @@ model Product {
   slug          String   @unique
   description   String?
   descriptionEn String?
+  color         String?  // cor (PT), ex.: "Branco/Preto" — feed Google Merchant
+  colorEn       String?
+  groupId       String?  // agrupa as cores do mesmo produto (item_group_id)
   price         Float
   images      String[]
   stock       Int      @default(0)
