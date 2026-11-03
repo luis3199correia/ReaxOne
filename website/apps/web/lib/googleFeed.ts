@@ -13,7 +13,12 @@ const DESCRIPTION_MAX = 5000;
 const MAX_ADDITIONAL_IMAGES = 10;
 
 const CATEGORY_SOCKS = 'Apparel & Accessories > Clothing > Underwear & Socks > Socks';
-const CATEGORY_ATHLETICS = 'Sporting Goods > Athletics';
+const CATEGORY_FITNESS = 'Sporting Goods > Exercise & Fitness';
+
+// Atributos obrigatórios para vestuário (meias)
+const SOCKS_SIZE: Record<Locale, string> = { pt: 'Tamanho único', en: 'One size' };
+const SOCKS_GENDER = 'unisex';
+const SOCKS_AGE_GROUP = 'adult';
 
 interface FeedProduct {
   name: string;
@@ -57,9 +62,9 @@ function absoluteUrl(path: string): string {
   return encodeURI(`${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`);
 }
 
-function googleCategory(p: FeedProduct): string {
+function isSocks(p: FeedProduct): boolean {
   const haystack = `${p.category?.slug ?? ''} ${p.category?.name ?? ''} ${p.slug}`.toLowerCase();
-  return /meia|sock/.test(haystack) ? CATEGORY_SOCKS : CATEGORY_ATHLETICS;
+  return /meia|sock/.test(haystack);
 }
 
 function tag(name: string, value: string | undefined | null): string {
@@ -76,6 +81,7 @@ function renderItem(p: FeedProduct, locale: Locale): string {
   );
   const color = ((isEn && p.colorEn?.trim()) || p.color?.trim()) ?? '';
   const [mainImage, ...extraImages] = p.images.filter(Boolean);
+  const socks = isSocks(p);
 
   return (
     '    <item>\n' +
@@ -90,9 +96,12 @@ function renderItem(p: FeedProduct, locale: Locale): string {
     tag('condition', 'new') +
     tag('brand', BRAND) +
     tag('identifier_exists', 'no') +
-    tag('google_product_category', googleCategory(p)) +
+    tag('google_product_category', socks ? CATEGORY_SOCKS : CATEGORY_FITNESS) +
     tag('item_group_id', p.groupId?.trim()) +
     tag('color', color) +
+    (socks
+      ? tag('size', SOCKS_SIZE[locale]) + tag('gender', SOCKS_GENDER) + tag('age_group', SOCKS_AGE_GROUP)
+      : '') +
     '    </item>\n'
   );
 }
