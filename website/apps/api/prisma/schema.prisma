@@ -128,6 +128,10 @@ model Order {
   shippingMethod   String?
   shippingCost     Float    @default(0)
 
+  // Código de desconto aplicado (snapshot do código e do valor descontado)
+  discountCode   String?
+  discountAmount Float    @default(0)
+
   user       User?         @relation(fields: [userId], references: [id])
   items      OrderItem[]
   payment    Payment?
@@ -156,6 +160,27 @@ model Payment {
   createdAt     DateTime      @default(now())
 
   order Order @relation(fields: [orderId], references: [id])
+}
+
+enum DiscountType {
+  PERCENTAGE // value = percentagem (ex.: 10 = 10%)
+  FIXED      // value = euros
+}
+
+model DiscountCode {
+  id             String       @id @default(cuid())
+  code           String       @unique // guardado sempre em maiúsculas
+  description    String?
+  type           DiscountType @default(PERCENTAGE)
+  value          Float
+  active         Boolean      @default(true)
+  minOrderAmount Float?       // subtotal mínimo dos produtos
+  maxUses        Int?         // null = ilimitado
+  usedCount      Int          @default(0)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Settings {

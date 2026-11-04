@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
 import { SettingsService } from '../settings/settings.service';
+import { DiscountsService } from '../discounts/discounts.service';
 import { detectZone, shippingPrice } from './shipping-rates';
 import { PICKUP_METHOD_ID } from './pickup';
 
@@ -27,6 +28,7 @@ export class OrdersService {
     private batchService: BatchService,
     private mailService: MailService,
     private settingsService: SettingsService,
+    private discountsService: DiscountsService,
   ) {}
 
   /**
@@ -57,6 +59,7 @@ export class OrdersService {
     companyName?: string;
     paymentMethod: PaymentMethodInput;
     shippingMethod?: string;
+    discountCode?: string;
     // price, name e shippingCost podem vir no body mas são ignorados — recalculados no servidor
     items: Array<{
       productId: string;
@@ -76,7 +79,8 @@ export class OrdersService {
       throw new BadRequestException('O pagamento em mão só está disponível com levantamento da encomenda.');
     }
 
-    // Levantamento não tem portes
+    // Levantamento não tem portes. Os limites de portes grátis contam o subtotal
+    // dos produtos antes do desconto.
     let shippingCost = 0;
     if (!isAllDigital && !isPickup) {
       const settings = await this.settingsService.getPublicSettings();
@@ -92,9 +96,14 @@ export class OrdersService {
       shippingCost = price;
     }
     const shippingMethod = isAllDigital ? 'digital' : data.shippingMethod;
-    const totalAmount = roundCents(itemsTotal + shippingCost);
 
     const order = await this.prisma.$transaction(async (tx) => {
+      // Valida e consome o código na mesma transação do stock: se algo falhar,
+      // a utilização do código é revertida.
+      const discount = await this.discountsService.redeem(tx, data.discountCode, itemsTotal);
+      const discountAmount = discount?.amount ?? 0;
+      const totalAmount = roundCents(itemsTotal - discountAmount + shippingCost);
+
       for (const item of items) {
         if (item.isEbook) continue;
 
@@ -125,6 +134,8 @@ export class OrdersService {
           companyName:   data.companyName,
           shippingMethod,
           shippingCost,
+          discountCode:   discount?.code ?? null,
+          discountAmount,
           totalAmount,
           items: {
             create: items.map((item) => ({
@@ -154,6 +165,8 @@ export class OrdersService {
         email:         order.email,
         totalAmount:   order.totalAmount,
         paymentMethod: data.paymentMethod,
+        discountCode:   order.discountCode,
+        discountAmount: order.discountAmount,
         shippingMethod,
         street:        order.street,
         city:          order.city,
@@ -177,6 +190,8 @@ export class OrdersService {
         phone:          order.phone,
         totalAmount:    order.totalAmount,
         paymentMethod:  data.paymentMethod,
+        discountCode:   order.discountCode,
+        discountAmount: order.discountAmount,
         shippingMethod,
         street:         order.street,
         city:           order.city,

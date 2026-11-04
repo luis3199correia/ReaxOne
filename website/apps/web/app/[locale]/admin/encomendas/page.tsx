@@ -55,6 +55,8 @@ type Order = {
   totalAmount: number;
   shippingMethod?: string;
   shippingCost?: number;
+  discountCode?: string | null;
+  discountAmount?: number;
   createdAt: string;
   items: OrderItem[];
   payment?: { method: string; status: string };
@@ -349,6 +351,12 @@ export default function AdminEncomendas() {
                                       <span className="font-medium">€{(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
                                   ))}
+                                  {order.discountCode && (order.discountAmount ?? 0) > 0 && (
+                                    <div className="flex justify-between text-sm text-green-700 pt-1 border-t">
+                                      <span>Desconto ({order.discountCode})</span>
+                                      <span>−€{(order.discountAmount ?? 0).toFixed(2)}</span>
+                                    </div>
+                                  )}
                                   {order.shippingMethod && (
                                     <div className="flex justify-between text-sm text-gray-500 pt-1 border-t">
                                       <span>{order.shippingMethod === PICKUP_METHOD_ID ? 'Levantamento' : order.shippingMethod}</span>

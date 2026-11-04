@@ -10,6 +10,7 @@ const SENSITIVE_ROUTES = new Set([
   'POST /api/auth/reset-password',
   'POST /api/contact',
   'POST /api/orders',
+  'POST /api/discounts/validate', // evita adivinhar códigos por força bruta
 ]);
 
 const ONE_MINUTE = 60_000;

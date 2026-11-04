@@ -101,7 +101,12 @@
     "address": "Address",
     "city": "City",
     "postal_code": "Postal code",
-    "country": "Country"
+    "country": "Country",
+    "discount_code": "Discount code",
+    "discount_apply": "Apply",
+    "discount_remove": "Remove code",
+    "discount": "Discount",
+    "discount_invalid": "Invalid discount code."
   },
   "account": {
     "title": "My account",

@@ -1,10 +1,10 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from '@/i18n/navigation';
-import { Loader2, Truck, Check, Calculator, AlertTriangle, Phone, BookOpen, MapPin } from 'lucide-react';
+import { Loader2, Truck, Check, Calculator, AlertTriangle, Phone, BookOpen, MapPin, Tag, X } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
 import { api } from '@/lib/api';
 import {
@@ -28,6 +28,18 @@ const PAYMENT_METHOD_API: Record<PaymentMethod, string> = {
   transfer: 'BANK_TRANSFER',
   cash:     'CASH',
 };
+
+interface AppliedDiscount {
+  code: string;
+  type: 'PERCENTAGE' | 'FIXED';
+  value: number;
+}
+
+/** Mesmo cálculo do servidor: só sobre os produtos e nunca acima do subtotal. */
+function discountAmountFor(discount: AppliedDiscount, subtotal: number) {
+  const raw = discount.type === 'PERCENTAGE' ? (subtotal * discount.value) / 100 : discount.value;
+  return Math.round(Math.min(Math.max(raw, 0), subtotal) * 100) / 100;
+}
 
 interface CheckoutForm {
   firstName: string;
@@ -129,6 +141,17 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Código de desconto (o valor final é sempre recalculado pelo servidor)
+  const [discountInput, setDiscountInput] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState<AppliedDiscount | null>(null);
+  const [discountError, setDiscountError] = useState('');
+  const [discountLoading, setDiscountLoading] = useState(false);
+
+  // Se o carrinho mudar, o código tem de ser revalidado (ex.: compra mínima)
+  useEffect(() => {
+    setAppliedDiscount(null);
+  }, [total]);
+
   const { register, handleSubmit, watch, formState: { errors } } = useForm<CheckoutForm>({
     defaultValues: { country: 'PT', shipCountry: 'PT' },
   });
@@ -176,8 +199,31 @@ export default function CheckoutPage() {
   const isPickup    = !isAllEbooks && deliveryMode === 'pickup';
   const needsShippingQuote = !isAllEbooks && !isPickup;
 
-  const shippingCost = needsShippingQuote ? (selectedShipping?.price ?? 0) : 0;
-  const orderTotal   = total + shippingCost;
+  const shippingCost   = needsShippingQuote ? (selectedShipping?.price ?? 0) : 0;
+  const discountAmount = appliedDiscount ? discountAmountFor(appliedDiscount, total) : 0;
+  const orderTotal     = Math.max(total - discountAmount, 0) + shippingCost;
+
+  /* ── Código de desconto ── */
+  async function applyDiscount() {
+    const code = discountInput.trim().toUpperCase();
+    if (!code) return;
+    setDiscountLoading(true);
+    setDiscountError('');
+    try {
+      const res = await api.post('/discounts/validate', { code, subtotal: total });
+      setAppliedDiscount({ code: res.data.code, type: res.data.type, value: Number(res.data.value) });
+      setDiscountInput('');
+    } catch (err: any) {
+      setDiscountError(err.response?.data?.message || t('discount_invalid'));
+    } finally {
+      setDiscountLoading(false);
+    }
+  }
+
+  function removeDiscount() {
+    setAppliedDiscount(null);
+    setDiscountError('');
+  }
 
   /* ── Submit ── */
   const onSubmit = async (data: CheckoutForm) => {
@@ -216,6 +262,7 @@ export default function CheckoutPage() {
         nif:            data.nif,
         companyName:    data.companyName,
         shippingMethod: isAllEbooks ? 'digital' : isPickup ? PICKUP_METHOD_ID : selectedShipping!.id,
+        discountCode:   appliedDiscount?.code,
         items: items.map((i) => ({
           productId: i.id,
           name:      i.name,
@@ -607,11 +654,65 @@ export default function CheckoutPage() {
                 </div>
               ))}
             </div>
+            {/* Código de desconto */}
+            <div className="border-t pt-4 mb-4">
+              {appliedDiscount ? (
+                <div className="flex items-center justify-between gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                  <span className="flex items-center gap-2 text-sm text-green-800">
+                    <Tag className="w-4 h-4" />
+                    <code className="font-semibold">{appliedDiscount.code}</code>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removeDiscount}
+                    className="text-green-700 hover:text-green-900"
+                    aria-label={t('discount_remove')}
+                    title={t('discount_remove')}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <label htmlFor="discount-code" className="block text-sm font-medium mb-1">{t('discount_code')}</label>
+                  <div className="flex gap-2">
+                    <input
+                      id="discount-code"
+                      type="text"
+                      value={discountInput}
+                      onChange={(e) => { setDiscountInput(e.target.value); setDiscountError(''); }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); applyDiscount(); }
+                      }}
+                      className={`input flex-1 min-w-0 uppercase ${discountError ? 'border-red-400' : ''}`}
+                      maxLength={32}
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyDiscount}
+                      disabled={discountLoading || !discountInput.trim()}
+                      className="btn-secondary px-4 flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      {discountLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : t('discount_apply')}
+                    </button>
+                  </div>
+                  {discountError && <p className="text-red-500 text-xs mt-1">{discountError}</p>}
+                </>
+              )}
+            </div>
+
             <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
                 <span>€{total.toFixed(2)}</span>
               </div>
+              {appliedDiscount && discountAmount > 0 && (
+                <div className="flex justify-between text-sm text-green-700">
+                  <span>{t('discount')} ({appliedDiscount.code})</span>
+                  <span>−€{discountAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span>{isPickup ? 'Levantamento' : 'Envio'}</span>
                 <span className="text-gray-400">

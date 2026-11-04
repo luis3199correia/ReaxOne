@@ -101,7 +101,12 @@
     "address": "Morada",
     "city": "Localidade",
     "postal_code": "Código postal",
-    "country": "País"
+    "country": "País",
+    "discount_code": "Código de desconto",
+    "discount_apply": "Aplicar",
+    "discount_remove": "Remover código",
+    "discount": "Desconto",
+    "discount_invalid": "Código de desconto inválido."
   },
   "account": {
     "title": "A minha conta",

@@ -23,6 +23,15 @@ function pickupBlock(): string {
   </div>`;
 }
 
+/** Linha "Desconto" para a tabela de itens dos emails (vazia sem desconto). */
+function discountRow(order: { discountCode?: string | null; discountAmount?: number | null }): string {
+  if (!order.discountCode || !order.discountAmount) return '';
+  return `<tr>
+                <td colspan="2" style="padding:6px 8px;text-align:right;color:#16A34A;">Desconto (${order.discountCode}):</td>
+                <td style="padding:6px 8px;text-align:right;color:#16A34A;">−€${order.discountAmount.toFixed(2)}</td>
+              </tr>`;
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -128,6 +137,8 @@ export class MailService {
     wantsInvoice?: boolean | null;
     nif?: string | null;
     companyName?: string | null;
+    discountCode?: string | null;
+    discountAmount?: number | null;
     items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
   }): Promise<void> {
     const shortId    = order.id.slice(-8).toUpperCase();
@@ -202,7 +213,7 @@ export class MailService {
                 <th style="padding:6px 8px;text-align:right;">Total</th>
               </tr></thead>
               <tbody>${itemsHtml}</tbody>
-              <tfoot><tr>
+              <tfoot>${discountRow(order)}<tr>
                 <td colspan="2" style="padding:10px 8px;text-align:right;font-weight:bold;">Total:</td>
                 <td style="padding:10px 8px;text-align:right;font-weight:bold;color:#E8322A;">€${order.totalAmount.toFixed(2)}</td>
               </tr></tfoot>
@@ -331,6 +342,8 @@ export class MailService {
     wantsInvoice?: boolean | null;
     nif?: string | null;
     companyName?: string | null;
+    discountCode?: string | null;
+    discountAmount?: number | null;
     items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
   }): Promise<void> {
     const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
@@ -382,7 +395,7 @@ export class MailService {
                 <th style="padding:6px 8px;text-align:right;">Total</th>
               </tr></thead>
               <tbody>${itemsHtml}</tbody>
-              <tfoot><tr>
+              <tfoot>${discountRow(order)}<tr>
                 <td colspan="2" style="padding:10px 8px;text-align:right;font-weight:bold;">Total:</td>
                 <td style="padding:10px 8px;text-align:right;font-weight:bold;font-size:16px;color:#E8322A;">€${order.totalAmount.toFixed(2)}</td>
               </tr></tfoot>

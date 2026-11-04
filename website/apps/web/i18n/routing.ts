@@ -28,6 +28,7 @@ export const routing = defineRouting({
     '/admin/categorias': { pt: '/admin/categorias', en: '/admin/categories' },
     '/admin/encomendas': { pt: '/admin/encomendas', en: '/admin/orders' },
     '/admin/clientes': { pt: '/admin/clientes', en: '/admin/customers' },
+    '/admin/descontos': { pt: '/admin/descontos', en: '/admin/discounts' },
     '/admin/configuracoes': { pt: '/admin/configuracoes', en: '/admin/settings' },
   },
 });
