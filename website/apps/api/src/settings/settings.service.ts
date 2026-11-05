@@ -11,6 +11,9 @@ export interface PublicSettings {
   freeShippingThreshold: number;   // Portugal Continental
   freeShippingThresholdEs: number; // Espanha (continental, Baleares e Canárias)
   freeShippingThresholdEu: number; // Restantes países da UE
+  // Período dos portes grátis em ISO 8601 ('' = sem limite)
+  freeShippingStartsAt: string;
+  freeShippingEndsAt: string;
   // Banner no topo do site. Datas em ISO 8601 ('' = sem limite)
   bannerEnabled: boolean;
   bannerMessage: string;
@@ -37,6 +40,8 @@ const KEYS = {
   freeShippingThreshold: 'shipping_free_above',
   freeShippingThresholdEs: 'shipping_free_above_es',
   freeShippingThresholdEu: 'shipping_free_above_eu',
+  freeShippingStartsAt: 'shipping_free_starts_at',
+  freeShippingEndsAt: 'shipping_free_ends_at',
   bannerEnabled: 'banner_enabled',
   bannerMessage: 'banner_message',
   bannerSubtext: 'banner_subtext',
@@ -55,6 +60,8 @@ const DEFAULTS: PublicSettings = {
   freeShippingThreshold: 35,
   freeShippingThresholdEs: 50,
   freeShippingThresholdEu: 70,
+  freeShippingStartsAt: '',
+  freeShippingEndsAt: '',
   bannerEnabled: false,
   bannerMessage: '',
   bannerSubtext: '',
@@ -65,12 +72,50 @@ const DEFAULTS: PublicSettings = {
 };
 
 // '' limpa a data; qualquer outro valor tem de ser uma data válida (guardada normalizada em ISO)
-function normalizeBannerDate(value: unknown): string {
+function normalizeOptionalDate(value: unknown, message: string): string {
   if (value === null || value === '') return '';
   if (typeof value !== 'string' || Number.isNaN(Date.parse(value))) {
-    throw new BadRequestException('Data do banner inválida.');
+    throw new BadRequestException(message);
   }
   return new Date(value).toISOString();
+}
+
+/** O instante `now` está dentro do período [início, fim)? Datas vazias = sem limite. */
+function isWithinPeriod(startsAt: string, endsAt: string, now: number): boolean {
+  if (startsAt && now < Date.parse(startsAt)) return false;
+  if (endsAt && now >= Date.parse(endsAt)) return false;
+  return true;
+}
+
+/** Limites de portes grátis em vigor: fora do período configurado ficam todos a 0 (desativados). */
+export function activeFreeShippingThresholds(s: PublicSettings, now: number = Date.now()) {
+  const active = isWithinPeriod(s.freeShippingStartsAt, s.freeShippingEndsAt, now);
+  return {
+    pt: active ? s.freeShippingThreshold : 0,
+    es: active ? s.freeShippingThresholdEs : 0,
+    eu: active ? s.freeShippingThresholdEu : 0,
+  };
+}
+
+/** Valida e devolve as entradas de um período opcional (início/fim). */
+function periodEntries(
+  startsRaw: unknown,
+  endsRaw: unknown,
+  current: { startsAt: string; endsAt: string },
+  keys: { startsAt: string; endsAt: string },
+  label: string,
+): Array<[string, string]> {
+  const startsAt = startsRaw !== undefined ? normalizeOptionalDate(startsRaw, `Data de início ${label} inválida.`) : undefined;
+  const endsAt = endsRaw !== undefined ? normalizeOptionalDate(endsRaw, `Data de fim ${label} inválida.`) : undefined;
+  const start = startsAt ?? current.startsAt;
+  const end = endsAt ?? current.endsAt;
+  if (start && end && Date.parse(end) <= Date.parse(start)) {
+    throw new BadRequestException(`A data de fim ${label} tem de ser posterior à data de início.`);
+  }
+  const entries: Array<[string, string]> = [];
+  if (startsAt !== undefined) entries.push([keys.startsAt, startsAt]);
+  if (endsAt !== undefined) entries.push([keys.endsAt, endsAt]);
+  return entries;
 }
 
 function parseThreshold(value: string | undefined, fallback: number): number {
@@ -99,6 +144,8 @@ export class SettingsService {
       freeShippingThreshold: parseThreshold(map.get(KEYS.freeShippingThreshold), DEFAULTS.freeShippingThreshold),
       freeShippingThresholdEs: parseThreshold(map.get(KEYS.freeShippingThresholdEs), DEFAULTS.freeShippingThresholdEs),
       freeShippingThresholdEu: parseThreshold(map.get(KEYS.freeShippingThresholdEu), DEFAULTS.freeShippingThresholdEu),
+      freeShippingStartsAt: map.get(KEYS.freeShippingStartsAt) ?? DEFAULTS.freeShippingStartsAt,
+      freeShippingEndsAt: map.get(KEYS.freeShippingEndsAt) ?? DEFAULTS.freeShippingEndsAt,
       bannerEnabled: map.get(KEYS.bannerEnabled) === 'true',
       bannerMessage: map.get(KEYS.bannerMessage) ?? DEFAULTS.bannerMessage,
       bannerSubtext: map.get(KEYS.bannerSubtext) ?? DEFAULTS.bannerSubtext,
@@ -124,7 +171,16 @@ export class SettingsService {
       }
       entries.push([KEYS[field], String(Math.round(n * 100) / 100)]);
     }
-    entries.push(...(await this.bannerEntries(dto)));
+    const needsCurrent = [dto.freeShippingStartsAt, dto.freeShippingEndsAt, dto.bannerStartsAt, dto.bannerEndsAt]
+      .some((v) => v !== undefined) || dto.bannerEnabled === true;
+    const current = needsCurrent ? await this.getPublicSettings() : DEFAULTS;
+    entries.push(...periodEntries(
+      dto.freeShippingStartsAt, dto.freeShippingEndsAt,
+      { startsAt: current.freeShippingStartsAt, endsAt: current.freeShippingEndsAt },
+      { startsAt: KEYS.freeShippingStartsAt, endsAt: KEYS.freeShippingEndsAt },
+      'dos portes grátis',
+    ));
+    entries.push(...this.bannerEntries(dto, current));
 
     await Promise.all(
       entries.map(([key, value]) =>
@@ -139,7 +195,7 @@ export class SettingsService {
     return this.getPublicSettings();
   }
 
-  private async bannerEntries(dto: Partial<PublicSettings>): Promise<Array<[string, string]>> {
+  private bannerEntries(dto: Partial<PublicSettings>, current: PublicSettings): Array<[string, string]> {
     const entries: Array<[string, string]> = [];
     if (dto.bannerEnabled !== undefined) entries.push([KEYS.bannerEnabled, String(dto.bannerEnabled === true)]);
     for (const field of BANNER_TEXT_FIELDS) {
@@ -153,24 +209,15 @@ export class SettingsService {
       entries.push([KEYS[field], text]);
     }
 
-    const startsAt = dto.bannerStartsAt !== undefined ? normalizeBannerDate(dto.bannerStartsAt) : undefined;
-    const endsAt = dto.bannerEndsAt !== undefined ? normalizeBannerDate(dto.bannerEndsAt) : undefined;
-    if (startsAt !== undefined) entries.push([KEYS.bannerStartsAt, startsAt]);
-    if (endsAt !== undefined) entries.push([KEYS.bannerEndsAt, endsAt]);
-
-    if (startsAt !== undefined || endsAt !== undefined) {
-      const current = await this.getPublicSettings();
-      const start = startsAt ?? current.bannerStartsAt;
-      const end = endsAt ?? current.bannerEndsAt;
-      if (start && end && Date.parse(end) <= Date.parse(start)) {
-        throw new BadRequestException('A data de fim do banner tem de ser posterior à data de início.');
-      }
-    }
+    entries.push(...periodEntries(
+      dto.bannerStartsAt, dto.bannerEndsAt,
+      { startsAt: current.bannerStartsAt, endsAt: current.bannerEndsAt },
+      { startsAt: KEYS.bannerStartsAt, endsAt: KEYS.bannerEndsAt },
+      'do banner',
+    ));
 
     if (dto.bannerEnabled === true) {
-      const message = dto.bannerMessage !== undefined
-        ? dto.bannerMessage.trim()
-        : (await this.getPublicSettings()).bannerMessage;
+      const message = dto.bannerMessage !== undefined ? dto.bannerMessage.trim() : current.bannerMessage;
       if (!message) throw new BadRequestException('Para ativar o banner é preciso escrever a mensagem.');
     }
     return entries;

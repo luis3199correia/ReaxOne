@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException, BadRequestException } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
-import { SettingsService } from '../settings/settings.service';
+import { SettingsService, activeFreeShippingThresholds } from '../settings/settings.service';
 import { DiscountsService } from '../discounts/discounts.service';
 import { PromotionsService } from '../promotions/promotions.service';
 import { detectZone, shippingPrice } from './shipping-rates';
@@ -104,11 +104,7 @@ export class OrdersService {
     if (!isAllDigital && !isPickup) {
       const settings = await this.settingsService.getPublicSettings();
       const zone = detectZone(country, data.postalCode);
-      const price = shippingPrice(zone, data.shippingMethod, itemsTotal, {
-        pt: settings.freeShippingThreshold,
-        es: settings.freeShippingThresholdEs,
-        eu: settings.freeShippingThresholdEu,
-      });
+      const price = shippingPrice(zone, data.shippingMethod, itemsTotal, activeFreeShippingThresholds(settings));
       if (price === null) {
         throw new BadRequestException('Método de envio indisponível para esta morada.');
       }

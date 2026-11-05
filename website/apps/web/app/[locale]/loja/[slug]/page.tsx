@@ -9,7 +9,7 @@ import { useCartStore } from '@/store/cart';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { api } from '@/lib/api';
 import { useCategoryLabel } from '@/lib/category';
-import { formatEuro } from '@/lib/settings';
+import { formatEuro, getFreeShippingThresholds } from '@/lib/settings';
 import { useSettings } from '@/components/providers/SettingsProvider';
 
 interface Props {
@@ -245,10 +245,10 @@ export default function ProductPage({ params: paramsPromise }: Props) {
 
             {/* Trust badges */}
             <div className="flex flex-col gap-3 pt-6 border-t border-gray-100">
-              {settings.freeShippingThreshold > 0 && (
+              {getFreeShippingThresholds(settings).pt > 0 && (
                 <div className="flex items-center gap-3 text-sm text-gray-600">
                   <Truck className="w-4 h-4 text-brand-green flex-shrink-0" />
-                  <span>{t('shipping_free', { amount: formatEuro(settings.freeShippingThreshold, locale) })}</span>
+                  <span>{t('shipping_free', { amount: formatEuro(getFreeShippingThresholds(settings).pt, locale) })}</span>
                 </div>
               )}
               <div className="flex items-center gap-3 text-sm text-gray-600">

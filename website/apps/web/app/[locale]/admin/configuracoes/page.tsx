@@ -15,6 +15,8 @@ const EMPTY_FORM: PublicSettings = {
   freeShippingThreshold: 0,
   freeShippingThresholdEs: 0,
   freeShippingThresholdEu: 0,
+  freeShippingStartsAt: '',
+  freeShippingEndsAt: '',
   bannerEnabled: false,
   bannerMessage: '',
   bannerSubtext: '',
@@ -254,6 +256,29 @@ export default function AdminSettingsPage() {
               </div>
             ))}
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Portes grátis desde (opcional)</label>
+              <input
+                type="datetime-local"
+                className="input"
+                value={isoToLocalInput(form.freeShippingStartsAt)}
+                onChange={(e) => update('freeShippingStartsAt', localInputToIso(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Portes grátis até (opcional)</label>
+              <input
+                type="datetime-local"
+                className="input"
+                value={isoToLocalInput(form.freeShippingEndsAt)}
+                onChange={(e) => update('freeShippingEndsAt', localInputToIso(e.target.value))}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">
+            Sem datas, os portes grátis estão sempre em vigor. Com datas, só se aplicam nesse período; fora dele todas as encomendas pagam portes.
+          </p>
           <p className="text-xs text-gray-400 mt-2">
             Encomendas com subtotal igual ou superior ao valor da zona não pagam portes. Use 0 para desativar.
             Açores e Madeira não têm portes grátis. Os valores aparecem automaticamente na página de produto, em Envios e nos Termos.

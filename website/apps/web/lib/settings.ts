@@ -10,6 +10,9 @@ export interface PublicSettings {
   freeShippingThreshold: number;   // Portugal Continental
   freeShippingThresholdEs: number; // Espanha (continental, Baleares e Canárias)
   freeShippingThresholdEu: number; // Restantes países da UE
+  // Período dos portes grátis em ISO 8601 ('' = sem limite)
+  freeShippingStartsAt: string;
+  freeShippingEndsAt: string;
   // Banner no topo do site. Datas em ISO 8601 ('' = sem limite)
   bannerEnabled: boolean;
   bannerMessage: string;
@@ -30,6 +33,8 @@ export const DEFAULT_SETTINGS: PublicSettings = {
   freeShippingThreshold: 35,
   freeShippingThresholdEs: 50,
   freeShippingThresholdEu: 70,
+  freeShippingStartsAt: '',
+  freeShippingEndsAt: '',
   bannerEnabled: false,
   bannerMessage: '',
   bannerSubtext: '',
@@ -46,17 +51,28 @@ export interface BannerContent {
 
 // Banner visível se ativo, com mensagem e dentro da janela [início, fim) quando definida
 export function getActiveBanner(s: PublicSettings, locale: string, now: number = Date.now()): BannerContent | null {
-  if (!s.bannerEnabled) return null;
-  if (s.bannerStartsAt && now < Date.parse(s.bannerStartsAt)) return null;
-  if (s.bannerEndsAt && now >= Date.parse(s.bannerEndsAt)) return null;
+  if (!s.bannerEnabled || !isWithinPeriod(s.bannerStartsAt, s.bannerEndsAt, now)) return null;
   const useEn = locale === 'en' && s.bannerMessageEn.trim() !== '';
   const message = (useEn ? s.bannerMessageEn : s.bannerMessage).trim();
   if (!message) return null;
   return { message, subtext: (useEn ? s.bannerSubtextEn : s.bannerSubtext).trim() };
 }
 
-export function getFreeShippingThresholds(s: PublicSettings): FreeShippingThresholds {
-  return { pt: s.freeShippingThreshold, es: s.freeShippingThresholdEs, eu: s.freeShippingThresholdEu };
+/** O instante `now` está dentro do período [início, fim)? Datas vazias = sem limite. */
+export function isWithinPeriod(startsAt: string, endsAt: string, now: number = Date.now()): boolean {
+  if (startsAt && now < Date.parse(startsAt)) return false;
+  if (endsAt && now >= Date.parse(endsAt)) return false;
+  return true;
+}
+
+/** Limites em vigor (mesma regra do servidor): fora do período ficam a 0, ou seja, sem portes grátis. */
+export function getFreeShippingThresholds(s: PublicSettings, now: number = Date.now()): FreeShippingThresholds {
+  const active = isWithinPeriod(s.freeShippingStartsAt, s.freeShippingEndsAt, now);
+  return {
+    pt: active ? s.freeShippingThreshold : 0,
+    es: active ? s.freeShippingThresholdEs : 0,
+    eu: active ? s.freeShippingThresholdEu : 0,
+  };
 }
 
 export async function fetchPublicSettings(): Promise<PublicSettings> {
