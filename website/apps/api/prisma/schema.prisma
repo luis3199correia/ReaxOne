@@ -26,6 +26,10 @@ enum PaymentMethod {
   MBWAY
   BANK_TRANSFER
   CASH // pagamento em mão, só com levantamento
+  MULTIBANCO // referência Multibanco (IfthenPay)
+  CARD       // cartão de crédito/débito (IfthenPay Gateway)
+  APPLE_PAY  // Apple Pay (IfthenPay Gateway)
+  GOOGLE_PAY // Google Pay (IfthenPay Gateway)
 }
 
 model User {
@@ -163,6 +167,11 @@ model Payment {
   method        PaymentMethod
   status        String        @default("PENDING") // PENDING, CONFIRMED, FAILED
   reference     String?       // referência para o cliente
+  // IfthenPay: identificador enviado como orderId (único), pedido e dados Multibanco
+  providerRef   String?       @unique
+  requestId     String?
+  entity        String?
+  expiresAt     DateTime?
   confirmedAt   DateTime?
   createdAt     DateTime      @default(now())
 

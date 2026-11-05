@@ -7,11 +7,16 @@ import { DiscountsService } from '../discounts/discounts.service';
 import { PromotionsService } from '../promotions/promotions.service';
 import { detectZone, shippingPrice } from './shipping-rates';
 import { PICKUP_METHOD_ID } from './pickup';
+import { OnlinePaymentService, PaymentAction } from './online-payment.service';
+import { IfthenpayClient } from '../payments/ifthenpay.client';
+import {
+  OnlineMethod, amountMatches, enabledOnlineMethods, isOnlineMethod, normalizeMbwayPhone,
+} from '../payments/ifthenpay.rules';
 
 const MAX_QUANTITY_PER_ITEM = 100;
 const NOTES_MAX_LENGTH = 500;
 
-const PAYMENT_METHODS = ['MBWAY', 'BANK_TRANSFER', 'CASH'] as const;
+const PAYMENT_METHODS = ['MBWAY', 'BANK_TRANSFER', 'CASH', 'MULTIBANCO', 'CARD', 'APPLE_PAY', 'GOOGLE_PAY'] as const;
 type PaymentMethodInput = (typeof PAYMENT_METHODS)[number];
 
 function roundCents(value: number) {
@@ -43,6 +48,8 @@ export class OrdersService {
     private settingsService: SettingsService,
     private discountsService: DiscountsService,
     private promotionsService: PromotionsService,
+    private onlinePayments: OnlinePaymentService,
+    private ifthenpay: IfthenpayClient,
   ) {}
 
   /**
@@ -72,6 +79,8 @@ export class OrdersService {
     nif?: string;
     companyName?: string;
     paymentMethod: PaymentMethodInput;
+    mbwayPhone?: string; // número MB WAY (se vazio usa o telefone do cliente)
+    locale?: string;     // idioma da página de pagamento (cartão / Apple Pay)
     shippingMethod?: string;
     discountCode?: string;
     notes?: string;
@@ -97,6 +106,7 @@ export class OrdersService {
     if (data.paymentMethod === 'CASH' && !isPickup) {
       throw new BadRequestException('O pagamento em mão só está disponível com levantamento da encomenda.');
     }
+    const online = this.resolveOnlinePayment(data.paymentMethod, data.mbwayPhone || data.phone);
 
     // Levantamento não tem portes. Os limites de portes grátis contam o subtotal
     // dos produtos antes do desconto.
@@ -152,6 +162,7 @@ export class OrdersService {
           discountAmount,
           totalAmount,
           notes,
+          ...(online ? { status: 'AWAITING_PAYMENT' as const } : {}),
           items: {
             create: [
               ...items.map((item) => ({
@@ -181,55 +192,41 @@ export class OrdersService {
       });
     });
 
-    // Confirmar encomenda ao cliente em background
-    this.fireAndForget(
-      () => this.mailService.sendOrderConfirmation({
-        id:            order.id,
-        firstName:     order.firstName,
-        email:         order.email,
-        totalAmount:   order.totalAmount,
-        paymentMethod: data.paymentMethod,
-        discountCode:   order.discountCode,
-        discountAmount: order.discountAmount,
-        notes:          order.notes,
-        shippingMethod,
-        street:        order.street,
-        city:          order.city,
-        postalCode:    order.postalCode,
-        country:       order.country,
-        wantsInvoice:  order.wantsInvoice,
-        nif:           order.nif,
-        companyName:   order.companyName,
-        items:         order.items,
-      }),
-      '[Mail] Erro ao enviar confirmação ao cliente',
-    );
+    // Pagamento online: pede-o à IfthenPay. Se falhar, a encomenda é cancelada
+    // (stock e código de desconto repostos) e o cliente pode tentar de novo.
+    let paymentAction: PaymentAction | null = null;
+    if (online) {
+      try {
+        paymentAction = await this.onlinePayments.start({
+          order, method: online.method, mbwayPhone: online.mbwayPhone, lang: data.locale === 'en' ? 'en' : 'pt',
+        });
+      } catch (e) {
+        await this.onlinePayments.cancelUnpaid(order.id, 'FAILED')
+          .catch((err) => this.logger.error('[Pagamentos] Erro ao cancelar encomenda falhada', err));
+        throw e;
+      }
+    }
 
-    // Notificar admin por email em background
-    this.fireAndForget(
-      () => this.mailService.sendNewOrderNotification({
-        id:             order.id,
-        firstName:      order.firstName,
-        lastName:       order.lastName,
-        email:          order.email,
-        phone:          order.phone,
-        totalAmount:    order.totalAmount,
-        paymentMethod:  data.paymentMethod,
-        discountCode:   order.discountCode,
-        discountAmount: order.discountAmount,
-        notes:          order.notes,
-        shippingMethod,
-        street:         order.street,
-        city:           order.city,
-        postalCode:     order.postalCode,
-        country:        order.country,
-        wantsInvoice:   order.wantsInvoice,
-        nif:            order.nif,
-        companyName:    order.companyName,
-        items:          order.items,
-      }),
-      '[Mail] Erro ao notificar admin de nova encomenda',
-    );
+    // Email ao cliente: nos pagamentos online só sai já com o pagamento feito,
+    // exceto Multibanco, que precisa de levar a entidade e a referência.
+    if (!online || paymentAction?.type === 'multibanco') {
+      this.fireAndForget(
+        () => this.mailService.sendOrderConfirmation({
+          ...this.mailOrder(order),
+          paymentMethod: data.paymentMethod,
+          multibanco: paymentAction?.type === 'multibanco'
+            ? { entity: paymentAction.entity, reference: paymentAction.reference, expiresAt: paymentAction.expiresAt ? new Date(paymentAction.expiresAt) : null }
+            : null,
+        }),
+        '[Mail] Erro ao enviar confirmação ao cliente',
+      );
+    }
+
+    // Admin e Batch: nos pagamentos online só depois de pago (ver confirmOnlinePayment)
+    if (!online) {
+      this.notifyAdminOfOrder(order);
+      if (!isPickup) this.sendToBatch(order);
+    }
 
     // Avisar o admin dos produtos que esgotaram com esta encomenda
     const physicalIds = [...new Set([...items.filter((i) => !i.isEbook), ...giftLines].map((i) => i.productId))];
@@ -237,13 +234,64 @@ export class OrdersService {
       this.fireAndForget(() => this.notifySoldOut(physicalIds), '[Mail] Erro ao avisar produtos esgotados');
     }
 
-    // Criar encomenda na Batch em background — apenas para produtos físicos enviados
-    // por transportadora (o levantamento é entregue em mão)
-    if (process.env.BATCH_DISABLED !== 'true' && !isPickup) {
-      this.fireAndForget(() => this.createBatchOrder(order), '[Batch] Erro ao criar encomenda');
-    }
+    return { ...order, paymentAction };
+  }
 
-    return order;
+  /**
+   * Valida um método IfthenPay. MB WAY sem chave configurada continua no modo
+   * manual (envio para o número da loja), como antes da integração.
+   */
+  private resolveOnlinePayment(method: PaymentMethodInput, rawPhone: unknown): { method: OnlineMethod; mbwayPhone: string | null } | null {
+    if (!isOnlineMethod(method)) return null;
+    const enabled = enabledOnlineMethods(this.ifthenpay.config);
+    if (!enabled[method]) {
+      if (method === 'MBWAY') return null;
+      throw new BadRequestException('Este método de pagamento não está disponível.');
+    }
+    if (method !== 'MBWAY') return { method, mbwayPhone: null };
+    const mbwayPhone = normalizeMbwayPhone(rawPhone);
+    if (!mbwayPhone) {
+      throw new BadRequestException('Indica um número de telemóvel português válido para o MB WAY (ex.: 912345678).');
+    }
+    return { method, mbwayPhone };
+  }
+
+  /** Dados comuns aos emails de encomenda. */
+  private mailOrder(order: any) {
+    return {
+      id:             order.id,
+      firstName:      order.firstName,
+      lastName:       order.lastName,
+      email:          order.email,
+      phone:          order.phone,
+      totalAmount:    order.totalAmount,
+      paymentMethod:  order.payment?.method ?? '',
+      discountCode:   order.discountCode,
+      discountAmount: order.discountAmount,
+      notes:          order.notes,
+      shippingMethod: order.shippingMethod,
+      street:         order.street,
+      city:           order.city,
+      postalCode:     order.postalCode,
+      country:        order.country,
+      wantsInvoice:   order.wantsInvoice,
+      nif:            order.nif,
+      companyName:    order.companyName,
+      items:          order.items ?? [],
+    };
+  }
+
+  private notifyAdminOfOrder(order: any) {
+    this.fireAndForget(
+      () => this.mailService.sendNewOrderNotification(this.mailOrder(order)),
+      '[Mail] Erro ao notificar admin de nova encomenda',
+    );
+  }
+
+  /** Encomenda na Batch em background — só produtos físicos enviados por transportadora. */
+  private sendToBatch(order: any) {
+    if (process.env.BATCH_DISABLED === 'true') return;
+    this.fireAndForget(() => this.createBatchOrder(order), '[Batch] Erro ao criar encomenda');
   }
 
   /**
@@ -417,7 +465,10 @@ export class OrdersService {
     return Promise.all(ids.map((id) => this.updateStatus(id, status)));
   }
 
+  /** Backoffice: confirmar à mão (transferência, dinheiro, MB WAY manual ou falha do callback). */
   async confirmPayment(orderId: string) {
+    const existing = await this.prisma.order.findUnique({ where: { id: orderId }, select: { status: true } });
+    if (!existing) throw new NotFoundException('Encomenda não encontrada');
     const [payment, order] = await this.prisma.$transaction([
       this.prisma.payment.update({
         where: { orderId },
@@ -429,31 +480,85 @@ export class OrdersService {
         include: { items: true, payment: true },
       }),
     ]);
+    // Encomenda online que nunca chegou a ser confirmada: falta o admin e a Batch
+    this.afterPaid(order, { isOnline: existing.status === 'AWAITING_PAYMENT' && payment.providerRef !== null });
+    return [payment, order];
+  }
 
-    // Enviar email de pagamento confirmado com detalhes da encomenda
+  /**
+   * Callback da IfthenPay. Valida método e valor; é idempotente (a IfthenPay
+   * pode repetir a notificação). Se a encomenda já tinha sido cancelada por
+   * falta de pagamento, é reativada, o stock volta a ser descontado e o admin é avisado.
+   */
+  async confirmOnlinePayment(input: { providerRef: string; methods: OnlineMethod[]; amount: unknown }) {
+    const payment = await this.prisma.payment.findUnique({
+      where:   { providerRef: input.providerRef },
+      include: { order: { include: { items: { include: { product: { select: { ebookFile: true } } } } } } },
+    });
+    if (!payment || !input.methods.includes(payment.method as OnlineMethod)) {
+      throw new NotFoundException('Pagamento não encontrado');
+    }
+    if (!amountMatches(payment.order.totalAmount, input.amount)) {
+      this.logger.warn(`[Pagamentos] Valor diferente no callback da encomenda ${payment.orderId}`);
+      throw new BadRequestException('Valor não corresponde à encomenda');
+    }
+    if (payment.status === 'CONFIRMED') return { ok: true, already: true };
+
+    const wasCancelled = payment.order.status === 'CANCELLED';
+    const order = await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.payment.updateMany({
+        where: { id: payment.id, status: { not: 'CONFIRMED' } },
+        data:  { status: 'CONFIRMED', confirmedAt: new Date() },
+      });
+      if (updated.count === 0) return null; // outra notificação chegou primeiro
+      if (wasCancelled) {
+        for (const item of payment.order.items) {
+          if (item.product?.ebookFile) continue;
+          await tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } });
+        }
+      }
+      return tx.order.update({
+        where:   { id: payment.orderId },
+        data:    { status: 'PAID' },
+        include: { items: true, payment: true },
+      });
+    });
+    if (!order) return { ok: true, already: true };
+
+    this.afterPaid(order, { isOnline: true });
+    if (wasCancelled) {
+      this.fireAndForget(() => this.mailService.sendLatePaymentAlert(order), '[Mail] Erro ao avisar pagamento fora de prazo');
+    }
+    return { ok: true };
+  }
+
+  /** Emails, ebooks e (nos pagamentos online) aviso ao admin e envio para a Batch. */
+  private afterPaid(order: any, { isOnline }: { isOnline: boolean }) {
     this.fireAndForget(
       () => this.mailService.sendPaymentConfirmed({
-        id:            order.id,
-        firstName:     order.firstName,
-        email:         order.email,
-        totalAmount:   order.totalAmount,
-        street:        order.street,
-        city:          order.city,
-        postalCode:    order.postalCode,
-        country:       order.country,
+        id:             order.id,
+        firstName:      order.firstName,
+        email:          order.email,
+        totalAmount:    order.totalAmount,
+        street:         order.street,
+        city:           order.city,
+        postalCode:     order.postalCode,
+        country:        order.country,
         shippingMethod: order.shippingMethod,
-        items:         (order as any).items ?? [],
+        items:          order.items ?? [],
       }),
       '[Mail] Erro ao enviar confirmação de pagamento',
     );
 
-    // Enviar ebooks por email em background (não bloqueia a resposta)
     this.fireAndForget(
-      () => this.deliverEbooks(orderId, order.email, order.firstName),
+      () => this.deliverEbooks(order.id, order.email, order.firstName),
       '[Mail] Erro ao entregar ebooks',
     );
 
-    return [payment, order];
+    if (isOnline) {
+      this.notifyAdminOfOrder(order);
+      if (order.shippingMethod !== PICKUP_METHOD_ID && !order.batchOrderNumber) this.sendToBatch(order);
+    }
   }
 
   private async deliverEbooks(

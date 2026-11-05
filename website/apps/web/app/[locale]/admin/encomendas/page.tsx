@@ -7,6 +7,7 @@ import { PICKUP_ADDRESS, PICKUP_METHOD_ID, PICKUP_PLACE, customerWhatsappUrl } f
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:   'Pendente',
+  AWAITING_PAYMENT: 'Aguarda pagamento',
   PAID:      'Pago',
   SHIPPED:   'Enviado',
   DELIVERED: 'Entregue',
@@ -15,6 +16,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   PENDING:   'bg-yellow-100 text-yellow-800',
+  AWAITING_PAYMENT: 'bg-orange-100 text-orange-800',
   PAID:      'bg-blue-100 text-blue-800',
   SHIPPED:   'bg-purple-100 text-purple-800',
   DELIVERED: 'bg-green-100 text-green-800',
@@ -25,12 +27,17 @@ const PAYMENT_LABELS: Record<string, string> = {
   MBWAY:         'MB Way',
   BANK_TRANSFER: 'Transferência',
   CASH:          'Em mão',
+  MULTIBANCO:    'Multibanco',
+  CARD:          'Cartão',
+  APPLE_PAY:     'Apple Pay',
+  GOOGLE_PAY:    'Google Pay',
 };
 
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
   PENDING:   'Por confirmar',
   CONFIRMED: 'Confirmado',
   FAILED:    'Falhado',
+  EXPIRED:   'Expirado',
 };
 
 type OrderItem = {

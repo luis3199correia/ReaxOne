@@ -9,7 +9,16 @@ const PAYMENT_LABELS: Record<string, string> = {
   MBWAY:         'MB Way',
   BANK_TRANSFER: 'Transferência Bancária',
   CASH:          'Pagamento em mão (no levantamento)',
+  MULTIBANCO:    'Multibanco (entidade e referência)',
+  CARD:          'Cartão',
+  APPLE_PAY:     'Apple Pay',
+  GOOGLE_PAY:    'Google Pay',
 };
+
+/** Referência Multibanco em blocos de 3 dígitos (ex.: 123 456 789). */
+export function formatMbReference(reference: string): string {
+  return reference.replace(/\D/g, '').replace(/(\d{3})(?=\d)/g, '$1 ');
+}
 
 // Bloco com a morada de levantamento e o aviso de marcação prévia
 function pickupBlock(): string {
@@ -173,14 +182,28 @@ export class MailService {
     discountAmount?: number | null;
     notes?: string | null;
     items: MailItem[];
+    // Referência Multibanco gerada pela IfthenPay
+    multibanco?: { entity: string; reference: string; expiresAt: Date | null } | null;
   }): Promise<void> {
     const shortId    = order.id.slice(-8).toUpperCase();
     const settings   = await this.settingsService.getPublicSettings();
     const mbwayPhone = process.env.MBWAY_PHONE ?? '';
 
     const isPickup = order.shippingMethod === PICKUP_METHOD_ID;
+    const mb = order.multibanco;
 
-    const paymentInstructions = order.paymentMethod === 'CASH'
+    const paymentInstructions = mb
+      ? `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
+           <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">PAGAMENTO — MULTIBANCO</p>
+           <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
+             Entidade: <strong>${escapeHtml(mb.entity)}</strong><br>
+             Referência: <strong>${escapeHtml(formatMbReference(mb.reference))}</strong><br>
+             Valor: <strong>€${order.totalAmount.toFixed(2)}</strong>
+             ${mb.expiresAt ? `<br>Pagar até: <strong>${mb.expiresAt.toLocaleDateString('pt-PT')}</strong>` : ''}
+           </p>
+           <p style="font-size:12px;color:#888;margin:8px 0 0;">Paga no multibanco ou no homebanking. A confirmação é automática.</p>
+         </div>`
+      : order.paymentMethod === 'CASH'
       ? `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
            <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">PAGAMENTO — EM MÃO</p>
            <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
@@ -466,6 +489,44 @@ export class MailService {
 
     if (error) throw new Error(JSON.stringify(error));
     this.logger.log(`Aviso de produto esgotado enviado para ${adminEmail}: ${names.join(', ')}`);
+  }
+
+  // ─── Pagamento recebido depois de a encomenda ser cancelada ───────────────
+
+  async sendLatePaymentAlert(order: { id: string; firstName: string; lastName: string; email: string; totalAmount: number }): Promise<void> {
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+    if (!adminEmail) return;
+    const shortId = order.id.slice(-8).toUpperCase();
+    const frontendUrl = process.env.FRONTEND_URL ?? 'https://reaxone.com';
+
+    const { error } = await this.resend.emails.send({
+      from:    this.from,
+      to:      [adminEmail],
+      subject: `⚠️ Pagamento recebido numa encomenda cancelada #${shortId}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;">
+          <div style="background:#0F0F0F;padding:20px 24px;border-radius:8px 8px 0 0;">
+            <h1 style="color:#F59E0B;margin:0;font-size:20px;">Pagamento fora de prazo</h1>
+          </div>
+          <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
+            <p style="font-size:15px;line-height:1.6;">
+              A encomenda <strong>#${shortId}</strong> de ${escapeHtml(order.firstName)} ${escapeHtml(order.lastName)}
+              (${escapeHtml(order.email)}) tinha sido cancelada por falta de pagamento, mas a IfthenPay confirmou
+              agora o pagamento de <strong>€${order.totalAmount.toFixed(2)}</strong>.
+            </p>
+            <p style="font-size:14px;color:#555;line-height:1.6;">
+              A encomenda foi reativada como paga e o stock voltou a ser descontado. Confirma se há stock para a enviar;
+              se não houver, contacta o cliente e faz o reembolso no backoffice da IfthenPay.
+            </p>
+            <p style="margin-top:24px;font-size:13px;color:#888;">
+              <a href="${frontendUrl}/pt/admin/encomendas" style="color:#E8322A;">Ver encomendas no backoffice →</a>
+            </p>
+          </div>
+        </div>`,
+    });
+
+    if (error) throw new Error(JSON.stringify(error));
+    this.logger.log(`Alerta de pagamento fora de prazo #${shortId} enviado para ${adminEmail}`);
   }
 
   // ─── Notificação de mudança de estado ao cliente ──────────────────────────

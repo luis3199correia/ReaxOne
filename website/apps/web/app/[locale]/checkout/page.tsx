@@ -27,16 +27,21 @@ import {
   selectedCount,
   useCurrentPromotion,
 } from '@/lib/giftPromotion';
+import { PaymentAction, useApplePayAvailable, useOnlineMethods } from '@/lib/payments';
 
 const NOTES_MAX_LENGTH = 500;
 
-type PaymentMethod = 'mbway' | 'transfer' | 'cash';
+type PaymentMethod = 'mbway' | 'multibanco' | 'card' | 'applepay' | 'googlepay' | 'transfer' | 'cash';
 type DeliveryMode = 'ship' | 'pickup';
 
 const PAYMENT_METHOD_API: Record<PaymentMethod, string> = {
-  mbway:    'MBWAY',
-  transfer: 'BANK_TRANSFER',
-  cash:     'CASH',
+  mbway:      'MBWAY',
+  multibanco: 'MULTIBANCO',
+  card:       'CARD',
+  applepay:   'APPLE_PAY',
+  googlepay:  'GOOGLE_PAY',
+  transfer:   'BANK_TRANSFER',
+  cash:       'CASH',
 };
 
 interface AppliedDiscount {
@@ -137,6 +142,9 @@ export default function CheckoutPage() {
   const { items, total, clearCart } = useCartStore();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mbway');
+  const [mbwayPhone, setMbwayPhone] = useState('');
+  const onlineMethods = useOnlineMethods();
+  const applePayAvailable = useApplePayAvailable();
   const [wantsInvoice, setWantsInvoice] = useState(false);
   const [differentAddress, setDifferentAddress] = useState(false);
 
@@ -223,6 +231,17 @@ export default function CheckoutPage() {
   // Detetar se todos os itens são ebooks (entrega digital, sem portes)
   const isAllEbooks = items.length > 0 && items.every((i) => i.isEbook);
   const isPickup    = !isAllEbooks && deliveryMode === 'pickup';
+
+  // MB WAY está sempre disponível (automático com IfthenPay, manual sem ela)
+  const paymentOptions = useMemo<PaymentMethod[]>(() => [
+    'mbway',
+    ...(onlineMethods.MULTIBANCO ? (['multibanco'] as const) : []),
+    ...(onlineMethods.CARD ? (['card'] as const) : []),
+    ...(onlineMethods.APPLE_PAY && applePayAvailable ? (['applepay'] as const) : []),
+    ...(onlineMethods.GOOGLE_PAY ? (['googlepay'] as const) : []),
+    'transfer',
+    ...(isPickup ? (['cash'] as const) : []),
+  ], [onlineMethods, applePayAvailable, isPickup]);
   const needsShippingQuote = !isAllEbooks && !isPickup;
 
   const shippingCost   = needsShippingQuote ? (selectedShipping?.price ?? 0) : 0;
@@ -289,6 +308,8 @@ export default function CheckoutPage() {
         postalCode,
         country: orderCountry,
         paymentMethod: PAYMENT_METHOD_API[paymentMethod],
+        mbwayPhone:    paymentMethod === 'mbway' && onlineMethods.MBWAY ? (mbwayPhone.trim() || data.phone) : undefined,
+        locale,
         wantsInvoice,
         nif:            data.nif,
         companyName:    data.companyName,
@@ -304,6 +325,12 @@ export default function CheckoutPage() {
           size:      i.size,
         })),
       });
+      const action: PaymentAction | null = res.data.paymentAction ?? null;
+      // Cartão / Apple Pay: o carrinho só é limpo quando o pagamento for concluído
+      if (action?.type === 'redirect') {
+        window.location.assign(action.url);
+        return;
+      }
       clearCart();
       // Total calculado pelo servidor (fonte de verdade para os portes)
       const serverTotal = Number(res.data.totalAmount);
@@ -313,6 +340,10 @@ export default function CheckoutPage() {
         method: paymentMethod,
         email:  data.email,
         ...(isPickup ? { delivery: 'pickup' } : {}),
+        ...(action?.type === 'mbway' ? { auto: '1', phone: action.phone } : {}),
+        ...(action?.type === 'multibanco'
+          ? { entity: action.entity, ref: action.reference, ...(action.expiresAt ? { expires: action.expiresAt } : {}) }
+          : {}),
       });
       router.push({ pathname: '/checkout/confirmacao', query: Object.fromEntries(params) });
     } catch (err: any) {
@@ -635,34 +666,35 @@ export default function CheckoutPage() {
             <div className="card p-6">
               <h2 className="text-lg font-semibold mb-4">{t('payment')}</h2>
               <div className="space-y-3 mb-6">
-                <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === 'mbway' ? 'border-brand-primary bg-red-50' : 'border-gray-200'}`}>
-                  <input type="radio" value="mbway" checked={paymentMethod === 'mbway'} onChange={() => setPaymentMethod('mbway')} className="accent-brand-primary" />
-                  <span className="font-medium">{t('payment_mbway')}</span>
-                </label>
-                <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === 'transfer' ? 'border-brand-primary bg-red-50' : 'border-gray-200'}`}>
-                  <input type="radio" value="transfer" checked={paymentMethod === 'transfer'} onChange={() => setPaymentMethod('transfer')} className="accent-brand-primary" />
-                  <span className="font-medium">{t('payment_transfer')}</span>
-                </label>
-                {isPickup && (
-                  <label className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === 'cash' ? 'border-brand-primary bg-red-50' : 'border-gray-200'}`}>
-                    <input type="radio" value="cash" checked={paymentMethod === 'cash'} onChange={() => setPaymentMethod('cash')} className="accent-brand-primary" />
-                    <span className="font-medium">{t('payment_cash')}</span>
+                {paymentOptions.map((option) => (
+                  <label
+                    key={option}
+                    className={`flex items-center gap-4 p-4 border-2 rounded-lg cursor-pointer transition-colors ${paymentMethod === option ? 'border-brand-primary bg-red-50' : 'border-gray-200'}`}
+                  >
+                    <input type="radio" value={option} checked={paymentMethod === option} onChange={() => setPaymentMethod(option)} className="accent-brand-primary" />
+                    <span className="font-medium">{t(`payment_${option}`)}</span>
                   </label>
-                )}
+                ))}
               </div>
-              {paymentMethod === 'mbway' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                  {t('mbway_instructions')}
+              {paymentMethod === 'mbway' && onlineMethods.MBWAY ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 space-y-3">
+                  <p>{t('mbway_auto_instructions')}</p>
+                  <label className="block">
+                    <span className="block text-xs font-medium text-blue-900 mb-1">{t('mbway_phone_label')}</span>
+                    <input
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      value={mbwayPhone}
+                      onChange={(e) => setMbwayPhone(e.target.value)}
+                      placeholder={t('mbway_phone_placeholder')}
+                      className="input bg-white"
+                    />
+                  </label>
                 </div>
-              )}
-              {paymentMethod === 'transfer' && (
+              ) : (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                  {t('transfer_instructions')}
-                </div>
-              )}
-              {paymentMethod === 'cash' && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
-                  {t('cash_instructions')}
+                  {t(paymentMethod === 'mbway' ? 'mbway_instructions' : `${paymentMethod}_instructions`)}
                 </div>
               )}
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
@@ -8,6 +8,8 @@ import { CheckCircle, Smartphone, Building2, ArrowRight, MapPin, HandCoins } fro
 import { whatsappUrl, formatWhatsappDisplay } from '@/lib/settings';
 import { useSettings } from '@/components/providers/SettingsProvider';
 import PickupInfo from '@/components/shop/PickupInfo';
+import { GatewayPayment, MbwayPayment, MultibancoPayment } from '@/components/checkout/OnlinePaymentStatus';
+import { useCartStore } from '@/store/cart';
 
 function ConfirmacaoContent() {
   const params   = useSearchParams();
@@ -18,6 +20,12 @@ function ConfirmacaoContent() {
   const method   = params.get('method') ?? 'mbway';
   const email    = params.get('email') ?? '';
   const isPickup = params.get('delivery') === 'pickup';
+  const isMbwayAuto = method === 'mbway' && params.get('auto') === '1';
+  const isGateway   = method === 'card' || method === 'applepay' || method === 'googlepay';
+  const gatewayFailed = isGateway && params.get('result') !== 'success';
+  const clearCart = useCartStore((s) => s.clearCart);
+  // Cartão / Apple Pay: o carrinho fica guardado até o pagamento estar confirmado
+  const onGatewayPaid = useCallback(() => clearCart(), [clearCart]);
 
   const shortId = orderId.slice(-8).toUpperCase();
 
@@ -25,11 +33,15 @@ function ConfirmacaoContent() {
     <div className="max-w-lg mx-auto px-6 py-16 text-center">
 
       {/* Ícone */}
-      <div className="w-20 h-20 bg-brand-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
-        <CheckCircle className="w-10 h-10 text-brand-green" />
-      </div>
+      {!gatewayFailed && (
+        <div className="w-20 h-20 bg-brand-green/20 rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-10 h-10 text-brand-green" />
+        </div>
+      )}
 
-      <h1 className="text-3xl font-bold text-brand-dark mb-2">Encomenda recebida!</h1>
+      <h1 className="text-3xl font-bold text-brand-dark mb-2">
+        {gatewayFailed ? 'Pagamento não concluído' : 'Encomenda recebida!'}
+      </h1>
       <p className="text-gray-500 mb-8">
         Referência: <span className="font-semibold text-brand-dark">#{shortId}</span>
       </p>
@@ -47,7 +59,19 @@ function ConfirmacaoContent() {
 
       {/* Instruções de pagamento */}
       <div className="card p-6 text-left mb-6">
-        {method === 'cash' ? (
+        {isGateway ? (
+          <GatewayPayment orderId={orderId} method={method as 'card' | 'applepay' | 'googlepay'} result={params.get('result') ?? ''} onPaid={onGatewayPaid} />
+        ) : method === 'multibanco' ? (
+          <MultibancoPayment
+            orderId={orderId}
+            total={total}
+            entity={params.get('entity') ?? ''}
+            reference={params.get('ref') ?? ''}
+            expires={params.get('expires') ?? ''}
+          />
+        ) : isMbwayAuto ? (
+          <MbwayPayment orderId={orderId} total={total} phone={params.get('phone') ?? ''} />
+        ) : method === 'cash' ? (
           <>
             <div className="flex items-center gap-3 mb-4">
               <HandCoins className="w-5 h-5 text-brand-primary flex-shrink-0" />
