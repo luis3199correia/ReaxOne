@@ -10,7 +10,7 @@ import { GATEWAY_METHODS, OnlineMethod, enabledOnlineMethods, isValidAntiPhishin
  * URLs de callback a registar na IfthenPay (os [MARCADORES] são substituídos por eles):
  *   MB WAY:      {API}/api/payments/ifthenpay/mbway?key=[ANTI_PHISHING_KEY]&orderId=[ORDER_ID]&amount=[AMOUNT]&requestId=[REQUEST_ID]
  *   Multibanco:  {API}/api/payments/ifthenpay/multibanco?key=[ANTI_PHISHING_KEY]&orderId=[ORDER_ID]&amount=[AMOUNT]&entity=[ENTITY]&reference=[REFERENCE]
- *   Gateway:     {API}/api/payments/ifthenpay/gateway?key=[ANTI_PHISHING_KEY]&orderId=[ORDER_ID]&amount=[AMOUNT]&method=[PAYMENT_METHOD]&requestId=[REQUEST_ID]
+ *   Gateway:     {API}/api/payments/ifthenpay/gateway?key=[ANTI_PHISHING_KEY]&orderId=[ID]&amount=[AMOUNT]&method=[PAYMENT_METHOD]&requestId=[REQUEST_ID]
  */
 @Controller('payments')
 export class PaymentsController {
