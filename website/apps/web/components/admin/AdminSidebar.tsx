@@ -18,7 +18,7 @@ import {
   LogOut,
   Store,
   Home,
-  TicketPercent,
+  TicketPercent, Gift,
 } from 'lucide-react';
 
 export default function AdminSidebar() {
@@ -40,6 +40,7 @@ export default function AdminSidebar() {
     { href: '/admin/encomendas',    label: t('orders'),    icon: ShoppingBag },
     { href: '/admin/clientes',      label: t('customers'), icon: Users },
     { href: '/admin/descontos',     label: 'Descontos',    icon: TicketPercent },
+    { href: '/admin/promocoes',     label: 'Promoções',    icon: Gift },
     { href: '/admin/configuracoes', label: t('settings'),  icon: Settings },
   ];
 

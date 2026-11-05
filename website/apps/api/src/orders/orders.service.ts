@@ -4,16 +4,29 @@ import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
 import { SettingsService } from '../settings/settings.service';
 import { DiscountsService } from '../discounts/discounts.service';
+import { PromotionsService } from '../promotions/promotions.service';
 import { detectZone, shippingPrice } from './shipping-rates';
 import { PICKUP_METHOD_ID } from './pickup';
 
 const MAX_QUANTITY_PER_ITEM = 100;
+const NOTES_MAX_LENGTH = 500;
 
 const PAYMENT_METHODS = ['MBWAY', 'BANK_TRANSFER', 'CASH'] as const;
 type PaymentMethodInput = (typeof PAYMENT_METHODS)[number];
 
 function roundCents(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+/** Notas do cliente: opcionais, sem espaços a mais e com tamanho limitado. */
+function parseNotes(value: unknown): string | null {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string') throw new BadRequestException('Notas inválidas.');
+  const notes = value.trim();
+  if (notes.length > NOTES_MAX_LENGTH) {
+    throw new BadRequestException(`As notas não podem ter mais de ${NOTES_MAX_LENGTH} caracteres.`);
+  }
+  return notes || null;
 }
 
 // Campos do cliente que podem ir para o backoffice (nunca a password)
@@ -29,6 +42,7 @@ export class OrdersService {
     private mailService: MailService,
     private settingsService: SettingsService,
     private discountsService: DiscountsService,
+    private promotionsService: PromotionsService,
   ) {}
 
   /**
@@ -60,6 +74,9 @@ export class OrdersService {
     paymentMethod: PaymentMethodInput;
     shippingMethod?: string;
     discountCode?: string;
+    notes?: string;
+    // Ofertas escolhidas pelo cliente (cor das meias); validadas no servidor
+    gifts?: Array<{ productId: string; quantity: number }>;
     // price, name e shippingCost podem vir no body mas são ignorados — recalculados no servidor
     items: Array<{
       productId: string;
@@ -68,6 +85,8 @@ export class OrdersService {
     }>;
   }) {
     const { items, itemsTotal } = await this.priceItems(data.items);
+    const notes = parseNotes(data.notes);
+    const giftLines = await this.promotionsService.resolveOrderGifts(items, data.gifts);
     const isAllDigital = items.every((i) => i.isEbook);
     const country = data.country ?? 'PT';
     const isPickup = !isAllDigital && data.shippingMethod === PICKUP_METHOD_ID;
@@ -104,9 +123,8 @@ export class OrdersService {
       const discountAmount = discount?.amount ?? 0;
       const totalAmount = roundCents(itemsTotal - discountAmount + shippingCost);
 
-      for (const item of items) {
-        if (item.isEbook) continue;
-
+      const stockLines = [...items.filter((i) => !i.isEbook), ...giftLines];
+      for (const item of stockLines) {
         // Decremento condicional e atómico: só desconta se ainda houver stock
         // suficiente, evitando vender a mesma unidade a dois clientes em simultâneo.
         const updated = await tx.product.updateMany({
@@ -137,14 +155,24 @@ export class OrdersService {
           discountCode:   discount?.code ?? null,
           discountAmount,
           totalAmount,
+          notes,
           items: {
-            create: items.map((item) => ({
-              productId: item.productId,
-              name:      item.name,
-              price:     item.price,
-              quantity:  item.quantity,
-              size:      item.size,
-            })),
+            create: [
+              ...items.map((item) => ({
+                productId: item.productId,
+                name:      item.name,
+                price:     item.price,
+                quantity:  item.quantity,
+                size:      item.size,
+              })),
+              ...giftLines.map((gift) => ({
+                productId: gift.productId,
+                name:      gift.name,
+                price:     0,
+                quantity:  gift.quantity,
+                isGift:    true,
+              })),
+            ],
           },
           payment: {
             create: {
@@ -167,6 +195,7 @@ export class OrdersService {
         paymentMethod: data.paymentMethod,
         discountCode:   order.discountCode,
         discountAmount: order.discountAmount,
+        notes:          order.notes,
         shippingMethod,
         street:        order.street,
         city:          order.city,
@@ -192,6 +221,7 @@ export class OrdersService {
         paymentMethod:  data.paymentMethod,
         discountCode:   order.discountCode,
         discountAmount: order.discountAmount,
+        notes:          order.notes,
         shippingMethod,
         street:         order.street,
         city:           order.city,
@@ -205,6 +235,12 @@ export class OrdersService {
       '[Mail] Erro ao notificar admin de nova encomenda',
     );
 
+    // Avisar o admin dos produtos que esgotaram com esta encomenda
+    const physicalIds = [...new Set([...items.filter((i) => !i.isEbook), ...giftLines].map((i) => i.productId))];
+    if (physicalIds.length > 0) {
+      this.fireAndForget(() => this.notifySoldOut(physicalIds), '[Mail] Erro ao avisar produtos esgotados');
+    }
+
     // Criar encomenda na Batch em background — apenas para produtos físicos enviados
     // por transportadora (o levantamento é entregue em mão)
     if (process.env.BATCH_DISABLED !== 'true' && !isPickup) {
@@ -212,6 +248,18 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  /**
+   * O decremento de stock é condicional (stock >= quantidade), por isso só a
+   * encomenda que leva a última unidade vê o stock a 0 — o aviso sai uma vez.
+   */
+  private async notifySoldOut(productIds: string[]) {
+    const soldOut = await this.prisma.product.findMany({
+      where:  { id: { in: productIds }, stock: { lte: 0 } },
+      select: { id: true, name: true },
+    });
+    if (soldOut.length > 0) await this.mailService.sendOutOfStockNotification(soldOut);
   }
 
   /**
@@ -272,7 +320,8 @@ export class OrdersService {
     const cart: Record<string, number> = {};
     for (const item of physicalItems) {
       const key = item.size ? `${item.name} // ${item.size}` : item.name;
-      cart[key] = item.quantity;
+      // A mesma meia pode vir comprada e de oferta — soma as quantidades
+      cart[key] = (cart[key] ?? 0) + item.quantity;
     }
 
     const weightGrams = physicalItems.reduce(
@@ -293,6 +342,7 @@ export class OrdersService {
       volumes:     physicalItems.reduce((acc: number, i: any) => acc + i.quantity, 0),
       total:       order.totalAmount,
       platform:    order.shippingMethod || undefined,
+      obs:         order.notes || undefined,
       cart,
     });
 

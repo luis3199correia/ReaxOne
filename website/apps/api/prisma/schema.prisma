@@ -86,6 +86,9 @@ model Product {
   category   Category?   @relation(fields: [categoryId], references: [id])
   variants   Variant[]
   orderItems OrderItem[]
+
+  giftPromotionTriggers GiftPromotionTrigger[]
+  giftPromotionGifts    GiftPromotionGift[]
 }
 
 model Variant {
@@ -132,6 +135,9 @@ model Order {
   discountCode   String?
   discountAmount Float    @default(0)
 
+  // Notas escritas pelo cliente no checkout
+  notes String?
+
   user       User?         @relation(fields: [userId], references: [id])
   items      OrderItem[]
   payment    Payment?
@@ -145,6 +151,7 @@ model OrderItem {
   price     Float   // snapshot do preço na altura da compra
   quantity  Int
   size      String?
+  isGift    Boolean @default(false) // oferta de uma promoção (preço 0)
 
   order   Order   @relation(fields: [orderId], references: [id])
   product Product @relation(fields: [productId], references: [id])
@@ -187,4 +194,46 @@ model Settings {
   id    String @id @default("singleton")
   key   String @unique
   value String
+}
+
+// Oferta automática: por cada `requiredUnits` unidades dos produtos gatilho, o cliente
+// escolhe `giftsPerGroup` produtos de oferta, até `maxGiftsPerOrder` por encomenda.
+// Só pode haver uma promoção ativa em cada período (validado no serviço).
+model GiftPromotion {
+  id               String   @id @default(cuid())
+  name             String
+  active           Boolean  @default(true)
+  startsAt         DateTime
+  endsAt           DateTime
+  requiredUnits    Int      @default(2)
+  giftsPerGroup    Int      @default(1)
+  maxGiftsPerOrder Int      @default(3)
+  messagePt        String?  // texto mostrado ao cliente no carrinho/checkout
+  messageEn        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  triggers GiftPromotionTrigger[]
+  gifts    GiftPromotionGift[]
+}
+
+model GiftPromotionTrigger {
+  promotionId String
+  productId   String
+  units       Int    @default(1) // ex.: um pack com 2 bolas conta 2
+
+  promotion GiftPromotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([promotionId, productId])
+}
+
+model GiftPromotionGift {
+  promotionId String
+  productId   String
+
+  promotion GiftPromotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  product   Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([promotionId, productId])
 }

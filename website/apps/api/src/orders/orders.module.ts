@@ -6,9 +6,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { MailModule } from '../mail/mail.module';
 import { SettingsModule } from '../settings/settings.module';
 import { DiscountsModule } from '../discounts/discounts.module';
+import { PromotionsModule } from '../promotions/promotions.module';
 
 @Module({
-  imports:     [PrismaModule, BatchModule, MailModule, SettingsModule, DiscountsModule],
+  imports:     [PrismaModule, BatchModule, MailModule, SettingsModule, DiscountsModule, PromotionsModule],
   providers:   [OrdersService],
   controllers: [OrdersController],
   exports:     [OrdersService],

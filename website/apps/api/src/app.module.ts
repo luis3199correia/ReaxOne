@@ -12,6 +12,7 @@ import { BatchModule } from './batch/batch.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SettingsModule } from './settings/settings.module';
 import { DiscountsModule } from './discounts/discounts.module';
+import { PromotionsModule } from './promotions/promotions.module';
 import { throttlerOptions } from './throttle.config';
 
 @Module({
@@ -28,6 +29,7 @@ import { throttlerOptions } from './throttle.config';
     BatchModule,
     SettingsModule,
     DiscountsModule,
+    PromotionsModule,
   ],
   // Rate limiting global (ver throttle.config.ts)
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

@@ -19,6 +19,16 @@ import { whatsappUrl, formatWhatsappDisplay, getFreeShippingThresholds } from '@
 import { useSettings } from '@/components/providers/SettingsProvider';
 import { PICKUP_METHOD_ID, PICKUP_PLACE } from '@/lib/pickup';
 import PickupInfo from '@/components/shop/PickupInfo';
+import GiftPicker from '@/components/checkout/GiftPicker';
+import {
+  GiftSelection,
+  giftLabel,
+  giftStatus,
+  selectedCount,
+  useCurrentPromotion,
+} from '@/lib/giftPromotion';
+
+const NOTES_MAX_LENGTH = 500;
 
 type PaymentMethod = 'mbway' | 'transfer' | 'cash';
 type DeliveryMode = 'ship' | 'pickup';
@@ -60,6 +70,7 @@ interface CheckoutForm {
   wantsInvoice: boolean;
   nif?: string;
   companyName?: string;
+  notes?: string;
 }
 
 /* ── Postal code format by country ─────────────────────────────────────── */
@@ -119,6 +130,7 @@ function CountrySelect({ value, onChange, error }: {
 /* ── Main Page ──────────────────────────────────────────────────────────── */
 export default function CheckoutPage() {
   const t = useTranslations('checkout');
+  const tGift = useTranslations('gift');
   const locale = useLocale();
   const router = useRouter();
   const settings = useSettings();
@@ -146,6 +158,20 @@ export default function CheckoutPage() {
   const [appliedDiscount, setAppliedDiscount] = useState<AppliedDiscount | null>(null);
   const [discountError, setDiscountError] = useState('');
   const [discountLoading, setDiscountLoading] = useState(false);
+
+  // Oferta automática: o cliente escolhe obrigatoriamente a cor de cada oferta
+  const { promotion } = useCurrentPromotion();
+  const [giftSelection, setGiftSelection] = useState<GiftSelection>({});
+  const [showGiftError, setShowGiftError] = useState(false);
+  const gift = promotion && promotion.gifts.length > 0 ? giftStatus(promotion, items) : null;
+  const giftsEligible = gift?.eligible ?? 0;
+  const giftsChosen = selectedCount(giftSelection);
+  const giftsIncomplete = giftsEligible > 0 && giftsChosen !== giftsEligible;
+
+  // Se o carrinho diminuir, as escolhas a mais deixam de ser válidas
+  useEffect(() => {
+    if (giftsChosen > giftsEligible) setGiftSelection({});
+  }, [giftsChosen, giftsEligible]);
 
   // Se o carrinho mudar, o código tem de ser revalidado (ex.: compra mínima)
   useEffect(() => {
@@ -239,6 +265,11 @@ export default function CheckoutPage() {
       setError('O pagamento em mão só está disponível com levantamento da encomenda.');
       return;
     }
+    if (giftsIncomplete) {
+      setShowGiftError(true);
+      setError(tGift('must_choose'));
+      return;
+    }
 
     setSubmitting(true);
     setError('');
@@ -263,6 +294,8 @@ export default function CheckoutPage() {
         companyName:    data.companyName,
         shippingMethod: isAllEbooks ? 'digital' : isPickup ? PICKUP_METHOD_ID : selectedShipping!.id,
         discountCode:   appliedDiscount?.code,
+        notes:          data.notes?.trim() || undefined,
+        gifts: Object.entries(giftSelection).map(([productId, quantity]) => ({ productId, quantity })),
         items: items.map((i) => ({
           productId: i.id,
           name:      i.name,
@@ -586,6 +619,18 @@ export default function CheckoutPage() {
             </div>
             )}
 
+            {/* ── Oferta automática ── */}
+            {promotion && gift && (giftsEligible > 0 || gift.missingUnits > 0) && (
+              <GiftPicker
+                promotion={promotion}
+                eligible={giftsEligible}
+                missingUnits={gift.missingUnits}
+                selection={giftSelection}
+                onChange={(next) => { setGiftSelection(next); setShowGiftError(false); }}
+                showError={showGiftError}
+              />
+            )}
+
             {/* ── Pagamento ── */}
             <div className="card p-6">
               <h2 className="text-lg font-semibold mb-4">{t('payment')}</h2>
@@ -641,6 +686,18 @@ export default function CheckoutPage() {
                 </div>
               )}
             </div>
+
+            {/* ── Notas ── */}
+            <div className="card p-6">
+              <label htmlFor="order-notes" className="block font-medium mb-2">{t('notes_label')}</label>
+              <textarea
+                id="order-notes"
+                {...register('notes', { maxLength: NOTES_MAX_LENGTH })}
+                className="input min-h-[96px]"
+                maxLength={NOTES_MAX_LENGTH}
+                placeholder={t('notes_placeholder')}
+              />
+            </div>
           </div>
 
           {/* ── Resumo ── */}
@@ -653,6 +710,16 @@ export default function CheckoutPage() {
                   <span className="font-medium">€{(item.price * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
+              {promotion && Object.entries(giftSelection).map(([productId, quantity]) => {
+                const g = promotion.gifts.find((x) => x.productId === productId);
+                if (!g) return null;
+                return (
+                  <div key={`gift-${productId}`} className="flex justify-between text-sm">
+                    <span className="text-gray-700">🎁 {giftLabel(g, locale)} × {quantity}</span>
+                    <span className="font-medium text-brand-green">{tGift('free')}</span>
+                  </div>
+                );
+              })}
             </div>
             {/* Código de desconto */}
             <div className="border-t pt-4 mb-4">

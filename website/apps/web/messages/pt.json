@@ -106,7 +106,9 @@
     "discount_apply": "Aplicar",
     "discount_remove": "Remover código",
     "discount": "Desconto",
-    "discount_invalid": "Código de desconto inválido."
+    "discount_invalid": "Código de desconto inválido.",
+    "notes_label": "Notas da encomenda (opcional)",
+    "notes_placeholder": "Alguma indicação para a entrega ou para a encomenda?"
   },
   "account": {
     "title": "A minha conta",
@@ -311,5 +313,17 @@
       "name": "Exercícios para Beginners",
       "description": "O teu primeiro passo para uma vida mais ativa. Guia gratuito com exercícios básicos pensados para quem está a começar — sem material, sem experiência prévia. Inclui dicas de reação e coordenação com ReaxOne®."
     }
+  },
+  "gift": {
+    "title": "Oferta",
+    "eligible": "Tens direito a {count, plural, one {# oferta} other {# ofertas}}. Escolhe a cor:",
+    "eligible_cart": "Tens direito a {count, plural, one {# oferta} other {# ofertas}}.",
+    "chosen": "Escolhidas: {chosen} de {total}",
+    "missing": "Adiciona mais {count, plural, one {# unidade} other {# unidades}} da promoção e ganha mais uma oferta.",
+    "must_choose": "Escolhe a cor de todas as ofertas antes de finalizar a encomenda.",
+    "free": "Oferta",
+    "pick_in_checkout": "Escolhes as cores no checkout.",
+    "add": "Adicionar {name}",
+    "remove": "Remover {name}"
   }
 }

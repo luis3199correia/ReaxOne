@@ -39,6 +39,7 @@ type OrderItem = {
   quantity: number;
   price: number;
   size?: string;
+  isGift?: boolean;
 };
 
 type Order = {
@@ -57,6 +58,7 @@ type Order = {
   shippingCost?: number;
   discountCode?: string | null;
   discountAmount?: number;
+  notes?: string | null;
   createdAt: string;
   items: OrderItem[];
   payment?: { method: string; status: string };
@@ -348,7 +350,9 @@ export default function AdminEncomendas() {
                                         {item.quantity}× {item.name}
                                         {item.size && <span className="text-gray-400 ml-1">({item.size})</span>}
                                       </span>
-                                      <span className="font-medium">€{(item.price * item.quantity).toFixed(2)}</span>
+                                      {item.isGift
+                                        ? <span className="font-medium text-green-700">🎁 Oferta</span>
+                                        : <span className="font-medium">€{(item.price * item.quantity).toFixed(2)}</span>}
                                     </div>
                                   ))}
                                   {order.discountCode && (order.discountAmount ?? 0) > 0 && (
@@ -364,6 +368,14 @@ export default function AdminEncomendas() {
                                     </div>
                                   )}
                                 </div>
+                                {order.notes && (
+                                  <div className="mt-4">
+                                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Notas do cliente</h3>
+                                    <p className="text-sm text-gray-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 whitespace-pre-wrap">
+                                      {order.notes}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
 
                               {/* Morada + ações */}

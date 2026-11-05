@@ -29,6 +29,7 @@ export const routing = defineRouting({
     '/admin/encomendas': { pt: '/admin/encomendas', en: '/admin/orders' },
     '/admin/clientes': { pt: '/admin/clientes', en: '/admin/customers' },
     '/admin/descontos': { pt: '/admin/descontos', en: '/admin/discounts' },
+    '/admin/promocoes': { pt: '/admin/promocoes', en: '/admin/promotions' },
     '/admin/configuracoes': { pt: '/admin/configuracoes', en: '/admin/settings' },
   },
 });

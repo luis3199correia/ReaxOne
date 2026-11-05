@@ -4,6 +4,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { useCartStore } from '@/store/cart';
+import GiftPromotionHint from '@/components/shop/GiftPromotionHint';
 
 export default function CartPage() {
   const t = useTranslations('cart');
@@ -79,6 +80,7 @@ export default function CartPage() {
 
         {/* Order summary */}
         <div className="card p-6 h-fit">
+          <GiftPromotionHint items={items} />
           <div className="flex justify-between mb-3">
             <span>{t('subtotal')}</span>
             <span>€{total.toFixed(2)}</span>

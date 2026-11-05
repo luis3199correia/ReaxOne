@@ -23,6 +23,38 @@ function pickupBlock(): string {
   </div>`;
 }
 
+type MailItem = { name: string; quantity: number; price: number; size?: string | null; isGift?: boolean | null };
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/** Linha de produto da tabela de itens; as ofertas aparecem como "Oferta". */
+function itemRow(i: MailItem): string {
+  const total = i.isGift
+    ? '<span style="color:#16A34A;font-weight:bold;">Oferta</span>'
+    : `€${(i.price * i.quantity).toFixed(2)}`;
+  return `<tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.isGift ? '🎁 ' : ''}${i.name}${i.size ? ` (${i.size})` : ''}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">${total}</td>
+      </tr>`;
+}
+
+/** Bloco com as notas escritas pelo cliente (vazio sem notas). */
+function notesBlock(notes?: string | null): string {
+  if (!notes) return '';
+  return `<div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
+    <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">NOTAS DA ENCOMENDA</p>
+    <p style="font-size:14px;color:#333;margin:0;line-height:1.6;white-space:pre-wrap;">${escapeHtml(notes)}</p>
+  </div>`;
+}
+
 /** Linha "Desconto" para a tabela de itens dos emails (vazia sem desconto). */
 function discountRow(order: { discountCode?: string | null; discountAmount?: number | null }): string {
   if (!order.discountCode || !order.discountAmount) return '';
@@ -139,7 +171,8 @@ export class MailService {
     companyName?: string | null;
     discountCode?: string | null;
     discountAmount?: number | null;
-    items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
+    notes?: string | null;
+    items: MailItem[];
   }): Promise<void> {
     const shortId    = order.id.slice(-8).toUpperCase();
     const settings   = await this.settingsService.getPublicSettings();
@@ -173,12 +206,7 @@ export class MailService {
            </p>
          </div>`;
 
-    const itemsHtml = order.items.map((i) =>
-      `<tr>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.name}${i.size ? ` (${i.size})` : ''}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">€${(i.price * i.quantity).toFixed(2)}</td>
-      </tr>`).join('');
+    const itemsHtml = order.items.map(itemRow).join('');
 
     const { error } = await this.resend.emails.send({
       from:    this.from,
@@ -239,6 +267,7 @@ export class MailService {
               </p>
             </div>` : ''}
 
+            ${notesBlock(order.notes)}
             ${paymentInstructions}
             ${this.contactBlock(settings)}
             ${this.footer()}
@@ -262,17 +291,12 @@ export class MailService {
     postalCode: string;
     country: string;
     shippingMethod?: string | null;
-    items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
+    items: MailItem[];
   }): Promise<void> {
     const shortId  = order.id.slice(-8).toUpperCase();
     const settings = await this.settingsService.getPublicSettings();
 
-    const itemsHtml = order.items.map((i) =>
-      `<tr>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.name}${i.size ? ` (${i.size})` : ''}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">€${(i.price * i.quantity).toFixed(2)}</td>
-      </tr>`).join('');
+    const itemsHtml = order.items.map(itemRow).join('');
 
     const { error } = await this.resend.emails.send({
       from:    this.from,
@@ -344,7 +368,8 @@ export class MailService {
     companyName?: string | null;
     discountCode?: string | null;
     discountAmount?: number | null;
-    items: Array<{ name: string; quantity: number; price: number; size?: string | null }>;
+    notes?: string | null;
+    items: MailItem[];
   }): Promise<void> {
     const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
     if (!adminEmail) return;
@@ -360,12 +385,7 @@ export class MailService {
       ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Entrega</td><td style="padding:6px 0;"><strong>Levantamento — agendar com o cliente</strong>${scheduleUrl ? `<br><a href="${scheduleUrl}" style="color:#E8322A;">Enviar WhatsApp ao cliente →</a>` : ''}</td></tr>`
       : '';
 
-    const itemsHtml = order.items.map((i) =>
-      `<tr>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.name}${i.size ? ` (${i.size})` : ''}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">€${(i.price * i.quantity).toFixed(2)}</td>
-      </tr>`).join('');
+    const itemsHtml = order.items.map(itemRow).join('');
 
     const { error } = await this.resend.emails.send({
       from:    this.from,
@@ -400,6 +420,7 @@ export class MailService {
                 <td style="padding:10px 8px;text-align:right;font-weight:bold;font-size:16px;color:#E8322A;">€${order.totalAmount.toFixed(2)}</td>
               </tr></tfoot>
             </table>
+            ${notesBlock(order.notes)}
             <p style="margin-top:24px;font-size:13px;color:#888;">
               <a href="${frontendUrl}/pt/admin/encomendas" style="color:#E8322A;">Ver no backoffice →</a>
             </p>
@@ -409,6 +430,42 @@ export class MailService {
 
     if (error) throw new Error(JSON.stringify(error));
     this.logger.log(`Notificação de nova encomenda #${shortId} enviada para ${adminEmail}`);
+  }
+
+  // ─── Produto esgotado (aviso ao admin) ────────────────────────────────────
+
+  async sendOutOfStockNotification(products: Array<{ id: string; name: string }>): Promise<void> {
+    const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+    if (!adminEmail || products.length === 0) return;
+
+    const frontendUrl = process.env.FRONTEND_URL ?? 'https://reaxone.com';
+    const names = products.map((p) => p.name);
+    const listHtml = names.map((n) => `<li>${n}</li>`).join('');
+
+    const { error } = await this.resend.emails.send({
+      from:    this.from,
+      to:      [adminEmail],
+      subject: `⚠️ Esgotado no site: ${names.join(', ')}`,
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;">
+          <div style="background:#0F0F0F;padding:20px 24px;border-radius:8px 8px 0 0;">
+            <h1 style="color:#F59E0B;margin:0;font-size:20px;">Produto esgotado</h1>
+          </div>
+          <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
+            <p style="font-size:15px;line-height:1.6;">O stock destes produtos chegou a 0 com a última encomenda:</p>
+            <ul style="font-size:15px;line-height:1.8;color:#333;">${listHtml}</ul>
+            <p style="font-size:14px;color:#555;line-height:1.6;">
+              Os clientes já não os conseguem comprar nem escolher como oferta. Atualiza o stock no backoffice quando houver reposição.
+            </p>
+            <p style="margin-top:24px;font-size:13px;color:#888;">
+              <a href="${frontendUrl}/pt/admin/produtos" style="color:#E8322A;">Ver produtos no backoffice →</a>
+            </p>
+          </div>
+        </div>`,
+    });
+
+    if (error) throw new Error(JSON.stringify(error));
+    this.logger.log(`Aviso de produto esgotado enviado para ${adminEmail}: ${names.join(', ')}`);
   }
 
   // ─── Notificação de mudança de estado ao cliente ──────────────────────────

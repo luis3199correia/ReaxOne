@@ -106,7 +106,9 @@
     "discount_apply": "Apply",
     "discount_remove": "Remove code",
     "discount": "Discount",
-    "discount_invalid": "Invalid discount code."
+    "discount_invalid": "Invalid discount code.",
+    "notes_label": "Order notes (optional)",
+    "notes_placeholder": "Anything we should know about the delivery or your order?"
   },
   "account": {
     "title": "My account",
@@ -311,5 +313,17 @@
       "name": "Exercises for Beginners",
       "description": "Your first step towards a more active life. Free guide with basic exercises for those just starting out — no equipment, no prior experience required. Includes reaction and coordination tips with ReaxOne®."
     }
+  },
+  "gift": {
+    "title": "Gift",
+    "eligible": "You get {count, plural, one {# free gift} other {# free gifts}}. Pick the colour:",
+    "eligible_cart": "You get {count, plural, one {# free gift} other {# free gifts}}.",
+    "chosen": "Chosen: {chosen} of {total}",
+    "missing": "Add {count, plural, one {# more promotion unit} other {# more promotion units}} and get another gift.",
+    "must_choose": "Pick the colour of every gift before placing the order.",
+    "free": "Free",
+    "pick_in_checkout": "You pick the colours at checkout.",
+    "add": "Add {name}",
+    "remove": "Remove {name}"
   }
 }
