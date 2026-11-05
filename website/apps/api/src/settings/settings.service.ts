@@ -22,7 +22,23 @@ export interface PublicSettings {
   bannerSubtextEn: string;
   bannerStartsAt: string;
   bannerEndsAt: string;
+  // Métodos de pagamento ligados no backoffice (os da IfthenPay também precisam das chaves na API)
+  paymentMbwayEnabled: boolean;
+  paymentMultibancoEnabled: boolean;
+  paymentCardEnabled: boolean;
+  paymentApplePayEnabled: boolean;
+  paymentGooglePayEnabled: boolean;
+  paymentTransferEnabled: boolean;
+  paymentCashEnabled: boolean; // só com levantamento
 }
+
+type PaymentToggleField =
+  | 'paymentMbwayEnabled' | 'paymentMultibancoEnabled' | 'paymentCardEnabled' | 'paymentApplePayEnabled'
+  | 'paymentGooglePayEnabled' | 'paymentTransferEnabled' | 'paymentCashEnabled';
+export const PAYMENT_TOGGLE_FIELDS: PaymentToggleField[] = [
+  'paymentMbwayEnabled', 'paymentMultibancoEnabled', 'paymentCardEnabled', 'paymentApplePayEnabled',
+  'paymentGooglePayEnabled', 'paymentTransferEnabled', 'paymentCashEnabled',
+];
 
 type BannerTextField = 'bannerMessage' | 'bannerSubtext' | 'bannerMessageEn' | 'bannerSubtextEn';
 const BANNER_TEXT_FIELDS: BannerTextField[] = ['bannerMessage', 'bannerSubtext', 'bannerMessageEn', 'bannerSubtextEn'];
@@ -49,6 +65,13 @@ const KEYS = {
   bannerSubtextEn: 'banner_subtext_en',
   bannerStartsAt: 'banner_starts_at',
   bannerEndsAt: 'banner_ends_at',
+  paymentMbwayEnabled: 'payment_mbway_enabled',
+  paymentMultibancoEnabled: 'payment_multibanco_enabled',
+  paymentCardEnabled: 'payment_card_enabled',
+  paymentApplePayEnabled: 'payment_apple_pay_enabled',
+  paymentGooglePayEnabled: 'payment_google_pay_enabled',
+  paymentTransferEnabled: 'payment_transfer_enabled',
+  paymentCashEnabled: 'payment_cash_enabled',
 } as const;
 
 const DEFAULTS: PublicSettings = {
@@ -69,6 +92,13 @@ const DEFAULTS: PublicSettings = {
   bannerSubtextEn: '',
   bannerStartsAt: '',
   bannerEndsAt: '',
+  paymentMbwayEnabled: true,
+  paymentMultibancoEnabled: true,
+  paymentCardEnabled: true,
+  paymentApplePayEnabled: true,
+  paymentGooglePayEnabled: true,
+  paymentTransferEnabled: true,
+  paymentCashEnabled: true,
 };
 
 // '' limpa a data; qualquer outro valor tem de ser uma data válida (guardada normalizada em ISO)
@@ -118,6 +148,23 @@ function periodEntries(
   return entries;
 }
 
+/** Liga/desliga métodos de pagamento; tem de ficar pelo menos um que sirva para envios (não só em mão). */
+function paymentEntries(dto: Partial<PublicSettings>, current: PublicSettings): Array<[string, string]> {
+  const entries: Array<[string, string]> = [];
+  for (const field of PAYMENT_TOGGLE_FIELDS) {
+    if (dto[field] === undefined) continue;
+    if (typeof dto[field] !== 'boolean') throw new BadRequestException('Valor inválido nos métodos de pagamento.');
+    entries.push([KEYS[field], String(dto[field])]);
+  }
+  if (entries.length === 0) return entries;
+  const final = (f: PaymentToggleField) => (dto[f] !== undefined ? dto[f] === true : current[f]);
+  const hasShippingMethod = PAYMENT_TOGGLE_FIELDS.some((f) => f !== 'paymentCashEnabled' && final(f));
+  if (!hasShippingMethod) {
+    throw new BadRequestException('Tem de ficar ativo pelo menos um método de pagamento além do pagamento em mão.');
+  }
+  return entries;
+}
+
 function parseThreshold(value: string | undefined, fallback: number): number {
   const n = Number(value);
   return value !== undefined && value !== '' && Number.isFinite(n) && n >= 0 ? n : fallback;
@@ -153,6 +200,10 @@ export class SettingsService {
       bannerSubtextEn: map.get(KEYS.bannerSubtextEn) ?? DEFAULTS.bannerSubtextEn,
       bannerStartsAt: map.get(KEYS.bannerStartsAt) ?? DEFAULTS.bannerStartsAt,
       bannerEndsAt: map.get(KEYS.bannerEndsAt) ?? DEFAULTS.bannerEndsAt,
+      ...Object.fromEntries(PAYMENT_TOGGLE_FIELDS.map((field) => [
+        field,
+        map.has(KEYS[field]) ? map.get(KEYS[field]) === 'true' : DEFAULTS[field],
+      ])) as Pick<PublicSettings, PaymentToggleField>,
     };
   }
 
@@ -172,7 +223,8 @@ export class SettingsService {
       entries.push([KEYS[field], String(Math.round(n * 100) / 100)]);
     }
     const needsCurrent = [dto.freeShippingStartsAt, dto.freeShippingEndsAt, dto.bannerStartsAt, dto.bannerEndsAt]
-      .some((v) => v !== undefined) || dto.bannerEnabled === true;
+      .some((v) => v !== undefined) || dto.bannerEnabled === true
+      || PAYMENT_TOGGLE_FIELDS.some((f) => dto[f] !== undefined);
     const current = needsCurrent ? await this.getPublicSettings() : DEFAULTS;
     entries.push(...periodEntries(
       dto.freeShippingStartsAt, dto.freeShippingEndsAt,
@@ -181,6 +233,7 @@ export class SettingsService {
       'dos portes grátis',
     ));
     entries.push(...this.bannerEntries(dto, current));
+    entries.push(...paymentEntries(dto, current));
 
     await Promise.all(
       entries.map(([key, value]) =>

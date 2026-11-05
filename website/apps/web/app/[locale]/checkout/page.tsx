@@ -27,7 +27,7 @@ import {
   selectedCount,
   useCurrentPromotion,
 } from '@/lib/giftPromotion';
-import { PaymentAction, useApplePayAvailable, useOnlineMethods } from '@/lib/payments';
+import { PaymentAction, useApplePayAvailable, useAvailablePaymentMethods } from '@/lib/payments';
 
 const NOTES_MAX_LENGTH = 500;
 
@@ -143,7 +143,7 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mbway');
   const [mbwayPhone, setMbwayPhone] = useState('');
-  const onlineMethods = useOnlineMethods();
+  const availableMethods = useAvailablePaymentMethods();
   const applePayAvailable = useApplePayAvailable();
   const [wantsInvoice, setWantsInvoice] = useState(false);
   const [differentAddress, setDifferentAddress] = useState(false);
@@ -224,24 +224,29 @@ export default function CheckoutPage() {
     setDeliveryMode(mode);
     // No levantamento não há morada de entrega
     if (mode === 'pickup') setDifferentAddress(false);
-    // Pagamento em mão só existe com levantamento
-    if (mode === 'ship' && paymentMethod === 'cash') setPaymentMethod('mbway');
   }
 
   // Detetar se todos os itens são ebooks (entrega digital, sem portes)
   const isAllEbooks = items.length > 0 && items.every((i) => i.isEbook);
   const isPickup    = !isAllEbooks && deliveryMode === 'pickup';
 
-  // MB WAY está sempre disponível (automático com IfthenPay, manual sem ela)
-  const paymentOptions = useMemo<PaymentMethod[]>(() => [
-    'mbway',
-    ...(onlineMethods.MULTIBANCO ? (['multibanco'] as const) : []),
-    ...(onlineMethods.CARD ? (['card'] as const) : []),
-    ...(onlineMethods.APPLE_PAY && applePayAvailable ? (['applepay'] as const) : []),
-    ...(onlineMethods.GOOGLE_PAY ? (['googlepay'] as const) : []),
-    'transfer',
-    ...(isPickup ? (['cash'] as const) : []),
-  ], [onlineMethods, applePayAvailable, isPickup]);
+  // Métodos ligados no backoffice; Apple Pay só em dispositivos Apple e
+  // pagamento em mão só com levantamento
+  const paymentOptions = useMemo<PaymentMethod[]>(() => {
+    if (!availableMethods) return [];
+    return (Object.keys(PAYMENT_METHOD_API) as PaymentMethod[]).filter((option) => {
+      if (!availableMethods[PAYMENT_METHOD_API[option] as keyof typeof availableMethods]) return false;
+      if (option === 'applepay') return applePayAvailable;
+      if (option === 'cash') return isPickup;
+      return true;
+    });
+  }, [availableMethods, applePayAvailable, isPickup]);
+  const mbwayAuto = availableMethods?.mbwayAuto ?? false;
+
+  // Se o método escolhido deixar de estar disponível (ex.: mudou para envio), escolhe o primeiro
+  useEffect(() => {
+    if (paymentOptions.length > 0 && !paymentOptions.includes(paymentMethod)) setPaymentMethod(paymentOptions[0]);
+  }, [paymentOptions, paymentMethod]);
   const needsShippingQuote = !isAllEbooks && !isPickup;
 
   const shippingCost   = needsShippingQuote ? (selectedShipping?.price ?? 0) : 0;
@@ -280,6 +285,10 @@ export default function CheckoutPage() {
       setError('Não é possível enviar para esta localização. Entra em contacto connosco.');
       return;
     }
+    if (!paymentOptions.includes(paymentMethod)) {
+      setError(t('payment_none'));
+      return;
+    }
     if (paymentMethod === 'cash' && !isPickup) {
       setError('O pagamento em mão só está disponível com levantamento da encomenda.');
       return;
@@ -308,7 +317,7 @@ export default function CheckoutPage() {
         postalCode,
         country: orderCountry,
         paymentMethod: PAYMENT_METHOD_API[paymentMethod],
-        mbwayPhone:    paymentMethod === 'mbway' && onlineMethods.MBWAY ? (mbwayPhone.trim() || data.phone) : undefined,
+        mbwayPhone:    paymentMethod === 'mbway' && mbwayAuto ? (mbwayPhone.trim() || data.phone) : undefined,
         locale,
         wantsInvoice,
         nif:            data.nif,
@@ -676,7 +685,12 @@ export default function CheckoutPage() {
                   </label>
                 ))}
               </div>
-              {paymentMethod === 'mbway' && onlineMethods.MBWAY ? (
+              {paymentOptions.length === 0 ? (
+                <p className="flex items-center gap-2 text-sm text-gray-500">
+                  {!availableMethods && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {availableMethods ? t('payment_none') : t('payment_loading')}
+                </p>
+              ) : paymentMethod === 'mbway' && mbwayAuto ? (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800 space-y-3">
                   <p>{t('mbway_auto_instructions')}</p>
                   <label className="block">

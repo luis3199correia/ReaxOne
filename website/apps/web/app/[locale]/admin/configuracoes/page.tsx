@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Loader2, Check, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-react';
 import { api } from '@/lib/api';
 import type { PublicSettings } from '@/lib/settings';
+import type { OnlineMethodKeys } from '@/lib/payments';
 
 const EMPTY_FORM: PublicSettings = {
   whatsappNumber: '',
@@ -24,9 +25,41 @@ const EMPTY_FORM: PublicSettings = {
   bannerSubtextEn: '',
   bannerStartsAt: '',
   bannerEndsAt: '',
+  paymentMbwayEnabled: true,
+  paymentMultibancoEnabled: true,
+  paymentCardEnabled: true,
+  paymentApplePayEnabled: true,
+  paymentGooglePayEnabled: true,
+  paymentTransferEnabled: true,
+  paymentCashEnabled: true,
 };
 
 const BANNER_TEXT_MAX_LENGTH = 300;
+
+type PaymentToggleField =
+  | 'paymentMbwayEnabled' | 'paymentMultibancoEnabled' | 'paymentCardEnabled' | 'paymentApplePayEnabled'
+  | 'paymentGooglePayEnabled' | 'paymentTransferEnabled' | 'paymentCashEnabled';
+
+// ifthenpay: método IfthenPay cujas chaves têm de estar na API (null = método manual)
+const PAYMENT_TOGGLES: { field: PaymentToggleField; label: string; ifthenpay: keyof OnlineMethodKeys | null; note?: string }[] = [
+  { field: 'paymentMbwayEnabled',      label: 'MB Way',                     ifthenpay: 'MBWAY' },
+  { field: 'paymentMultibancoEnabled', label: 'Multibanco (entidade e referência)', ifthenpay: 'MULTIBANCO' },
+  { field: 'paymentCardEnabled',       label: 'Cartão de crédito ou débito', ifthenpay: 'CARD' },
+  { field: 'paymentApplePayEnabled',   label: 'Apple Pay',                  ifthenpay: 'APPLE_PAY', note: 'Só aparece em dispositivos Apple.' },
+  { field: 'paymentGooglePayEnabled',  label: 'Google Pay',                 ifthenpay: 'GOOGLE_PAY' },
+  { field: 'paymentTransferEnabled',   label: 'Transferência bancária',     ifthenpay: null, note: 'Confirmação manual em Encomendas.' },
+  { field: 'paymentCashEnabled',       label: 'Pagamento em mão',           ifthenpay: null, note: 'Só aparece com levantamento da encomenda.' },
+];
+
+/** Texto e cor do estado de cada método, consoante o interruptor e as chaves IfthenPay. */
+function paymentStatus(enabled: boolean, ifthenpay: keyof OnlineMethodKeys | null, keys: OnlineMethodKeys | null) {
+  if (!enabled) return { label: 'Desligado', className: 'bg-gray-100 text-gray-600' };
+  if (!ifthenpay) return { label: 'Ativo', className: 'bg-green-100 text-green-800' };
+  if (!keys) return { label: 'A verificar…', className: 'bg-gray-100 text-gray-600' };
+  if (keys[ifthenpay]) return { label: 'Ativo (IfthenPay)', className: 'bg-green-100 text-green-800' };
+  if (ifthenpay === 'MBWAY') return { label: 'Ativo em modo manual — faltam as chaves IfthenPay', className: 'bg-amber-100 text-amber-800' };
+  return { label: 'Não aparece — faltam as chaves IfthenPay', className: 'bg-amber-100 text-amber-800' };
+}
 
 type BannerTextField = 'bannerMessage' | 'bannerSubtext' | 'bannerMessageEn' | 'bannerSubtextEn';
 
@@ -78,12 +111,16 @@ export default function AdminSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [ifthenpayKeys, setIfthenpayKeys] = useState<OnlineMethodKeys | null>(null);
 
   useEffect(() => {
     api.get('/settings')
       .then((res) => setForm({ ...EMPTY_FORM, ...res.data }))
       .catch(() => setError('Erro ao carregar configurações.'))
       .finally(() => setLoading(false));
+    api.get<OnlineMethodKeys>('/payments/admin/keys')
+      .then((res) => setIfthenpayKeys(res.data))
+      .catch(() => { /* sem estado das chaves: os badges ficam "A verificar…" */ });
   }, []);
 
   function update<K extends keyof PublicSettings>(key: K, value: PublicSettings[K]) {
@@ -283,6 +320,43 @@ export default function AdminSettingsPage() {
             Encomendas com subtotal igual ou superior ao valor da zona não pagam portes. Use 0 para desativar.
             Açores e Madeira não têm portes grátis. Os valores aparecem automaticamente na página de produto, em Envios e nos Termos.
           </p>
+        </div>
+
+        {/* Métodos de pagamento */}
+        <div className="card p-6">
+          <h2 className="text-lg font-semibold mb-1">Métodos de pagamento</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Escolhe os métodos que aparecem no checkout. Os da IfthenPay só aparecem quando as chaves estão
+            configuradas no servidor da API.
+          </p>
+          <div className="divide-y divide-gray-100">
+            {PAYMENT_TOGGLES.map(({ field, label, ifthenpay, note }) => {
+              const enabled = form[field];
+              const status = paymentStatus(enabled, ifthenpay, ifthenpayKeys);
+              return (
+                <div key={field} className="flex items-center justify-between gap-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-brand-dark">{label}</p>
+                    <span className={`inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full ${status.className}`}>
+                      {status.label}
+                    </span>
+                    {note && <p className="text-xs text-gray-400 mt-1">{note}</p>}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => update(field, !enabled)}
+                    aria-pressed={enabled}
+                    aria-label={`${enabled ? 'Desligar' : 'Ligar'} ${label}`}
+                    className="flex-shrink-0"
+                  >
+                    {enabled
+                      ? <ToggleRight className="w-8 h-8 text-brand-green" />
+                      : <ToggleLeft className="w-8 h-8 text-gray-400" />}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Transferência Bancária */}

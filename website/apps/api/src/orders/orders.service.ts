@@ -2,7 +2,8 @@ import { Injectable, Logger, NotFoundException, BadRequestException } from '@nes
 import { PrismaService } from '../prisma/prisma.service';
 import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
-import { SettingsService, activeFreeShippingThresholds } from '../settings/settings.service';
+import { PublicSettings, SettingsService, activeFreeShippingThresholds } from '../settings/settings.service';
+import { paymentAvailability } from '../payments/payment-availability';
 import { DiscountsService } from '../discounts/discounts.service';
 import { PromotionsService } from '../promotions/promotions.service';
 import { detectZone, shippingPrice } from './shipping-rates';
@@ -106,13 +107,13 @@ export class OrdersService {
     if (data.paymentMethod === 'CASH' && !isPickup) {
       throw new BadRequestException('O pagamento em mão só está disponível com levantamento da encomenda.');
     }
-    const online = this.resolveOnlinePayment(data.paymentMethod, data.mbwayPhone || data.phone);
+    const settings = await this.settingsService.getPublicSettings();
+    const online = this.resolveOnlinePayment(settings, data.paymentMethod, data.mbwayPhone || data.phone);
 
     // Levantamento não tem portes. Os limites de portes grátis contam o subtotal
     // dos produtos antes do desconto.
     let shippingCost = 0;
     if (!isAllDigital && !isPickup) {
-      const settings = await this.settingsService.getPublicSettings();
       const zone = detectZone(country, data.postalCode);
       const price = shippingPrice(zone, data.shippingMethod, itemsTotal, activeFreeShippingThresholds(settings));
       if (price === null) {
@@ -241,13 +242,13 @@ export class OrdersService {
    * Valida um método IfthenPay. MB WAY sem chave configurada continua no modo
    * manual (envio para o número da loja), como antes da integração.
    */
-  private resolveOnlinePayment(method: PaymentMethodInput, rawPhone: unknown): { method: OnlineMethod; mbwayPhone: string | null } | null {
+  private resolveOnlinePayment(
+    settings: PublicSettings, method: PaymentMethodInput, rawPhone: unknown,
+  ): { method: OnlineMethod; mbwayPhone: string | null } | null {
+    const available = paymentAvailability(settings, enabledOnlineMethods(this.ifthenpay.config));
+    if (!available[method]) throw new BadRequestException('Este método de pagamento não está disponível.');
     if (!isOnlineMethod(method)) return null;
-    const enabled = enabledOnlineMethods(this.ifthenpay.config);
-    if (!enabled[method]) {
-      if (method === 'MBWAY') return null;
-      throw new BadRequestException('Este método de pagamento não está disponível.');
-    }
+    if (method === 'MBWAY' && !available.mbwayAuto) return null; // MB WAY manual
     if (method !== 'MBWAY') return { method, mbwayPhone: null };
     const mbwayPhone = normalizeMbwayPhone(rawPhone);
     if (!mbwayPhone) {

@@ -1,4 +1,8 @@
-import { Controller, ForbiddenException, Get, HttpCode, Logger, NotFoundException, Param, Query } from '@nestjs/common';
+import { Controller, ForbiddenException, Get, HttpCode, Logger, NotFoundException, Param, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { SettingsService } from '../settings/settings.service';
+import { paymentAvailability } from '../payments/payment-availability';
 import { OrdersService } from './orders.service';
 import { OnlinePaymentService } from './online-payment.service';
 import { IfthenpayClient } from '../payments/ifthenpay.client';
@@ -20,11 +24,20 @@ export class PaymentsController {
     private ordersService: OrdersService,
     private onlinePayments: OnlinePaymentService,
     private ifthenpay: IfthenpayClient,
+    private settingsService: SettingsService,
   ) {}
 
-  /** Métodos online disponíveis no checkout (os que têm chaves configuradas). */
+  /** Métodos que o checkout mostra: ligados no backoffice e, os da IfthenPay, com chaves. */
   @Get('methods')
-  methods() {
+  async methods() {
+    const settings = await this.settingsService.getPublicSettings();
+    return paymentAvailability(settings, enabledOnlineMethods(this.ifthenpay.config));
+  }
+
+  /** Backoffice: que métodos IfthenPay têm as chaves configuradas na API. */
+  @Get('admin/keys')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  keys() {
     return enabledOnlineMethods(this.ifthenpay.config);
   }
 

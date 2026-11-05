@@ -21,6 +21,14 @@ export interface PublicSettings {
   bannerSubtextEn: string;
   bannerStartsAt: string;
   bannerEndsAt: string;
+  // Métodos de pagamento ligados no backoffice (os da IfthenPay também precisam das chaves na API)
+  paymentMbwayEnabled: boolean;
+  paymentMultibancoEnabled: boolean;
+  paymentCardEnabled: boolean;
+  paymentApplePayEnabled: boolean;
+  paymentGooglePayEnabled: boolean;
+  paymentTransferEnabled: boolean;
+  paymentCashEnabled: boolean; // só com levantamento
 }
 
 // Usado apenas se a API estiver indisponível
@@ -42,6 +50,13 @@ export const DEFAULT_SETTINGS: PublicSettings = {
   bannerSubtextEn: '',
   bannerStartsAt: '',
   bannerEndsAt: '',
+  paymentMbwayEnabled: true,
+  paymentMultibancoEnabled: true,
+  paymentCardEnabled: true,
+  paymentApplePayEnabled: true,
+  paymentGooglePayEnabled: true,
+  paymentTransferEnabled: true,
+  paymentCashEnabled: true,
 };
 
 export interface BannerContent {

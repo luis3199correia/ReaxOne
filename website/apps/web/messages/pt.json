@@ -83,6 +83,8 @@
     "personal_info": "Dados pessoais",
     "shipping_address": "Morada de entrega",
     "payment": "Pagamento",
+    "payment_loading": "A carregar métodos de pagamento…",
+    "payment_none": "Nenhum método de pagamento disponível de momento. Contacta-nos para concluir a encomenda.",
     "payment_mbway": "MB Way",
     "payment_transfer": "Transferência bancária",
     "mbway_instructions": "Introduz o teu número de telemóvel. Receberás uma notificação no MB Way para confirmar o pagamento.",

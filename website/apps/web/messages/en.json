@@ -83,6 +83,8 @@
     "personal_info": "Personal info",
     "shipping_address": "Shipping address",
     "payment": "Payment",
+    "payment_loading": "Loading payment methods…",
+    "payment_none": "No payment method is available right now. Please contact us to complete your order.",
     "payment_mbway": "MB Way",
     "payment_transfer": "Bank transfer",
     "mbway_instructions": "Enter your phone number. You will receive an MB Way notification to confirm the payment.",
