@@ -15,7 +15,50 @@ const EMPTY_FORM: PublicSettings = {
   freeShippingThreshold: 0,
   freeShippingThresholdEs: 0,
   freeShippingThresholdEu: 0,
+  bannerEnabled: false,
+  bannerMessage: '',
+  bannerSubtext: '',
+  bannerMessageEn: '',
+  bannerSubtextEn: '',
+  bannerStartsAt: '',
+  bannerEndsAt: '',
 };
+
+const BANNER_TEXT_MAX_LENGTH = 300;
+
+type BannerTextField = 'bannerMessage' | 'bannerSubtext' | 'bannerMessageEn' | 'bannerSubtextEn';
+
+const BANNER_TEXT_FIELDS: { field: BannerTextField; label: string; placeholder: string }[] = [
+  { field: 'bannerMessage', label: 'Mensagem (PT)', placeholder: 'Black Friday: leva 2 bolas...' },
+  { field: 'bannerSubtext', label: 'Texto pequeno por baixo (PT, opcional)', placeholder: '1 par de oferta por cada 2 bolas...' },
+  { field: 'bannerMessageEn', label: 'Mensagem (EN, opcional)', placeholder: 'Se vazio, usa a mensagem PT' },
+  { field: 'bannerSubtextEn', label: 'Texto pequeno por baixo (EN, opcional)', placeholder: 'Se vazio, usa o texto PT' },
+];
+
+// ISO (UTC) → valor de <input type="datetime-local"> na hora local do browser
+function isoToLocalInput(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function localInputToIso(value: string): string {
+  return value ? new Date(value).toISOString() : '';
+}
+
+function bannerStatus(form: PublicSettings): { label: string; className: string } {
+  if (!form.bannerEnabled) return { label: 'Desativado', className: 'bg-gray-100 text-gray-500' };
+  const now = Date.now();
+  if (form.bannerStartsAt && now < Date.parse(form.bannerStartsAt)) {
+    return { label: 'Agendado', className: 'bg-amber-100 text-amber-700' };
+  }
+  if (form.bannerEndsAt && now >= Date.parse(form.bannerEndsAt)) {
+    return { label: 'Terminado', className: 'bg-gray-100 text-gray-500' };
+  }
+  return { label: 'Visível agora', className: 'bg-green-100 text-green-700' };
+}
 
 type ThresholdField = 'freeShippingThreshold' | 'freeShippingThresholdEs' | 'freeShippingThresholdEu';
 
@@ -53,8 +96,9 @@ export default function AdminSettingsPage() {
       const res = await api.patch('/settings', form);
       setForm(res.data);
       setSaved(true);
-    } catch {
-      setError('Erro ao gravar configurações.');
+    } catch (err: any) {
+      const msg = err?.response?.data?.message;
+      setError(typeof msg === 'string' ? msg : 'Erro ao gravar configurações.');
     } finally {
       setSaving(false);
     }
@@ -117,6 +161,76 @@ export default function AdminSettingsPage() {
                 onChange={(e) => update('contactEmail', e.target.value)}
               />
             </div>
+          </div>
+        </div>
+
+        {/* Banner */}
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">Banner no topo do site</h2>
+            <span className={`text-xs font-medium px-2 py-1 rounded-full ${bannerStatus(form).className}`}>
+              {bannerStatus(form).label}
+            </span>
+          </div>
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => update('bannerEnabled', !form.bannerEnabled)}
+              className="flex items-center gap-2 text-sm font-medium"
+            >
+              {form.bannerEnabled
+                ? <><ToggleRight className="w-5 h-5 text-brand-green" /><span className="text-brand-green">Banner ativo</span></>
+                : <><ToggleLeft className="w-5 h-5 text-gray-400" /><span className="text-gray-400">Banner desativado</span></>
+              }
+            </button>
+            {BANNER_TEXT_FIELDS.map(({ field, label, placeholder }) => (
+              <div key={field}>
+                <label className="block text-sm font-medium mb-1">{label}</label>
+                <input
+                  className="input"
+                  maxLength={BANNER_TEXT_MAX_LENGTH}
+                  placeholder={placeholder}
+                  value={form[field]}
+                  onChange={(e) => update(field, e.target.value)}
+                />
+              </div>
+            ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Início (opcional)</label>
+                <input
+                  type="datetime-local"
+                  className="input"
+                  value={isoToLocalInput(form.bannerStartsAt)}
+                  onChange={(e) => update('bannerStartsAt', localInputToIso(e.target.value))}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Fim (opcional)</label>
+                <input
+                  type="datetime-local"
+                  className="input"
+                  value={isoToLocalInput(form.bannerEndsAt)}
+                  onChange={(e) => update('bannerEndsAt', localInputToIso(e.target.value))}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400">
+              Com o banner ativo, aparece automaticamente entre o início e o fim (hora local deste computador).
+              Sem datas, fica visível enquanto estiver ativo. Se a versão EN estiver vazia, o site em inglês mostra o texto PT.
+            </p>
+
+            {form.bannerMessage.trim() && (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-1">Pré-visualização</p>
+                <div className="bg-brand-primary text-white text-center px-4 py-2 rounded-lg">
+                  <p className="text-sm font-semibold leading-snug">{form.bannerMessage}</p>
+                  {form.bannerSubtext.trim() && (
+                    <p className="text-xs opacity-90 leading-snug mt-0.5">{form.bannerSubtext}</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

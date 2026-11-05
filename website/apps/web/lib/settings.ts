@@ -10,6 +10,14 @@ export interface PublicSettings {
   freeShippingThreshold: number;   // Portugal Continental
   freeShippingThresholdEs: number; // Espanha (continental, Baleares e Canárias)
   freeShippingThresholdEu: number; // Restantes países da UE
+  // Banner no topo do site. Datas em ISO 8601 ('' = sem limite)
+  bannerEnabled: boolean;
+  bannerMessage: string;
+  bannerSubtext: string;
+  bannerMessageEn: string; // vazio → usa o texto PT
+  bannerSubtextEn: string;
+  bannerStartsAt: string;
+  bannerEndsAt: string;
 }
 
 // Usado apenas se a API estiver indisponível
@@ -22,7 +30,30 @@ export const DEFAULT_SETTINGS: PublicSettings = {
   freeShippingThreshold: 35,
   freeShippingThresholdEs: 50,
   freeShippingThresholdEu: 70,
+  bannerEnabled: false,
+  bannerMessage: '',
+  bannerSubtext: '',
+  bannerMessageEn: '',
+  bannerSubtextEn: '',
+  bannerStartsAt: '',
+  bannerEndsAt: '',
 };
+
+export interface BannerContent {
+  message: string;
+  subtext: string;
+}
+
+// Banner visível se ativo, com mensagem e dentro da janela [início, fim) quando definida
+export function getActiveBanner(s: PublicSettings, locale: string, now: number = Date.now()): BannerContent | null {
+  if (!s.bannerEnabled) return null;
+  if (s.bannerStartsAt && now < Date.parse(s.bannerStartsAt)) return null;
+  if (s.bannerEndsAt && now >= Date.parse(s.bannerEndsAt)) return null;
+  const useEn = locale === 'en' && s.bannerMessageEn.trim() !== '';
+  const message = (useEn ? s.bannerMessageEn : s.bannerMessage).trim();
+  if (!message) return null;
+  return { message, subtext: (useEn ? s.bannerSubtextEn : s.bannerSubtext).trim() };
+}
 
 export function getFreeShippingThresholds(s: PublicSettings): FreeShippingThresholds {
   return { pt: s.freeShippingThreshold, es: s.freeShippingThresholdEs, eu: s.freeShippingThresholdEu };

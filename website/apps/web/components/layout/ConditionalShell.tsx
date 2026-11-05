@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
+import AnnouncementBanner from './AnnouncementBanner';
 import Footer from './Footer';
 import WhatsAppBubble from './WhatsAppBubble';
 import CartToast from '@/components/shop/CartToast';
@@ -19,6 +20,7 @@ export default function ConditionalShell({ children }: { children: React.ReactNo
 
   return (
     <div className="min-h-screen flex flex-col">
+      <AnnouncementBanner />
       <Navbar />
       <main className="flex-1">{children}</main>
       <Footer />
