@@ -1,8 +1,8 @@
 'use client';
 
-import { useTranslations, useLocale } from 'next-intl';
-import { useParams } from 'next/navigation';
-import { Link, usePathname } from '@/i18n/navigation';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import LocaleSwitcher from './LocaleSwitcher';
 import Image from 'next/image';
 import {
   ShoppingCart, User, Menu, X, Instagram, LayoutDashboard,
@@ -16,9 +16,6 @@ type AuthUser = { id: string; email: string; role: string } | null;
 export default function Navbar() {
   const t = useTranslations('nav');
   const tAdmin = useTranslations('admin');
-  const locale = useLocale();
-  const pathname = usePathname();
-  const params = useParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const [authUser, setAuthUser] = useState<AuthUser>(null);
@@ -74,17 +71,7 @@ export default function Navbar() {
 
         {/* Actions */}
         <div className="flex items-center gap-5">
-          {/* Language switcher */}
-          {/* Mantém a página atual, com o URL traduzido do outro idioma */}
-          <Link
-            // pathname é a rota interna (ex: '/loja/[slug]') e params traz o slug
-            // @ts-expect-error -- combinação pathname/params resolvida em runtime
-            href={{ pathname, params }}
-            locale={locale === 'pt' ? 'en' : 'pt'}
-            className="text-xs text-gray-500 hover:text-white uppercase tracking-widest transition-colors"
-          >
-            {locale === 'pt' ? 'EN' : 'PT'}
-          </Link>
+          <LocaleSwitcher />
 
           {/* Instagram */}
           <a

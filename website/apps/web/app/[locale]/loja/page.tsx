@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { useRouter } from '@/i18n/navigation';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -26,15 +27,29 @@ function toProduct(p: any): Product {
   };
 }
 
+const ALL_KEY = '__all__';
+
+type Category = { name: string; nameEn?: string; slug: string };
+
+// ?categoria=bolas → slug exato, ou um slug que o contenha (ex: 'bolas-de-reacao').
+// Categoria desconhecida → todos os produtos (os links dos QR codes nunca dão página vazia).
+function resolveCategory(param: string, categories: Category[]): string {
+  if (!param) return ALL_KEY;
+  const match = categories.find((c) => c.slug === param) ?? categories.find((c) => c.slug.includes(param));
+  return match?.slug ?? ALL_KEY;
+}
+
 export default function ShopPage() {
   const t = useTranslations('shop');
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const initialCatSlug = searchParams.get('categoria') ?? '';
+  const categoryParam = searchParams.get('categoria') ?? '';
 
   const categoryLabel = useCategoryLabel();
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<{ name: string; nameEn?: string; slug: string }[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('__all__');
+  const [categories, setCategories] = useState<Category[]>([]);
+  // A categoria ativa vive no URL: partilhável e mantida ao trocar de idioma
+  const activeCategory = useMemo(() => resolveCategory(categoryParam, categories), [categoryParam, categories]);
   const [sort, setSort] = useState<SortKey>('newest');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -49,22 +64,16 @@ export default function ShopPage() {
       setProducts(prodRes.data.map(toProduct));
 
       setCategories(catRes.data.map((c: any) => ({ name: c.name, nameEn: c.nameEn ?? undefined, slug: c.slug })));
-
-      // Resolve a categoria inicial da querystring
-      if (initialCatSlug) {
-        const match = catRes.data.find(
-          (c: any) => c.slug === initialCatSlug || c.slug.includes(initialCatSlug)
-        );
-        if (match) setActiveCategory(match.slug);
-      }
     }).catch((err) => {
       console.error('[Loja] Erro ao carregar produtos/categorias:', err);
       setLoadError(true);
     }).finally(() => setLoading(false));
-  }, [initialCatSlug]);
+  }, []);
 
-  const ALL_KEY = '__all__';
-
+  function selectCategory(slug: string) {
+    const href = slug === ALL_KEY ? { pathname: '/loja' as const } : { pathname: '/loja' as const, query: { categoria: slug } };
+    router.replace(href, { scroll: false });
+  }
 
   const allCategories = [ALL_KEY, ...categories.map((c) => c.slug)];
 
@@ -77,7 +86,7 @@ export default function ShopPage() {
     if (sort === 'price_asc') list = [...list].sort((a, b) => a.price - b.price);
     if (sort === 'price_desc') list = [...list].sort((a, b) => b.price - a.price);
     return list;
-  }, [products, activeCategory, sort]);
+  }, [products, categories, activeCategory, sort]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -104,7 +113,7 @@ export default function ShopPage() {
                 return (
                   <li key={slug}>
                     <button
-                      onClick={() => setActiveCategory(slug)}
+                      onClick={() => selectCategory(slug)}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                         activeCategory === slug
                           ? 'bg-brand-primary text-white font-semibold'
@@ -161,7 +170,7 @@ export default function ShopPage() {
                 return (
                   <button
                     key={slug}
-                    onClick={() => { setActiveCategory(slug); setMobileFiltersOpen(false); }}
+                    onClick={() => { selectCategory(slug); setMobileFiltersOpen(false); }}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                       activeCategory === slug
                         ? 'bg-brand-primary text-white'
