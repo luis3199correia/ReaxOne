@@ -2,14 +2,24 @@ import createMiddleware from 'next-intl/middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { locales, defaultLocale, type Locale } from './i18n/config';
 import { routing, localizePath } from './i18n/routing';
+import { BASE_URL } from './lib/seo';
 
 const intlMiddleware = createMiddleware(routing);
 
 // URLs públicos (PT e EN) das rotas protegidas
 const protectedRoutes = ['/conta', '/account', '/admin'];
 
+const CANONICAL_HOST = new URL(BASE_URL).host;
+const MOVED_PERMANENTLY = 301;
+
 export default function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
+
+  // www.reaxone.com servia o site inteiro em duplicado → 301 para o domínio canónico
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? '';
+  if (host === `www.${CANONICAL_HOST}`) {
+    return NextResponse.redirect(`${BASE_URL}${pathname}${search}`, MOVED_PERMANENTLY);
+  }
 
   // ─────────────────────────────────────────────────────────────
   // COMING SOON
@@ -52,7 +62,10 @@ export default function middleware(request: NextRequest) {
   // Rotas protegidas por autenticação
   // ─────────────────────────────────────────────────────────────
   const pathnameWithoutLocale = pathname.replace(/^\/(pt|en)/, '');
-  const isProtected = protectedRoutes.some((r) => pathnameWithoutLocale.startsWith(r));
+  // Comparação por segmento: '/conta' não pode apanhar '/contacto'
+  const isProtected = protectedRoutes.some(
+    (r) => pathnameWithoutLocale === r || pathnameWithoutLocale.startsWith(`${r}/`),
+  );
 
   if (isProtected) {
     const token = request.cookies.get('reaxone_token')?.value;

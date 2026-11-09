@@ -6,6 +6,9 @@ export const routing = defineRouting({
   locales,
   defaultLocale,
   localePrefix: 'always',
+  // hreflang vai só no <head> de cada página indexável (lib/seo.ts). O header `Link` do
+  // next-intl dava um x-default diferente (`/`) e aparecia também em páginas noindex.
+  alternateLinks: false,
   pathnames: {
     '/': '/',
     '/loja': { pt: '/loja', en: '/shop' },
