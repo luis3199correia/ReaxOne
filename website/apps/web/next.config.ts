@@ -2,6 +2,7 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { routing, localizePath } from './i18n/routing';
 import { LEGACY_PRODUCT_SLUGS, LEGACY_PATHS } from './lib/legacyRedirects';
+import { SHORT_LINKS } from './lib/shortLinks';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
@@ -39,6 +40,18 @@ function legacyProductRedirects(): Redirect[] {
   );
 }
 
+// Links dos QR codes (/bolas, /en/socks, ...) → loja filtrada. Temporário de propósito (307):
+// o destino pode mudar sem que os browsers tenham guardado um redirect definitivo.
+function shortLinkRedirects() {
+  return SHORT_LINKS.flatMap(({ paths, locale, category }) =>
+    paths.map((source) => ({
+      source,
+      destination: `${localizePath(locale, '/loja')}?categoria=${category}`,
+      permanent: false,
+    })),
+  );
+}
+
 function legacyPathRedirects(): Redirect[] {
   return Object.entries(LEGACY_PATHS).flatMap(([oldPath, internal]) =>
     routing.locales.map((l) => redirect(`/${l}${oldPath}`, localizePath(l, internal))),
@@ -49,7 +62,12 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   async redirects() {
     // Os mais específicos primeiro: o Next aplica o primeiro que coincidir
-    return [...legacyProductRedirects(), ...legacyPathRedirects(), ...legacyLocaleRedirects()];
+    return [
+      ...shortLinkRedirects(),
+      ...legacyProductRedirects(),
+      ...legacyPathRedirects(),
+      ...legacyLocaleRedirects(),
+    ];
   },
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
