@@ -6,6 +6,7 @@ import { Loader2, Check, AlertCircle, ToggleLeft, ToggleRight } from 'lucide-rea
 import { api } from '@/lib/api';
 import type { PublicSettings } from '@/lib/settings';
 import type { OnlineMethodKeys } from '@/lib/payments';
+import InvoicingSettingsCard from '@/components/admin/InvoicingSettingsCard';
 
 const EMPTY_FORM: PublicSettings = {
   whatsappNumber: '',
@@ -396,6 +397,9 @@ export default function AdminSettingsPage() {
           {saving && !saved && <Loader2 className="w-4 h-4 animate-spin" />}
           {saved ? <><Check className="w-4 h-4" /> Guardado!</> : 'Guardar configurações'}
         </button>
+
+        {/* Faturação — tem o seu próprio botão de gravar */}
+        <InvoicingSettingsCard />
 
       </div>
     </div>

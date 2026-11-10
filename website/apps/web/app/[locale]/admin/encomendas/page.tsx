@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { ChevronDown, ChevronUp, CheckCircle, Loader2, RefreshCw, XCircle, Trash2, AlertCircle, MessageCircle } from 'lucide-react';
 import { PICKUP_ADDRESS, PICKUP_METHOD_ID, PICKUP_PLACE, customerWhatsappUrl } from '@/lib/pickup';
+import OrderInvoice, { InvoiceFields, hasInvoice } from '@/components/admin/OrderInvoice';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:   'Pendente',
@@ -33,6 +34,20 @@ const PAYMENT_LABELS: Record<string, string> = {
   GOOGLE_PAY:    'Google Pay',
 };
 
+const CREDIT_NOTE_WARNING = 'Esta encomenda tem fatura no Facturalusa: é preciso emitir lá a nota de crédito.';
+
+/** Confirma o cancelamento; com fatura emitida avisa que é preciso nota de crédito. */
+function confirmCancel(order: Order): boolean {
+  const base = `Cancelar encomenda #${order.id.slice(-8).toUpperCase()}? Esta ação não pode ser desfeita.`;
+  return window.confirm(hasInvoice(order) ? `${base}\n\n${CREDIT_NOTE_WARNING}` : base);
+}
+
+/** Marcar como Pago confirma também o pagamento (a API trata disso). */
+function withStatus(order: Order, status: string): Order {
+  const payment = status === 'PAID' && order.payment ? { ...order.payment, status: 'CONFIRMED' } : order.payment;
+  return { ...order, status, payment };
+}
+
 const PAYMENT_STATUS_LABELS: Record<string, string> = {
   PENDING:   'Por confirmar',
   CONFIRMED: 'Confirmado',
@@ -49,7 +64,7 @@ type OrderItem = {
   isGift?: boolean;
 };
 
-type Order = {
+type Order = InvoiceFields & {
   id: string;
   firstName: string;
   lastName: string;
@@ -124,13 +139,17 @@ export default function AdminEncomendas() {
     try {
       await api.patch(`/orders/${id}/status`, { status });
       setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, status } : o))
+        prev.map((o) => (o.id === id ? withStatus(o, status) : o))
       );
     } catch {
       alert('Erro ao atualizar estado.');
     } finally {
       setUpdatingStatus(null);
     }
+  }
+
+  function updateInvoice(id: string, fields: InvoiceFields) {
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...fields } : o)));
   }
 
   function toggleSelect(id: string) {
@@ -176,7 +195,7 @@ export default function AdminEncomendas() {
     try {
       await api.patch('/orders/bulk/status', { ids: selected, status: bulkStatus });
       setOrders((prev) =>
-        prev.map((o) => (selected.includes(o.id) ? { ...o, status: bulkStatus } : o))
+        prev.map((o) => (selected.includes(o.id) ? withStatus(o, bulkStatus) : o))
       );
       setSelected([]);
     } catch {
@@ -312,7 +331,10 @@ export default function AdminEncomendas() {
                           <select
                             value={order.status}
                             disabled={updatingStatus === order.id}
-                            onChange={(e) => updateStatus(order.id, e.target.value)}
+                            onChange={(e) => {
+                              if (e.target.value === 'CANCELLED' && hasInvoice(order) && !confirmCancel(order)) return;
+                              updateStatus(order.id, e.target.value);
+                            }}
                             className={`text-xs font-semibold px-2 py-1 rounded-full border-0 cursor-pointer focus:ring-1 focus:ring-brand-primary ${STATUS_COLORS[order.status] ?? 'bg-gray-100 text-gray-700'}`}
                           >
                             {Object.entries(STATUS_LABELS).map(([val, label]) => (
@@ -401,6 +423,14 @@ export default function AdminEncomendas() {
                                   <PickupScheduling order={order} />
                                 )}
 
+                                <OrderInvoice
+                                  orderId={order.id}
+                                  orderStatus={order.status}
+                                  paymentStatus={order.payment?.status}
+                                  invoice={order}
+                                  onUpdated={(fields) => updateInvoice(order.id, fields)}
+                                />
+
                                 <div className="flex flex-col gap-2">
                                   {isPending && (
                                     <button
@@ -417,7 +447,7 @@ export default function AdminEncomendas() {
                                   {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
                                     <button
                                       onClick={() => {
-                                        if (window.confirm(`Cancelar encomenda #${order.id.slice(-8).toUpperCase()}? Esta ação não pode ser desfeita.`)) {
+                                        if (confirmCancel(order)) {
                                           updateStatus(order.id, 'CANCELLED');
                                         }
                                       }}

@@ -10,9 +10,10 @@ import { PromotionsModule } from '../promotions/promotions.module';
 import { IfthenpayClient } from '../payments/ifthenpay.client';
 import { OnlinePaymentService } from './online-payment.service';
 import { PaymentsController } from './payments.controller';
+import { InvoicingModule } from '../invoicing/invoicing.module';
 
 @Module({
-  imports:     [PrismaModule, BatchModule, MailModule, SettingsModule, DiscountsModule, PromotionsModule],
+  imports:     [PrismaModule, BatchModule, MailModule, SettingsModule, DiscountsModule, PromotionsModule, InvoicingModule],
   providers:   [OrdersService, OnlinePaymentService, IfthenpayClient],
   controllers: [OrdersController, PaymentsController],
   exports:     [OrdersService],

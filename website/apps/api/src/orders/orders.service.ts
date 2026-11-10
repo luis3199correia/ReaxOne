@@ -10,6 +10,7 @@ import { detectZone, shippingPrice } from './shipping-rates';
 import { PICKUP_METHOD_ID } from './pickup';
 import { OnlinePaymentService, PaymentAction } from './online-payment.service';
 import { IfthenpayClient } from '../payments/ifthenpay.client';
+import { InvoicingService } from '../invoicing/invoicing.service';
 import {
   OnlineMethod, amountMatches, enabledOnlineMethods, isOnlineMethod, normalizeMbwayPhone,
 } from '../payments/ifthenpay.rules';
@@ -51,6 +52,7 @@ export class OrdersService {
     private promotionsService: PromotionsService,
     private onlinePayments: OnlinePaymentService,
     private ifthenpay: IfthenpayClient,
+    private invoicing: InvoicingService,
   ) {}
 
   /**
@@ -424,6 +426,16 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: string) {
+    // Marcar como Pago sem pagamento confirmado = confirmar o pagamento, para
+    // correrem os passos seguintes (emails, ebooks, fatura).
+    if (status === 'PAID') {
+      const payment = await this.prisma.payment.findUnique({ where: { orderId: id }, select: { status: true } });
+      if (payment && payment.status !== 'CONFIRMED') {
+        const [, order] = await this.confirmPayment(id);
+        return order;
+      }
+    }
+
     const order = await this.prisma.order.update({
       where: { id },
       data:  { status: status as any },
@@ -533,7 +545,7 @@ export class OrdersService {
     return { ok: true };
   }
 
-  /** Emails, ebooks e (nos pagamentos online) aviso ao admin e envio para a Batch. */
+  /** Emails, ebooks, fatura e (nos pagamentos online) aviso ao admin e envio para a Batch. */
   private afterPaid(order: any, { isOnline }: { isOnline: boolean }) {
     this.fireAndForget(
       () => this.mailService.sendPaymentConfirmed({
@@ -554,6 +566,11 @@ export class OrdersService {
     this.fireAndForget(
       () => this.deliverEbooks(order.id, order.email, order.firstName),
       '[Mail] Erro ao entregar ebooks',
+    );
+
+    this.fireAndForget(
+      () => this.invoicing.issueForOrder(order.id),
+      '[Faturação] Erro ao emitir fatura',
     );
 
     if (isOnline) {

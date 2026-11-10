@@ -12,10 +12,14 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { OrdersService } from './orders.service';
+import { InvoicingService } from '../invoicing/invoicing.service';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private ordersService: OrdersService) {}
+  constructor(
+    private ordersService: OrdersService,
+    private invoicing: InvoicingService,
+  ) {}
 
   // Criar encomenda (pode ser guest ou autenticado)
   @Post()
@@ -66,6 +70,13 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   confirmPayment(@Param('id') id: string) {
     return this.ordersService.confirmPayment(id);
+  }
+
+  // Admin: emitir a fatura no Facturalusa (manual ou nova tentativa)
+  @Post(':id/invoice')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  issueInvoice(@Param('id') id: string) {
+    return this.invoicing.issueManually(id);
   }
 
   // Admin: apagar várias encomendas de uma vez

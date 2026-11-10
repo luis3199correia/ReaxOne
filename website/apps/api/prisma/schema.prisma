@@ -83,6 +83,7 @@ model Product {
   active      Boolean  @default(true)
   featured    Boolean  @default(false)
   ebookFile   String?  // caminho para o PDF (apenas para produtos da categoria Ebooks)
+  facturalusaItemId Int? // ID do artigo no Facturalusa (criado na primeira fatura)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -141,6 +142,15 @@ model Order {
 
   // Notas escritas pelo cliente no checkout
   notes String?
+
+  // Fatura certificada (Facturalusa)
+  invoiceId       Int?      // ID da venda no Facturalusa
+  invoiceNumber   String?   // número completo do documento (ex.: "FR 2026/12")
+  invoiceUrl      String?   // PDF do documento
+  invoiceStatus   String?   // ISSUED, DRAFT ou FAILED
+  invoiceError    String?   // último erro (ou aviso de total diferente)
+  invoiceAttempts Int       @default(0)
+  invoicedAt      DateTime?
 
   user       User?         @relation(fields: [userId], references: [id])
   items      OrderItem[]

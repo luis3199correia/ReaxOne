@@ -38,7 +38,7 @@ function PrivacidadePt() {
 
         <section>
           <h2 className={h2Class}>Com quem partilhamos</h2>
-          <p>Apenas com prestadores necessários ao serviço: transportadora (Batch), alojamento do site (Hetzner) e software de faturação (Weoinvoice). Não vendemos nem cedemos dados para fins comerciais.</p>
+          <p>Apenas com prestadores necessários ao serviço: transportadora (Batch), alojamento do site (Hetzner) e software de faturação (Facturalusa). Não vendemos nem cedemos dados para fins comerciais.</p>
         </section>
 
         <section>
@@ -96,7 +96,7 @@ function PrivacidadeEn() {
 
         <section>
           <h2 className={h2Class}>Who we share it with</h2>
-          <p>Only with providers needed to deliver the service: carrier (Batch), website hosting (Hetzner) and invoicing software (Weoinvoice). We do not sell or transfer data for commercial purposes.</p>
+          <p>Only with providers needed to deliver the service: carrier (Batch), website hosting (Hetzner) and invoicing software (Facturalusa). We do not sell or transfer data for commercial purposes.</p>
         </section>
 
         <section>
