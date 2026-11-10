@@ -11,7 +11,6 @@ const KEYS = {
   series:            'invoicing_series',
   enabledAt:         'invoicing_enabled_at',      // só se faturam pagamentos a partir daqui
   genericCustomerId: 'facturalusa_generic_customer_id',
-  shippingItemId:    'facturalusa_shipping_item_id',
 } as const;
 
 const SERIES_MAX_LENGTH = 30;
@@ -23,7 +22,7 @@ export interface InvoicingSettings {
   enabledAt: Date | null;
 }
 
-export type CachedIdKey = 'genericCustomerId' | 'shippingItemId';
+export type CachedIdKey = 'genericCustomerId';
 
 @Injectable()
 export class InvoicingSettingsService {

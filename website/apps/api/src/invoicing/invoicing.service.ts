@@ -131,9 +131,8 @@ export class InvoicingService implements OnModuleInit, OnModuleDestroy {
 
     const customerId = await this.ids.customerFor(selectCustomer(invoiceOrder), invoiceOrder);
     const articleIds = await this.ids.articlesFor(order.items.map((i) => i.product));
-    const shippingArticleId = invoiceOrder.shippingCost > 0 ? await this.ids.shippingArticle() : null;
     const payload = buildSalePayload({
-      order: invoiceOrder, customerId, articleIds, shippingArticleId, settings, issueDate: lisbonDate(new Date()),
+      order: invoiceOrder, customerId, articleIds, settings, issueDate: lisbonDate(new Date()),
     });
 
     const sale = await this.client.createSale(payload);

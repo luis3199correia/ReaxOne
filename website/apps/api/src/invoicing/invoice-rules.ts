@@ -9,7 +9,6 @@ export const DOCUMENT_TYPE = 'Factura Recibo';
 export const VAT_TYPE = 'IVA incluído';
 export const VAT_RATE = 23;
 export const EXTERNAL_REFERENCE_PREFIX = 'REAXONE-';
-export const SHIPPING_ARTICLE = { reference: 'PORTES', description: 'Portes de envio', type: 'Serviços' } as const;
 export const PRODUCT_ARTICLE_TYPE = 'Mercadorias';
 export const ARTICLE_UNIT = 'uni';
 
@@ -76,6 +75,8 @@ export interface SalePayload {
   country?: string;
   vat_type: string;
   items: SaleItem[];
+  shipping_value?: number; // portes (despesa de transporte), com IVA incluído como o resto da venda
+  shipping_vat?: number;
   status: 'Rascunho' | 'Terminado';
   external_reference: string;
   force_send_email: boolean;
@@ -132,16 +133,6 @@ export function productArticlePayload(product: { slug: string; name: string }) {
   };
 }
 
-export function shippingArticlePayload() {
-  return {
-    reference:   SHIPPING_ARTICLE.reference,
-    description: SHIPPING_ARTICLE.description,
-    unit:        ARTICLE_UNIT,
-    vat:         VAT_RATE,
-    type:        SHIPPING_ARTICLE.type,
-  };
-}
-
 export function articleReference(slug: string): string {
   return slug.slice(0, ARTICLE_REFERENCE_MAX_LENGTH);
 }
@@ -190,23 +181,16 @@ function buildLine(line: InvoiceOrderLine, articleId: number | undefined, discou
   };
 }
 
-function shippingLine(cost: number, articleId: number | null): SaleItem {
-  if (!articleId) throw new Error('Falta o artigo do Facturalusa para os portes.');
-  return { id: articleId, price: cost, quantity: 1, vat: VAT_RATE };
-}
-
 export function buildSalePayload(input: {
   order: InvoiceOrder;
   customerId: number;
   articleIds: Record<string, number>;
-  shippingArticleId: number | null;
   settings: InvoiceSettingsInput;
   issueDate: string;
 }): SalePayload {
   const { order, settings } = input;
   const discount = discountPercent(order);
-  const productLines = order.items.map((line) => buildLine(line, input.articleIds[line.productId], discount));
-  const lines = order.shippingCost > 0 ? [...productLines, shippingLine(order.shippingCost, input.shippingArticleId)] : productLines;
+  const lines = order.items.map((line) => buildLine(line, input.articleIds[line.productId], discount));
 
   const spec = selectCustomer(order);
   const series = settings.series.trim();
@@ -221,6 +205,8 @@ export function buildSalePayload(input: {
       : {}),
     vat_type:     VAT_TYPE,
     items:        lines,
+    // Portes nos campos próprios do Facturalusa ("Despesas de transporte"), sem desconto
+    ...(order.shippingCost > 0 ? { shipping_value: order.shippingCost, shipping_vat: VAT_RATE } : {}),
     status:       settings.draft ? 'Rascunho' : 'Terminado',
     external_reference: externalReference(order.id),
     force_send_email: false,
@@ -228,11 +214,12 @@ export function buildSalePayload(input: {
 }
 
 /** Total esperado da venda (preços com IVA incluído). */
-export function expectedSaleTotal(payload: Pick<SalePayload, 'items'>): number {
-  return round2(payload.items.reduce(
+export function expectedSaleTotal(payload: Pick<SalePayload, 'items' | 'shipping_value'>): number {
+  const itemsTotal = payload.items.reduce(
     (acc, i) => acc + i.price * i.quantity * (1 - (i.discount ?? 0) / 100),
     0,
-  ));
+  );
+  return round2(itemsTotal + (payload.shipping_value ?? 0));
 }
 
 export function totalsMatch(expected: number, actual: number): boolean {

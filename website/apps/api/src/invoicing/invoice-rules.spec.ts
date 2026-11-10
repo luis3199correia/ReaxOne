@@ -12,7 +12,7 @@ import {
   totalsMatch,
 } from './invoice-rules';
 
-const IDS = { customerId: 77, articleIds: { p1: 101, p2: 102 }, shippingArticleId: 900 };
+const IDS = { customerId: 77, articleIds: { p1: 101, p2: 102 } };
 
 function makeOrder(overrides: Partial<InvoiceOrder> = {}): InvoiceOrder {
   return {
@@ -132,10 +132,14 @@ describe('buildSalePayload', () => {
     expect(gift).toEqual({ id: 102, price: 0, quantity: 1, vat: 23, details: 'Tamanho: M · Oferta' });
   });
 
-  it('portes vão numa linha própria só quando há custo de envio', () => {
-    expect(build(makeOrder()).items).toHaveLength(1);
+  it('portes vão nos campos de despesa de transporte, não como linha', () => {
+    const noShipping = build(makeOrder());
+    expect(noShipping.shipping_value).toBeUndefined();
+    expect(noShipping.shipping_vat).toBeUndefined();
     const payload = build(makeOrder({ shippingCost: 4.5, totalAmount: 34.48 }));
-    expect(payload.items[1]).toEqual({ id: 900, price: 4.5, quantity: 1, vat: 23 });
+    expect(payload.items).toHaveLength(1);
+    expect(payload).toMatchObject({ shipping_value: 4.5, shipping_vat: 23 });
+    expect(expectedSaleTotal(payload)).toBe(34.48);
   });
 
   it('o tamanho aparece nos detalhes da linha', () => {
@@ -156,12 +160,10 @@ describe('verificação de totais', () => {
     expect(totalsMatch(10, 10.02)).toBe(false);
   });
 
-  it('expectedSaleTotal soma preço × quantidade com o desconto de cada linha', () => {
+  it('expectedSaleTotal soma as linhas (com desconto) e os portes', () => {
     const total = expectedSaleTotal({
-      items: [
-        { id: 1, price: 10, quantity: 2, vat: 23, discount: 10 },
-        { id: 2, price: 3.9, quantity: 1, vat: 23 },
-      ],
+      items: [{ id: 1, price: 10, quantity: 2, vat: 23, discount: 10 }],
+      shipping_value: 3.9,
     });
     expect(total).toBe(21.9);
   });

@@ -3,8 +3,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { FacturalusaClient } from './facturalusa.client';
 import { InvoicingSettingsService } from './invoicing-settings.service';
 import {
-  CustomerSpec, GENERIC_VAT_NUMBER, InvoiceOrder, SHIPPING_ARTICLE, articleReference, buildCustomerPayload,
-  genericCustomerPayload, productArticlePayload, shippingArticlePayload,
+  CustomerSpec, GENERIC_VAT_NUMBER, InvoiceOrder, articleReference, buildCustomerPayload,
+  genericCustomerPayload, productArticlePayload,
 } from './invoice-rules';
 
 export interface InvoiceProduct {
@@ -47,15 +47,6 @@ export class FacturalusaIdsService {
       entries.push([product.id, product.facturalusaItemId ?? await this.productArticle(product)]);
     }
     return Object.fromEntries(entries);
-  }
-
-  async shippingArticle(): Promise<number> {
-    const cached = await this.settings.getCachedId('shippingItemId');
-    if (cached) return cached;
-    const id = (await this.client.findItemByReference(SHIPPING_ARTICLE.reference))
-      ?? await this.client.createItem(shippingArticlePayload());
-    await this.settings.setCachedId('shippingItemId', id);
-    return id;
   }
 
   private async genericCustomer(): Promise<number> {
