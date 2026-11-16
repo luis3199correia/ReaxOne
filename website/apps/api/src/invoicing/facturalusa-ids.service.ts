@@ -58,6 +58,13 @@ export class FacturalusaIdsService {
     return id;
   }
 
+  /** Esquece os IDs de artigos guardados, para voltarem a ser procurados/criados. */
+  async forgetItemIds(productIds: string[]): Promise<void> {
+    await this.settings.clearCachedId('shippingItemId');
+    await this.prisma.product.updateMany({ where: { id: { in: productIds } }, data: { facturalusaItemId: null } });
+    this.logger.warn('[Faturação] IDs de artigos do Facturalusa inválidos: vão ser procurados de novo');
+  }
+
   private async genericCustomer(): Promise<number> {
     const cached = await this.settings.getCachedId('genericCustomerId');
     if (cached) return cached;

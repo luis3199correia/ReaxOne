@@ -79,6 +79,10 @@ export class InvoicingSettingsService {
     await this.save(KEYS[key], String(id));
   }
 
+  async clearCachedId(key: CachedIdKey): Promise<void> {
+    await this.prisma.settings.deleteMany({ where: { key: KEYS[key] } });
+  }
+
   private save(key: string, value: string) {
     return this.prisma.settings.upsert({
       where:  { key },

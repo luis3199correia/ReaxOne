@@ -37,6 +37,15 @@ export function isNotFoundResponse(status: number | null, message: string | null
   return isClientError && /n[aã]o (foi )?encontrad|not found/i.test(message ?? '');
 }
 
+/**
+ * Linha da venda com um artigo que o Facturalusa não reconhece (ex.: artigo
+ * apagado lá, mas com o ID ainda guardado do nosso lado).
+ */
+export function isUnknownItemResponse(status: number | null, message: string | null): boolean {
+  const isClientError = status === HTTP_BAD_REQUEST || status === HTTP_UNPROCESSABLE;
+  return isClientError && /\bitems?(\.\d+\.|\s)id\b/i.test(message ?? '');
+}
+
 function rawApiError(data: unknown): string | null {
   if (typeof data === 'string') return data.trim() || null;
   if (!data || typeof data !== 'object') return null;

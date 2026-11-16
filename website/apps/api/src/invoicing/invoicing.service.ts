@@ -2,7 +2,8 @@ import {
   BadRequestException, Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { FacturalusaClient, FacturalusaSale } from './facturalusa.client';
+import { FacturalusaClient, FacturalusaError, FacturalusaSale } from './facturalusa.client';
+import { isUnknownItemResponse } from './facturalusa.rules';
 import { FacturalusaIdsService } from './facturalusa-ids.service';
 import { InvoicingSettings, InvoicingSettingsService } from './invoicing-settings.service';
 import {
@@ -130,13 +131,24 @@ export class InvoicingService implements OnModuleInit, OnModuleDestroy {
     if (blocker) throw new Error(blocker);
 
     const customerId = await this.ids.customerFor(selectCustomer(invoiceOrder), invoiceOrder);
-    const articleIds = await this.ids.articlesFor(order.items.map((i) => i.product));
-    const shippingArticleId = invoiceOrder.shippingCost > 0 ? await this.ids.shippingArticle() : null;
-    const payload = buildSalePayload({
-      order: invoiceOrder, customerId, articleIds, shippingArticleId, settings, issueDate: lisbonDate(new Date()),
-    });
+    const products = order.items.map((i) => i.product);
+    const createSale = async (freshProducts: typeof products) => {
+      const articleIds = await this.ids.articlesFor(freshProducts);
+      const shippingArticleId = invoiceOrder.shippingCost > 0 ? await this.ids.shippingArticle() : null;
+      return this.client.createSale(buildSalePayload({
+        order: invoiceOrder, customerId, articleIds, shippingArticleId, settings, issueDate: lisbonDate(new Date()),
+      }));
+    };
 
-    const sale = await this.client.createSale(payload);
+    let sale: FacturalusaSale;
+    try {
+      sale = await createSale(products);
+    } catch (e) {
+      // Artigo apagado no Facturalusa com o ID ainda guardado: esquece os IDs e tenta uma vez
+      if (!(e instanceof FacturalusaError && isUnknownItemResponse(e.status, e.message))) throw e;
+      await this.ids.forgetItemIds(products.map((p) => p.id));
+      sale = await createSale(products.map((p) => ({ ...p, facturalusaItemId: null })));
+    }
     const status = invoiceStatusFromSale(sale.status);
     const notes = [
       saleTotalNote(sale, order.totalAmount),

@@ -1,4 +1,6 @@
-import { DEFAULT_FACTURALUSA_API_URL, extractApiError, isNotFoundResponse, readFacturalusaConfig } from './facturalusa.rules';
+import {
+  DEFAULT_FACTURALUSA_API_URL, extractApiError, isNotFoundResponse, isUnknownItemResponse, readFacturalusaConfig,
+} from './facturalusa.rules';
 
 describe('readFacturalusaConfig', () => {
   it('sem variáveis: sem chave e com o URL por omissão', () => {
@@ -48,5 +50,18 @@ describe('isNotFoundResponse', () => {
     expect(isNotFoundResponse(400, 'Introduza pelo menos um artigo')).toBe(false);
     expect(isNotFoundResponse(500, 'não encontrado')).toBe(false);
     expect(isNotFoundResponse(null, null)).toBe(false);
+  });
+});
+
+describe('isUnknownItemResponse', () => {
+  it('reconhece o erro de artigo inexistente nas linhas da venda', () => {
+    expect(isUnknownItemResponse(400, 'É obrigatória a indicação de um valor para o campo item id')).toBe(true);
+    expect(isUnknownItemResponse(422, 'campo items.0.id inválido')).toBe(true);
+  });
+
+  it('ignora outros erros', () => {
+    expect(isUnknownItemResponse(400, 'É obrigatória a indicação de um valor para o campo to_name')).toBe(false);
+    expect(isUnknownItemResponse(500, 'campo item id')).toBe(false);
+    expect(isUnknownItemResponse(400, null)).toBe(false);
   });
 });
