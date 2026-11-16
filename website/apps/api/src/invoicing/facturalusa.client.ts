@@ -90,7 +90,8 @@ export class FacturalusaClient {
 
   /** Envia o documento (Terminado) por email para o comprador. */
   async sendSaleEmail(saleId: number, to: { name: string; email: string }): Promise<void> {
-    await this.request(`/sales/${saleId}/send_email`, { to: [to] });
+    // A API espera `to` como objeto ({ name, email }); um array falha com "to_name obrigatório".
+    await this.request(`/sales/${saleId}/send_email`, { to: { name: to.name || to.email, email: to.email } });
   }
 
   private async findId(path: string, body: Record<string, unknown>): Promise<number | null> {
