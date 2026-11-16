@@ -10,6 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { OrdersService } from './orders.service';
 import { InvoicingService } from '../invoicing/invoicing.service';
@@ -23,6 +24,7 @@ export class OrdersController {
 
   // Criar encomenda (pode ser guest ou autenticado)
   @Post()
+  @UseGuards(OptionalJwtAuthGuard) // com sessão, a encomenda fica associada à conta
   create(@Body() body: any, @Request() req: any) {
     return this.ordersService.create({
       ...body,

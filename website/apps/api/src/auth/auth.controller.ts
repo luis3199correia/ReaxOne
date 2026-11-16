@@ -53,6 +53,9 @@ class ResetPasswordDto {
   password: string;
 }
 
+const CUSTOMER_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias (JWT_EXPIRES_IN)
+const ADMIN_COOKIE_MAX_AGE_MS = 12 * 60 * 60 * 1000;       // 12 h (ADMIN_TOKEN_TTL)
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -65,7 +68,7 @@ export class AuthController {
       dto.firstName,
       dto.lastName,
     );
-    this.setTokenCookie(res, result.access_token);
+    this.setTokenCookie(res, result.access_token, result.role);
     return res.json({ role: result.role });
   }
 
@@ -73,7 +76,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto, @Res() res: Response) {
     const result = await this.authService.login(dto.email, dto.password);
-    this.setTokenCookie(res, result.access_token);
+    this.setTokenCookie(res, result.access_token, result.role);
     return res.json({ role: result.role });
   }
 
@@ -104,20 +107,20 @@ export class AuthController {
     res.clearCookie('reaxone_token', {
       httpOnly: true,
       secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      sameSite: 'lax', // site e API em reaxone.com (mesmo site): Lax chega e trava CSRF entre sites
       domain: isProd ? '.reaxone.com' : undefined,
     });
     return res.json({ ok: true });
   }
 
-  private setTokenCookie(res: Response, token: string) {
+  private setTokenCookie(res: Response, token: string, role: string) {
     const isProd = process.env.NODE_ENV === 'production';
     res.cookie('reaxone_token', token, {
       httpOnly: true,
       secure: isProd,
-      sameSite: isProd ? 'none' : 'lax',
+      sameSite: 'lax', // site e API em reaxone.com (mesmo site): Lax chega e trava CSRF entre sites
       domain: isProd ? '.reaxone.com' : undefined,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+      maxAge: role === 'ADMIN' ? ADMIN_COOKIE_MAX_AGE_MS : CUSTOMER_COOKIE_MAX_AGE_MS, // igual à validade do token
     });
   }
 }

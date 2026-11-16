@@ -34,6 +34,11 @@ function pickupBlock(): string {
 
 type MailItem = { name: string; quantity: number; price: number; size?: string | null; isGift?: boolean | null };
 
+/** Escapa valores vindos do cliente (nome, morada…) antes de entrarem no HTML. */
+function esc(value: unknown): string {
+  return value === null || value === undefined ? '' : escapeHtml(String(value));
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, '&amp;')
@@ -49,7 +54,7 @@ function itemRow(i: MailItem): string {
     ? '<span style="color:#16A34A;font-weight:bold;">Oferta</span>'
     : `€${(i.price * i.quantity).toFixed(2)}`;
   return `<tr>
-        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.isGift ? '🎁 ' : ''}${i.name}${i.size ? ` (${i.size})` : ''}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #eee;">${i.isGift ? '🎁 ' : ''}${esc(i.name)}${i.size ? ` (${esc(i.size)})` : ''}</td>
         <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:center;">${i.quantity}</td>
         <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">${total}</td>
       </tr>`;
@@ -68,7 +73,7 @@ function notesBlock(notes?: string | null): string {
 function discountRow(order: { discountCode?: string | null; discountAmount?: number | null }): string {
   if (!order.discountCode || !order.discountAmount) return '';
   return `<tr>
-                <td colspan="2" style="padding:6px 8px;text-align:right;color:#16A34A;">Desconto (${order.discountCode}):</td>
+                <td colspan="2" style="padding:6px 8px;text-align:right;color:#16A34A;">Desconto (${esc(order.discountCode)}):</td>
                 <td style="padding:6px 8px;text-align:right;color:#16A34A;">−€${order.discountAmount.toFixed(2)}</td>
               </tr>`;
 }
@@ -142,7 +147,7 @@ export class MailService {
             <h1 style="color:#88C900;margin:0;font-size:22px;">O teu ebook está pronto!</h1>
           </div>
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
-            <p style="font-size:15px;line-height:1.6;">Olá <strong>${firstName}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${esc(firstName)}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">
               O pagamento da tua encomenda <strong>#${shortId}</strong> foi confirmado.
               Encontras em anexo o(s) teu(s) ebook(s):
@@ -241,7 +246,7 @@ export class MailService {
             <h1 style="color:#88C900;margin:0;font-size:22px;">Encomenda recebida!</h1>
           </div>
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
-            <p style="font-size:15px;line-height:1.6;">Olá <strong>${order.firstName}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${esc(order.firstName)}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">
               Recebemos a tua encomenda <strong>#${shortId}</strong>.
               ${order.shippingMethod === 'digital' && order.totalAmount === 0
@@ -274,10 +279,10 @@ export class MailService {
             <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
               <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">MORADA DE ENTREGA</p>
               <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
-                ${order.street}<br>
-                ${order.postalCode} ${order.city}<br>
-                ${order.country}
-                ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${order.shippingMethod}</span>` : ''}
+                ${esc(order.street)}<br>
+                ${esc(order.postalCode)} ${esc(order.city)}<br>
+                ${esc(order.country)}
+                ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${esc(order.shippingMethod)}</span>` : ''}
               </p>
             </div>` : ''}
 
@@ -285,8 +290,8 @@ export class MailService {
             <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
               <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">DADOS DE FATURAÇÃO</p>
               <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
-                ${order.companyName ? `${order.companyName}<br>` : ''}
-                NIF: <strong>${order.nif}</strong>
+                ${order.companyName ? `${esc(order.companyName)}<br>` : ''}
+                NIF: <strong>${esc(order.nif)}</strong>
               </p>
             </div>` : ''}
 
@@ -331,7 +336,7 @@ export class MailService {
             <h1 style="color:#88C900;margin:0;font-size:22px;">Pagamento confirmado!</h1>
           </div>
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
-            <p style="font-size:15px;line-height:1.6;">Olá <strong>${order.firstName}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${esc(order.firstName)}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">
               O pagamento da tua encomenda <strong>#${shortId}</strong> foi confirmado. Estamos a preparar o teu pedido!
             </p>
@@ -354,10 +359,10 @@ export class MailService {
             <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:16px;margin:20px 0;">
               <p style="font-size:13px;color:#888;margin:0 0 8px;font-weight:bold;">MORADA DE ENTREGA</p>
               <p style="font-size:14px;color:#333;margin:0;line-height:1.8;">
-                ${order.street}<br>
-                ${order.postalCode} ${order.city}<br>
-                ${order.country}
-                ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${order.shippingMethod}</span>` : ''}
+                ${esc(order.street)}<br>
+                ${esc(order.postalCode)} ${esc(order.city)}<br>
+                ${esc(order.country)}
+                ${order.shippingMethod ? `<br><span style="color:#888;">Envio: ${esc(order.shippingMethod)}</span>` : ''}
               </p>
             </div>`}
 
@@ -422,13 +427,13 @@ export class MailService {
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
             <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
               <tr><td style="padding:6px 0;color:#888;font-size:13px;width:140px;">Referência</td><td style="padding:6px 0;font-weight:bold;">#${shortId}</td></tr>
-              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Cliente</td><td style="padding:6px 0;">${order.firstName} ${order.lastName}</td></tr>
-              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Email</td><td style="padding:6px 0;"><a href="mailto:${order.email}" style="color:#E8322A;">${order.email}</a></td></tr>
-              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Telefone</td><td style="padding:6px 0;">${order.phone}</td></tr>
+              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Cliente</td><td style="padding:6px 0;">${esc(order.firstName)} ${esc(order.lastName)}</td></tr>
+              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Email</td><td style="padding:6px 0;"><a href="mailto:${esc(order.email)}" style="color:#E8322A;">${esc(order.email)}</a></td></tr>
+              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Telefone</td><td style="padding:6px 0;">${esc(order.phone)}</td></tr>
               <tr><td style="padding:6px 0;color:#888;font-size:13px;">Pagamento</td><td style="padding:6px 0;">${paymentLabel}</td></tr>
-              ${isPickup ? pickupRow : order.shippingMethod ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Envio</td><td style="padding:6px 0;">${order.shippingMethod}</td></tr>` : ''}
-              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Morada</td><td style="padding:6px 0;">${order.street}, ${order.postalCode} ${order.city}, ${order.country}</td></tr>
-              ${order.wantsInvoice && order.nif ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">NIF</td><td style="padding:6px 0;">${order.companyName ? `${order.companyName} — ` : ''}${order.nif}</td></tr>` : ''}
+              ${isPickup ? pickupRow : order.shippingMethod ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">Envio</td><td style="padding:6px 0;">${esc(order.shippingMethod)}</td></tr>` : ''}
+              <tr><td style="padding:6px 0;color:#888;font-size:13px;">Morada</td><td style="padding:6px 0;">${esc(order.street)}, ${esc(order.postalCode)} ${esc(order.city)}, ${esc(order.country)}</td></tr>
+              ${order.wantsInvoice && order.nif ? `<tr><td style="padding:6px 0;color:#888;font-size:13px;">NIF</td><td style="padding:6px 0;">${order.companyName ? `${esc(order.companyName)} — ` : ''}${esc(order.nif)}</td></tr>` : ''}
             </table>
             <h3 style="font-size:14px;color:#333;margin:0 0 8px;">Itens</h3>
             <table style="width:100%;border-collapse:collapse;font-size:14px;">
@@ -577,7 +582,7 @@ export class MailService {
             <h1 style="color:${info.color};margin:0;font-size:22px;">${info.title}</h1>
           </div>
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
-            <p style="font-size:15px;line-height:1.6;">Olá <strong>${order.firstName}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${esc(order.firstName)}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">${info.body}</p>
             <table style="width:100%;border-collapse:collapse;font-size:14px;margin:16px 0;">
               <tr><td style="padding:6px 0;color:#888;width:140px;">Referência</td><td style="padding:6px 0;font-weight:bold;">#${shortId}</td></tr>
@@ -607,7 +612,7 @@ export class MailService {
             <h1 style="color:#88C900;margin:0;font-size:22px;">Recuperar palavra-passe</h1>
           </div>
           <div style="background:#f9f9f9;padding:24px;border-radius:0 0 8px 8px;border:1px solid #e5e5e5;">
-            <p style="font-size:15px;line-height:1.6;">Olá <strong>${firstName}</strong>,</p>
+            <p style="font-size:15px;line-height:1.6;">Olá <strong>${esc(firstName)}</strong>,</p>
             <p style="font-size:15px;line-height:1.6;">
               Recebemos um pedido para recuperar a palavra-passe da tua conta ReaxOne.
               Clica no botão abaixo para definir uma nova palavra-passe.

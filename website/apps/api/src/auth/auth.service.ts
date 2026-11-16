@@ -1,10 +1,10 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { createHash } from 'crypto';
 import { UsersService } from '../users/users.service';
 import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { passwordFingerprint, tokenTtl } from './session.rules';
 
 @Injectable()
 export class AuthService {
@@ -45,7 +45,7 @@ export class AuthService {
     if (!user) return { ok: true };
 
     const token = this.jwtService.sign(
-      { sub: user.id, type: 'password-reset', pwh: this.passwordFingerprint(user.password) },
+      { sub: user.id, type: 'password-reset', pwh: passwordFingerprint(user.password) },
       { expiresIn: '15m' },
     );
 
@@ -78,7 +78,7 @@ export class AuthService {
       where: { id: payload.sub },
       select: { password: true },
     });
-    if (!user || !payload.pwh || payload.pwh !== this.passwordFingerprint(user.password)) {
+    if (!user || !payload.pwh || payload.pwh !== passwordFingerprint(user.password)) {
       throw new BadRequestException('Link expirado ou inválido');
     }
 
@@ -91,15 +91,12 @@ export class AuthService {
     return { ok: true };
   }
 
-  /** Impressão digital do hash atual da password (não revela o hash) */
-  private passwordFingerprint(passwordHash: string) {
-    return createHash('sha256').update(passwordHash).digest('hex').slice(0, 16);
-  }
-
-  private signToken(user: { id: string; email: string; role: string }) {
-    const payload = { sub: user.id, email: user.email, role: user.role };
+  /** O token leva a impressão digital da password: mudá-la termina as sessões abertas. */
+  private signToken(user: { id: string; email: string; role: string; password: string }) {
+    const payload = { sub: user.id, email: user.email, role: user.role, pwh: passwordFingerprint(user.password) };
+    const ttl = tokenTtl(user.role);
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: this.jwtService.sign(payload, ttl ? { expiresIn: ttl } : undefined),
       role: user.role,
     };
   }
