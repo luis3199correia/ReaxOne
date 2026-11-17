@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '@/lib/api';
 import {
-  CartItem, CatalogProduct, cartTotal, linesFromStorage, pendingItem, refreshFromCatalog, toLine,
+  CartItem, CatalogProduct, cartTotal, isFreeEbook, linesFromStorage, pendingItem, refreshFromCatalog, toLine,
 } from './cart.rules';
 
 export type { CartItem } from './cart.rules';
@@ -37,6 +37,7 @@ export const useCartStore = create<CartStore>()(
       lastAdded: null,
 
       addItem: (item) => set((state) => {
+        if (isFreeEbook(item)) return state;
         const exists = state.items.some((i) => sameLine(i, item.id, item.size));
         const items = exists
           ? state.items.map((i) => (sameLine(i, item.id, item.size) ? { ...i, quantity: i.quantity + item.quantity } : i))

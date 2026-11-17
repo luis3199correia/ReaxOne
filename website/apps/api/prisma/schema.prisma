@@ -83,6 +83,8 @@ model Product {
   active      Boolean  @default(true)
   featured    Boolean  @default(false)
   ebookFile   String?  // caminho para o PDF (apenas para produtos da categoria Ebooks)
+  downloadUrl   String? // link público de download (ebooks gratuitos) — PT
+  downloadUrlEn String? // link público de download (ebooks gratuitos) — EN
   facturalusaItemId Int? // ID do artigo no Facturalusa (criado na primeira fatura)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

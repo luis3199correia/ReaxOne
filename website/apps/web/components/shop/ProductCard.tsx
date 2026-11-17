@@ -2,9 +2,10 @@
 
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
-import { ShoppingCart } from 'lucide-react';
+import { Download, ShoppingCart } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCartStore } from '@/store/cart';
+import { isFreeEbook } from '@/store/cart.rules';
 import { useCategoryLabel } from '@/lib/category';
 
 export interface Product {
@@ -20,6 +21,7 @@ export interface Product {
   stock: number;
   badge?: string;
   isEbook?: boolean;
+  isFreeEbook?: boolean;
 }
 
 interface ProductCardProps {
@@ -32,13 +34,14 @@ export default function ProductCard({ product }: ProductCardProps) {
   const t = useTranslations('shop');
   const addItem = useCartStore((s) => s.addItem);
 
-  const isOutOfStock = product.stock === 0;
+  const freeEbook = isFreeEbook(product);
+  const isOutOfStock = !freeEbook && product.stock === 0;
   const imageSrc = product.images[0] ?? '/images/placeholder.png';
   const displayName = locale === 'en' && product.nameEn ? product.nameEn : product.name;
 
   function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
-    if (isOutOfStock) return;
+    if (isOutOfStock || freeEbook) return;
     addItem({
       id: product.id,
       name: product.name,
@@ -89,8 +92,15 @@ export default function ProductCard({ product }: ProductCardProps) {
         </h3>
         <div className="flex items-center justify-between mt-auto">
           <span className="text-lg font-bold text-brand-dark">
-            €{product.price.toFixed(2)}
+            {freeEbook ? t('free') : `€${product.price.toFixed(2)}`}
           </span>
+          {freeEbook ? (
+            // O cartão inteiro já leva à página do produto, onde está o link
+            <span className="flex items-center gap-1.5 bg-brand-green text-brand-dark text-sm font-semibold px-3 py-2 rounded-lg">
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('download_ebook')}</span>
+            </span>
+          ) : (
           <button
             onClick={handleAddToCart}
             disabled={isOutOfStock}
@@ -100,6 +110,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <ShoppingCart className="w-4 h-4" />
             <span className="hidden sm:inline">{t('add_to_cart')}</span>
           </button>
+          )}
         </div>
       </div>
     </Link>

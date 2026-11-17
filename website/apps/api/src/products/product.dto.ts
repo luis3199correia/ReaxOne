@@ -7,9 +7,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
   MaxLength,
   Min,
 } from 'class-validator';
+
+const DOWNLOAD_URL_OPTIONS = { protocols: ['http', 'https'], require_protocol: true };
 
 // Campos aceites na criação/edição de produtos (backoffice).
 // O ValidationPipe global (whitelist + forbidNonWhitelisted) rejeita o resto.
@@ -81,6 +84,17 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   ebookFile?: string; // caminho para o PDF (apenas para ebooks)
+
+  // Links públicos de download dos ebooks gratuitos (null limpa o valor)
+  @IsOptional()
+  @IsUrl(DOWNLOAD_URL_OPTIONS)
+  @MaxLength(500)
+  downloadUrl?: string | null;
+
+  @IsOptional()
+  @IsUrl(DOWNLOAD_URL_OPTIONS)
+  @MaxLength(500)
+  downloadUrlEn?: string | null;
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}

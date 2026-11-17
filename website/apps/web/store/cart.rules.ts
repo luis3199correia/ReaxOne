@@ -30,10 +30,26 @@ export interface CatalogProduct {
   price: number | string;
   images?: string[];
   isEbook?: boolean;
+  isFreeEbook?: boolean;
   categorySlug?: string;
 }
 
 export const PLACEHOLDER_IMAGE = '/images/placeholder.png';
+
+/**
+ * Ebook gratuito: descarrega-se pelo link da página do produto e
+ * não entra no carrinho (a API também recusa encomendá-lo).
+ */
+export function isFreeEbook(product: {
+  price: number | string;
+  isEbook?: boolean;
+  isFreeEbook?: boolean;
+  categorySlug?: string;
+}): boolean {
+  if (product.isFreeEbook) return true;
+  const isEbook = product.isEbook || product.categorySlug === 'ebooks';
+  return !!isEbook && Number(product.price) === 0;
+}
 
 export function toLine(item: CartItem): CartLine {
   return { id: item.id, quantity: item.quantity, ...(item.size ? { size: item.size } : {}) };
@@ -62,7 +78,7 @@ export function refreshFromCatalog(items: CartItem[], catalog: CatalogProduct[])
   const byId = new Map(catalog.map((p) => [p.id, p]));
   return items.flatMap((item) => {
     const product = byId.get(item.id);
-    if (!product) return [];
+    if (!product || isFreeEbook(product)) return [];
     const price = Number(product.price);
     if (!Number.isFinite(price)) return [];
     return [{

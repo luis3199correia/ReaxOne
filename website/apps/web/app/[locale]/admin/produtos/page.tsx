@@ -24,6 +24,8 @@ interface Product {
   images: string[];
   active: boolean;
   featured: boolean;
+  downloadUrl?: string | null;
+  downloadUrlEn?: string | null;
 }
 
 interface Category {
@@ -52,6 +54,8 @@ const EMPTY_FORM = {
   images: [] as string[],
   active: true,
   featured: false,
+  downloadUrl: '',
+  downloadUrlEn: '',
 };
 
 /* ─── Image Picker Overlay ─────────────────────────────────────────────── */
@@ -275,6 +279,8 @@ export default function AdminProductsPage() {
       images: p.images ?? [],
       active: p.active,
       featured: p.featured ?? false,
+      downloadUrl: p.downloadUrl ?? '',
+      downloadUrlEn: p.downloadUrlEn ?? '',
     });
     setSaveError('');
     setLangTab('pt');
@@ -288,6 +294,8 @@ export default function AdminProductsPage() {
     setSaved(false);
     setSaveError('');
   }
+
+  const isEbooksCategory = categories.find((c) => c.id === form.categoryId)?.slug === 'ebooks';
 
   function handleField(key: keyof typeof EMPTY_FORM, value: string | boolean | string[]) {
     setForm((f) => {
@@ -342,6 +350,9 @@ export default function AdminProductsPage() {
       images: form.images,
       active: form.active,
       featured: form.featured,
+      // vazio → null, para se poder apagar o link
+      downloadUrl: form.downloadUrl.trim() || null,
+      downloadUrlEn: form.downloadUrlEn.trim() || null,
       ...(form.categoryId ? { categoryId: form.categoryId } : {}),
     };
 
@@ -774,6 +785,37 @@ export default function AdminProductsPage() {
                     </>
                   )}
                 </div>
+
+                {isEbooksCategory && (
+                  <div className="col-span-2">
+                    {langTab === 'pt' ? (
+                      <>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Link de download <span className="text-gray-400 font-normal">(Português)</span></label>
+                        <input
+                          type="url"
+                          value={form.downloadUrl}
+                          onChange={(e) => handleField('downloadUrl', e.target.value)}
+                          className="input text-sm font-mono"
+                          placeholder="https://..."
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Download link <span className="text-gray-400 font-normal">(English)</span></label>
+                        <input
+                          type="url"
+                          value={form.downloadUrlEn}
+                          onChange={(e) => handleField('downloadUrlEn', e.target.value)}
+                          className="input text-sm font-mono"
+                          placeholder="https://..."
+                        />
+                      </>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      Só usado quando o ebook é gratuito (preço 0): a loja mostra o botão de download no idioma do cliente em vez de &quot;Adicionar ao carrinho&quot;.
+                    </p>
+                  </div>
+                )}
 
                 {/* ── Imagens ── */}
                 <div className="col-span-2">

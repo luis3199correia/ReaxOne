@@ -1,14 +1,24 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
+import { isEbookProduct, isFreeEbook } from './free-ebook';
 
 /**
  * Versão pública do produto: nunca expõe o caminho do ficheiro do ebook
  * (seria um download grátis). Indica apenas se é ebook.
  */
-function toPublic<T extends { ebookFile?: string | null }>(product: T) {
-  const { ebookFile, ...rest } = product;
-  return { ...rest, isEbook: !!ebookFile };
+function toPublic<T extends {
+  price: number;
+  ebookFile?: string | null;
+  downloadUrl?: string | null;
+  downloadUrlEn?: string | null;
+  category?: { slug: string } | null;
+}>(product: T) {
+  const { ebookFile, downloadUrl, downloadUrlEn, ...rest } = product;
+  const free = isFreeEbook(product);
+  // Os links de download só são públicos quando o ebook é gratuito
+  const links = free ? { downloadUrl: downloadUrl ?? null, downloadUrlEn: downloadUrlEn ?? null } : {};
+  return { ...rest, ...links, isEbook: isEbookProduct(product), isFreeEbook: free };
 }
 
 @Injectable()

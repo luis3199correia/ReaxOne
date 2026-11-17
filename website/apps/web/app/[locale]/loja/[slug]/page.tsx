@@ -4,8 +4,9 @@ import { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import { Link } from '@/i18n/navigation';
 import { useLocale, useTranslations, useMessages } from 'next-intl';
-import { ShoppingCart, ChevronLeft, Check, Shield, Truck, Loader2 } from 'lucide-react';
+import { ShoppingCart, ChevronLeft, Check, Shield, Truck, Loader2, Download } from 'lucide-react';
 import { useCartStore } from '@/store/cart';
+import { isFreeEbook } from '@/store/cart.rules';
 import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { api } from '@/lib/api';
 import { useCategoryLabel } from '@/lib/category';
@@ -19,6 +20,17 @@ interface Props {
 interface FullProduct extends Product {
   description?: string;
   descriptionEn?: string;
+  downloadUrl?: string;
+  downloadUrlEn?: string;
+}
+
+/** Link de download no idioma da página, com o outro idioma como alternativa. */
+function downloadLinks(product: FullProduct, locale: string) {
+  const pt = product.downloadUrl || undefined;
+  const en = product.downloadUrlEn || undefined;
+  const primary = locale === 'en' ? en ?? pt : pt ?? en;
+  const other = locale === 'en' ? pt : en;
+  return { primary, other: other && other !== primary ? other : undefined };
 }
 
 function toProduct(p: any): FullProduct {
@@ -36,7 +48,45 @@ function toProduct(p: any): FullProduct {
     description: p.description ?? '',
     descriptionEn: p.descriptionEn ?? undefined,
     isEbook: p.category?.slug === 'ebooks' || !!p.isEbook,
+    isFreeEbook: !!p.isFreeEbook,
+    downloadUrl: p.downloadUrl ?? undefined,
+    downloadUrlEn: p.downloadUrlEn ?? undefined,
   };
+}
+
+function FreeEbookDownload({ product, locale }: { product: FullProduct; locale: string }) {
+  const t = useTranslations('shop');
+  const { primary, other } = downloadLinks(product, locale);
+
+  return (
+    <div className="mb-4">
+      <p className="text-sm text-gray-600 mb-4">{t('free_ebook_info')}</p>
+      {primary ? (
+        <>
+          <a
+            href={primary}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-3 w-full py-4 rounded-xl text-lg font-bold bg-brand-primary text-white hover:bg-red-700 transition-all duration-200"
+          >
+            <Download className="w-5 h-5" /> {t('download_ebook')}
+          </a>
+          {other && (
+            <a
+              href={other}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center text-sm text-brand-muted hover:text-brand-primary underline mt-3"
+            >
+              {t('download_other_lang')}
+            </a>
+          )}
+        </>
+      ) : (
+        <p className="text-sm font-medium text-brand-muted">{t('download_unavailable')}</p>
+      )}
+    </div>
+  );
 }
 
 export default function ProductPage({ params: paramsPromise }: Props) {
@@ -88,7 +138,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
   }
 
   function handleAddToCart() {
-    if (!product || product.stock === 0) return;
+    if (!product || product.stock === 0 || isFreeEbook(product)) return;
     addItem({
       id: product.id,
       name: product.name,
@@ -122,6 +172,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
   }
 
   const isOutOfStock = product.stock === 0;
+  const freeEbook = isFreeEbook(product);
 
   return (
     <div className="min-h-screen bg-white">
@@ -189,6 +240,10 @@ export default function ProductPage({ params: paramsPromise }: Props) {
               {getTranslatedDescription()}
             </p>
 
+            {freeEbook ? (
+              <FreeEbookDownload product={product} locale={locale} />
+            ) : (
+            <>
             {/* Stock */}
             <div className="flex items-center gap-2 mb-6">
               {isOutOfStock ? (
@@ -256,6 +311,8 @@ export default function ProductPage({ params: paramsPromise }: Props) {
                 <span>{t('secure_payment')}</span>
               </div>
             </div>
+            </>
+            )}
           </div>
         </div>
 

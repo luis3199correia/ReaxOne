@@ -11,6 +11,7 @@ import { PICKUP_METHOD_ID } from './pickup';
 import { OnlinePaymentService, PaymentAction } from './online-payment.service';
 import { IfthenpayClient } from '../payments/ifthenpay.client';
 import { InvoicingService } from '../invoicing/invoicing.service';
+import { isFreeEbook } from '../products/free-ebook';
 import {
   OnlineMethod, amountMatches, enabledOnlineMethods, isOnlineMethod, normalizeMbwayPhone,
 } from '../payments/ifthenpay.rules';
@@ -325,13 +326,16 @@ export class OrdersService {
 
     const products = await this.prisma.product.findMany({
       where:  { id: { in: rawItems.map((i) => i.productId) }, active: true },
-      select: { id: true, name: true, price: true, ebookFile: true },
+      select: { id: true, name: true, price: true, ebookFile: true, category: { select: { slug: true } } },
     });
     const byId = new Map(products.map((p) => [p.id, p]));
 
     const items = rawItems.map((i) => {
       const product = byId.get(i.productId);
       if (!product) throw new BadRequestException('Um dos produtos já não está disponível.');
+      if (isFreeEbook(product)) {
+        throw new BadRequestException('Os ebooks gratuitos descarregam-se na página do produto e não podem ser encomendados.');
+      }
       return {
         productId: product.id,
         name:      product.name,
