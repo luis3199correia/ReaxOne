@@ -3,6 +3,7 @@
 import { useLocale } from 'next-intl';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
+import { useCartStore } from '@/store/cart';
 import { LogOut, ShoppingBag, User } from 'lucide-react';
 
 export default function ContaLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +13,7 @@ export default function ContaLayout({ children }: { children: React.ReactNode })
 
   async function handleLogout() {
     try { await api.post('/auth/logout'); } catch {}
+    useCartStore.getState().clearCart(); // dispositivos partilhados: o carrinho não passa ao próximo utilizador
     router.push('/auth');
   }
 

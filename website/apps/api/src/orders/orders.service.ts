@@ -15,10 +15,10 @@ import {
   OnlineMethod, amountMatches, enabledOnlineMethods, isOnlineMethod, normalizeMbwayPhone,
 } from '../payments/ifthenpay.rules';
 
-const MAX_QUANTITY_PER_ITEM = 100;
-const NOTES_MAX_LENGTH = 500;
+export const MAX_QUANTITY_PER_ITEM = 100;
+export const NOTES_MAX_LENGTH = 500;
 
-const PAYMENT_METHODS = ['MBWAY', 'BANK_TRANSFER', 'CASH', 'MULTIBANCO', 'CARD', 'APPLE_PAY', 'GOOGLE_PAY'] as const;
+export const PAYMENT_METHODS = ['MBWAY', 'BANK_TRANSFER', 'CASH', 'MULTIBANCO', 'CARD', 'APPLE_PAY', 'GOOGLE_PAY'] as const;
 type PaymentMethodInput = (typeof PAYMENT_METHODS)[number];
 
 function roundCents(value: number) {

@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { api } from '@/lib/api';
+import { useCartStore } from '@/store/cart';
 import type { StaticPathname } from '@/i18n/routing';
 import {
   LayoutDashboard,
@@ -30,6 +31,7 @@ export default function AdminSidebar() {
 
   async function handleLogout() {
     try { await api.post('/auth/logout'); } catch {}
+    useCartStore.getState().clearCart(); // dispositivos partilhados: o carrinho não passa ao próximo utilizador
     router.push('/auth');
   }
 

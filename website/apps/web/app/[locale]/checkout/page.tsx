@@ -139,7 +139,8 @@ export default function CheckoutPage() {
   const locale = useLocale();
   const router = useRouter();
   const settings = useSettings();
-  const { items, total, clearCart } = useCartStore();
+  const tCommon = useTranslations('common');
+  const { items, total, clearCart, ready: cartReady } = useCartStore();
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mbway');
   const [mbwayPhone, setMbwayPhone] = useState('');
@@ -361,6 +362,13 @@ export default function CheckoutPage() {
       setSubmitting(false);
     }
   };
+
+  // Os preços vêm do catálogo: esperar por eles antes de mostrar totais
+  if (!cartReady) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-24 text-center text-gray-500">{tCommon('loading')}</div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-12">

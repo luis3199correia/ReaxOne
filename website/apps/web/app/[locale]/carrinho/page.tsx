@@ -9,7 +9,15 @@ import GiftPromotionHint from '@/components/shop/GiftPromotionHint';
 export default function CartPage() {
   const t = useTranslations('cart');
   const locale = useLocale();
-  const { items, removeItem, updateQuantity, total } = useCartStore();
+  const tCommon = useTranslations('common');
+  const { items, removeItem, updateQuantity, total, ready } = useCartStore();
+
+  // Os preços vêm do catálogo: esperar por eles em vez de mostrar valores a zero
+  if (!ready) {
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-24 text-center text-gray-500">{tCommon('loading')}</div>
+    );
+  }
 
   if (items.length === 0) {
     return (
