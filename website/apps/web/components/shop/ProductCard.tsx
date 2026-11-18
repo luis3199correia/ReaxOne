@@ -44,6 +44,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     if (isOutOfStock || freeEbook) return;
     addItem({
       id: product.id,
+      slug: product.slug,
       name: product.name,
       price: product.price,
       image: imageSrc,

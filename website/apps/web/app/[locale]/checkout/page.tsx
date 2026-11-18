@@ -28,6 +28,7 @@ import {
   useCurrentPromotion,
 } from '@/lib/giftPromotion';
 import { PaymentAction, useApplePayAvailable, useAvailablePaymentMethods } from '@/lib/payments';
+import { savePendingPurchase } from '@/lib/analytics';
 
 const NOTES_MAX_LENGTH = 500;
 
@@ -336,6 +337,17 @@ export default function CheckoutPage() {
         })),
       });
       const action: PaymentAction | null = res.data.paymentAction ?? null;
+      // Evento "purchase" (GA4): enviado na página de confirmação, uma vez por encomenda
+      const finite = (v: unknown) => (v !== null && v !== undefined && Number.isFinite(Number(v)) ? Number(v) : undefined);
+      savePendingPurchase({
+        orderId:      res.data.id,
+        total:        finite(res.data.totalAmount) ?? orderTotal,
+        shipping:     finite(res.data.shippingCost),
+        discountCode: res.data.discountCode ?? appliedDiscount?.code,
+        lines: items.map((i) => ({
+          slug: i.slug ?? '', name: i.name, price: i.price, quantity: i.quantity, size: i.size,
+        })),
+      });
       // Cartão / Apple Pay: o carrinho só é limpo quando o pagamento for concluído
       if (action?.type === 'redirect') {
         window.location.assign(action.url);

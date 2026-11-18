@@ -8,6 +8,8 @@ import ConditionalShell from '@/components/layout/ConditionalShell';
 import { SettingsProvider } from '@/components/providers/SettingsProvider';
 import { fetchPublicSettings } from '@/lib/settings';
 import { BASE_URL } from '@/lib/seo';
+import { GoogleTagHead, GoogleTagNoScript } from '@/components/analytics/GoogleTag';
+import CookieConsent from '@/components/analytics/CookieConsent';
 import '../globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -89,10 +91,15 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        <GoogleTagHead />
+      </head>
       <body className={inter.className}>
+        <GoogleTagNoScript />
         <NextIntlClientProvider messages={messages}>
           <SettingsProvider value={settings}>
             <ConditionalShell>{children}</ConditionalShell>
+            <CookieConsent />
           </SettingsProvider>
         </NextIntlClientProvider>
       </body>

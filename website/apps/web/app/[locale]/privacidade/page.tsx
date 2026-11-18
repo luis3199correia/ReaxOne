@@ -56,7 +56,9 @@ function PrivacidadePt() {
 
         <section>
           <h2 className={h2Class}>Cookies</h2>
-          <p>Utilizamos apenas cookies essenciais ao funcionamento do site (por exemplo, sessão de login). Não usamos cookies de rastreamento nem de publicidade.</p>
+          <p>Utilizamos cookies essenciais ao funcionamento do site (por exemplo, sessão de login e carrinho), que não precisam de consentimento.</p>
+          <p className="mt-3">Só com a tua autorização, dada no aviso de cookies, usamos também cookies de estatística (Google Analytics, para medir visitas e compras de forma agregada) e de marketing (Google Ads / Shopping, para medir campanhas). Estes serviços são fornecidos pela Google Ireland Limited e são geridos através do Google Tag Manager com o Consent Mode da Google: enquanto não aceitares, não são guardados cookies de estatística nem de marketing.</p>
+          <p className="mt-3">Podes aceitar, rejeitar ou alterar a tua escolha a qualquer momento em &quot;Preferências de cookies&quot;, no rodapé do site.</p>
         </section>
 
       </div>
@@ -114,7 +116,9 @@ function PrivacidadeEn() {
 
         <section>
           <h2 className={h2Class}>Cookies</h2>
-          <p>We only use cookies that are essential for the website to work (for example, the login session). We do not use tracking or advertising cookies.</p>
+          <p>We use cookies that are essential for the website to work (for example, the login session and the cart), which do not require consent.</p>
+          <p className="mt-3">Only with your permission, given in the cookie notice, do we also use statistics cookies (Google Analytics, to measure visits and purchases in aggregate) and marketing cookies (Google Ads / Shopping, to measure campaigns). These services are provided by Google Ireland Limited and managed through Google Tag Manager with Google Consent Mode: until you accept, no statistics or marketing cookies are stored.</p>
+          <p className="mt-3">You can accept, reject or change your choice at any time under &quot;Cookie preferences&quot; in the website footer.</p>
         </section>
 
       </div>

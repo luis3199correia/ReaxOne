@@ -8,6 +8,8 @@
 
 export interface CartItem {
   id: string;
+  /** Slug do catálogo (= g:id do Google Merchant Center); não é guardado no browser. */
+  slug?: string;
   name: string;
   price: number;
   quantity: number;
@@ -26,6 +28,7 @@ export interface CartLine {
 /** Campos do produto público (GET /products) usados no carrinho. */
 export interface CatalogProduct {
   id: string;
+  slug?: string;
   name: string;
   price: number | string;
   images?: string[];
@@ -83,6 +86,7 @@ export function refreshFromCatalog(items: CartItem[], catalog: CatalogProduct[])
     if (!Number.isFinite(price)) return [];
     return [{
       ...toLine(item),
+      slug:    product.slug,
       name:    product.name,
       price,
       image:   product.images?.[0] ?? PLACEHOLDER_IMAGE,

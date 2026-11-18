@@ -141,6 +141,7 @@ export default function ProductPage({ params: paramsPromise }: Props) {
     if (!product || product.stock === 0 || isFreeEbook(product)) return;
     addItem({
       id: product.id,
+      slug: product.slug,
       name: product.name,
       price: product.price,
       image: product.images[0],

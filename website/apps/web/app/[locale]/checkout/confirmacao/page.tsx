@@ -1,6 +1,7 @@
 'use client';
 
-import { Suspense, useCallback } from 'react';
+import { Suspense, useCallback, useEffect } from 'react';
+import { pushPendingPurchase } from '@/lib/analytics';
 import { useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/navigation';
 import { useLocale } from 'next-intl';
@@ -25,7 +26,16 @@ function ConfirmacaoContent() {
   const gatewayFailed = isGateway && params.get('result') !== 'success';
   const clearCart = useCartStore((s) => s.clearCart);
   // Cartão / Apple Pay: o carrinho fica guardado até o pagamento estar confirmado
-  const onGatewayPaid = useCallback(() => clearCart(), [clearCart]);
+  const onGatewayPaid = useCallback(() => {
+    clearCart();
+    pushPendingPurchase(orderId);
+  }, [clearCart, orderId]);
+
+  // Compra (GA4): MB Way, Multibanco, transferência e em mão contam ao criar a encomenda;
+  // cartão / Apple Pay / Google Pay só quando o pagamento foi bem-sucedido
+  useEffect(() => {
+    if (!gatewayFailed) pushPendingPurchase(orderId);
+  }, [orderId, gatewayFailed]);
 
   const shortId = orderId.slice(-8).toUpperCase();
 

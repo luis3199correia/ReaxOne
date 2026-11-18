@@ -292,6 +292,7 @@
     "shipping_returns": "Envios e devoluções",
     "privacy": "Privacidade",
     "terms": "Termos",
+    "cookie_settings": "Preferências de cookies",
     "rights": "Todos os direitos reservados.",
     "made_in": "Marca portuguesa",
     "legal_brand": "ReaxOne® é uma marca de Quimera Pragmática, Lda.",
@@ -342,5 +343,20 @@
     "pick_in_checkout": "Escolhes as cores no checkout.",
     "add": "Adicionar {name}",
     "remove": "Remover {name}"
+  },
+  "cookies": {
+    "title": "Cookies",
+    "text": "Usamos cookies essenciais para o site funcionar e, com a tua autorização, cookies de estatística (Google Analytics) e de marketing (Google) para perceber como o site é usado e medir campanhas. Podes mudar a escolha a qualquer momento no rodapé.",
+    "privacy_link": "Política de privacidade",
+    "accept": "Aceitar todos",
+    "reject": "Rejeitar",
+    "customize": "Personalizar",
+    "save": "Guardar escolhas",
+    "necessary": "Essenciais",
+    "necessary_desc": "Sessão, carrinho e segurança. Sempre ativos.",
+    "analytics": "Estatística",
+    "analytics_desc": "Google Analytics: visitas, páginas vistas e compras, de forma agregada.",
+    "ads": "Marketing",
+    "ads_desc": "Medição de campanhas e anúncios da Google (Google Ads / Shopping)."
   }
 }

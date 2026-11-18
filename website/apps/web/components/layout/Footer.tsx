@@ -2,6 +2,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import Image from 'next/image';
 import { Instagram } from 'lucide-react';
+import { OPEN_CONSENT_EVENT } from '@/lib/analytics';
 
 
 export default function Footer() {
@@ -57,6 +58,15 @@ export default function Footer() {
               <li><Link href="/envios" className="hover:text-brand-green transition-colors">{t('shipping_returns')}</Link></li>
               <li><Link href="/privacidade" className="hover:text-brand-green transition-colors">{t('privacy')}</Link></li>
               <li><Link href="/termos" className="hover:text-brand-green transition-colors">{t('terms')}</Link></li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
+                  className="hover:text-brand-green transition-colors"
+                >
+                  {t('cookie_settings')}
+                </button>
+              </li>
             </ul>
           </div>
         </div>
