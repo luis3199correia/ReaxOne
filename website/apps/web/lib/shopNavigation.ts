@@ -18,7 +18,13 @@ export type ShopQuery = {
 };
 
 const STORAGE_KEY = 'reaxone_shop_query';
-const SLUG_RE = /^[a-z0-9-]{1,100}$/;
+// Os slugs vêm do backoffice e podem ter espaços/acentos (ex: "bolas de reação"):
+// aceitam-se tal como estão, só com limite de tamanho (o router codifica-os no URL)
+const MAX_CATEGORY_LENGTH = 100;
+
+function isValidCategory(category: string | undefined): category is string {
+  return !!category && category.trim().length > 0 && category.length <= MAX_CATEGORY_LENGTH;
+}
 
 export function sortFromParam(param: string | null): SortKey {
   const entry = Object.entries(SORT_PARAM).find(([, value]) => value === param);
@@ -33,7 +39,7 @@ export function sortToParam(sort: SortKey): string | undefined {
 export function shopQuery(category: string | undefined, sort: SortKey): ShopQuery {
   const ordem = sortToParam(sort);
   return {
-    ...(category && SLUG_RE.test(category) ? { categoria: category } : {}),
+    ...(isValidCategory(category) ? { categoria: category } : {}),
     ...(ordem ? { ordem } : {}),
   };
 }

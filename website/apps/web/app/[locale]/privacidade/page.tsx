@@ -10,7 +10,7 @@ function PrivacidadePt() {
   return (
     <>
       <h1 className="text-4xl font-black text-brand-dark mb-2">Política de Privacidade</h1>
-      <p className="text-brand-muted mb-10">Última atualização: outubro de 2026</p>
+      <p className="text-brand-muted mb-10">Última atualização: novembro de 2026</p>
 
       <div className="space-y-10 text-gray-700 leading-relaxed">
 
@@ -55,10 +55,20 @@ function PrivacidadePt() {
         </section>
 
         <section>
-          <h2 className={h2Class}>Cookies</h2>
-          <p>Utilizamos cookies essenciais ao funcionamento do site (por exemplo, sessão de login e carrinho), que não precisam de consentimento.</p>
-          <p className="mt-3">Só com a tua autorização, dada no aviso de cookies, usamos também cookies de estatística (Google Analytics, para medir visitas e compras de forma agregada) e de marketing (Google Ads / Shopping, para medir campanhas). Estes serviços são fornecidos pela Google Ireland Limited e são geridos através do Google Tag Manager com o Consent Mode da Google: enquanto não aceitares, não são guardados cookies de estatística nem de marketing.</p>
-          <p className="mt-3">Podes aceitar, rejeitar ou alterar a tua escolha a qualquer momento em &quot;Preferências de cookies&quot;, no rodapé do site.</p>
+          <h2 className={h2Class}>Cookies e análise do site</h2>
+          <p>O site reaxone.com utiliza cookies, que são pequenos ficheiros guardados no seu dispositivo.</p>
+          <ul className="list-disc pl-5 space-y-2 mt-3">
+            <li><strong>Cookies necessários:</strong> asseguram o funcionamento do site, como a sessão de login, o carrinho de compras, o checkout e a memória das suas preferências de cookies. Não precisam de consentimento.</li>
+            <li><strong>Cookies de análise (Google Analytics 4):</strong> só são ativados se der o seu consentimento no aviso de cookies. Permitem-nos saber, de forma agregada, quantas pessoas visitam o site, que páginas consultam, de onde vêm e que compras são feitas. O objetivo é melhorar o site e a loja. Os cookies utilizados são o _ga e o _ga_*, com duração máxima de 2 anos. Os dados recolhidos são guardados pelo Google Analytics durante 14 meses.</li>
+            <li><strong>Cookies de marketing (Google Ads):</strong> só são ativados se der o seu consentimento no aviso de cookies. Servem para medir os resultados das nossas campanhas.</li>
+          </ul>
+          <p className="mt-3">O Google Analytics é fornecido pela Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Irlanda). Alguns dados podem ser transferidos para a Google LLC, nos Estados Unidos, ao abrigo do Quadro de Privacidade de Dados UE-EUA (EU-US Data Privacy Framework). Mais informação em <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={linkClass}>policies.google.com/privacy</a>.</p>
+          <p className="mt-3">Pode aceitar, recusar ou retirar o seu consentimento a qualquer momento, através da opção &quot;Preferências de cookies&quot; no rodapé do site. Pode também apagar os cookies nas definições do seu navegador.</p>
+        </section>
+
+        <section>
+          <h2 className={h2Class}>Pagamentos</h2>
+          <p>Os pagamentos são processados pela IfthenPay (Multibanco, MB WAY, cartões, Apple Pay e Google Pay). A ReaxOne não tem acesso nem guarda os dados do seu cartão bancário. A IfthenPay trata os dados necessários ao pagamento de acordo com a sua própria política de privacidade.</p>
         </section>
 
       </div>
@@ -70,7 +80,7 @@ function PrivacidadeEn() {
   return (
     <>
       <h1 className="text-4xl font-black text-brand-dark mb-2">Privacy Policy</h1>
-      <p className="text-brand-muted mb-10">Last updated: October 2026</p>
+      <p className="text-brand-muted mb-10">Last updated: November 2026</p>
 
       <div className="space-y-10 text-gray-700 leading-relaxed">
 
@@ -115,10 +125,20 @@ function PrivacidadeEn() {
         </section>
 
         <section>
-          <h2 className={h2Class}>Cookies</h2>
-          <p>We use cookies that are essential for the website to work (for example, the login session and the cart), which do not require consent.</p>
-          <p className="mt-3">Only with your permission, given in the cookie notice, do we also use statistics cookies (Google Analytics, to measure visits and purchases in aggregate) and marketing cookies (Google Ads / Shopping, to measure campaigns). These services are provided by Google Ireland Limited and managed through Google Tag Manager with Google Consent Mode: until you accept, no statistics or marketing cookies are stored.</p>
-          <p className="mt-3">You can accept, reject or change your choice at any time under &quot;Cookie preferences&quot; in the website footer.</p>
+          <h2 className={h2Class}>Cookies and website analytics</h2>
+          <p>The website reaxone.com uses cookies, which are small files stored on your device.</p>
+          <ul className="list-disc pl-5 space-y-2 mt-3">
+            <li><strong>Necessary cookies:</strong> they keep the website working, such as the login session, the shopping cart, checkout and your cookie preferences. They do not require consent.</li>
+            <li><strong>Analytics cookies (Google Analytics 4):</strong> they are only activated if you give your consent in the cookie banner. They help us understand, in aggregate, how many people visit the website, which pages they view, where they come from and which purchases are made, so we can improve the website and the shop. The cookies used are _ga and _ga_*, lasting up to 2 years. Collected data is kept by Google Analytics for 14 months.</li>
+            <li><strong>Marketing cookies (Google Ads):</strong> they are only activated if you give your consent in the cookie banner. They are used to measure the results of our campaigns.</li>
+          </ul>
+          <p className="mt-3">Google Analytics is provided by Google Ireland Limited (Gordon House, Barrow Street, Dublin 4, Ireland). Some data may be transferred to Google LLC in the United States under the EU-US Data Privacy Framework. More information at <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className={linkClass}>policies.google.com/privacy</a>.</p>
+          <p className="mt-3">You can accept, reject or withdraw your consent at any time through &quot;Cookie preferences&quot; in the website footer, and you can delete cookies in your browser settings.</p>
+        </section>
+
+        <section>
+          <h2 className={h2Class}>Payments</h2>
+          <p>Payments are processed by IfthenPay (Multibanco, MB WAY, cards, Apple Pay and Google Pay). ReaxOne has no access to and does not store your card details. IfthenPay processes the data needed for payment under its own privacy policy.</p>
         </section>
 
       </div>
