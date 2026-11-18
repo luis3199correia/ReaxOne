@@ -1,3 +1,4 @@
+import { serverApiUrl } from '@/lib/serverApi';
 import { Metadata } from 'next';
 import { getTranslations, getLocale } from 'next-intl/server';
 import Image from 'next/image';
@@ -39,7 +40,7 @@ export default async function HomePage() {
   type ApiProduct = { id: string; slug: string; name: string; nameEn?: string; price: number; images: string[] };
   let featuredProducts: { id: string; name: string; price: number; image: string; tag: string | null }[] = [];
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    const apiUrl = serverApiUrl();
     const res = await fetch(`${apiUrl}/products?featured=true`, { next: { revalidate: 60 } });
     if (res.ok) {
       const list: ApiProduct[] = await res.json();

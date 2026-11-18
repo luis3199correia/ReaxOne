@@ -1,3 +1,4 @@
+import { serverApiUrl } from '@/lib/serverApi';
 import { MetadataRoute } from 'next';
 import { locales } from '@/i18n/config';
 import { BASE_URL, hreflangLanguages } from '@/lib/seo';
@@ -31,7 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Páginas de produto dinâmicas
   let productEntries: MetadataRoute.Sitemap = [];
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    const apiUrl = serverApiUrl();
     const res = await fetch(`${apiUrl}/products`, { next: { revalidate: 3600 } });
     if (res.ok) {
       const products: { slug: string; updatedAt: string }[] = await res.json();

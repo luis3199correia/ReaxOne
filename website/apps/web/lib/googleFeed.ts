@@ -1,3 +1,4 @@
+import { serverApiUrl } from './serverApi';
 import type { Locale } from '@/i18n/config';
 import { localizePath } from '@/i18n/routing';
 import { BASE_URL } from '@/lib/seo';
@@ -127,7 +128,7 @@ export function buildGoogleFeed(products: FeedProduct[], locale: Locale): string
 // Resposta HTTP do feed. Se a API falhar devolve 503 (e não um feed vazio),
 // para o Google não desativar os produtos por engano.
 export async function googleFeedResponse(locale: Locale): Promise<Response> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const apiUrl = serverApiUrl();
   try {
     const res = await fetch(`${apiUrl}/products`, { next: { revalidate: FEED_REVALIDATE_SECONDS } });
     if (!res.ok) throw new Error(`API respondeu ${res.status}`);

@@ -1,3 +1,4 @@
+import { serverApiUrl } from '@/lib/serverApi';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { localeAlternates } from '@/lib/seo';
@@ -19,7 +20,7 @@ const HTTP_NOT_FOUND = 404;
 
 // Mesmo URL e opções em generateMetadata e no layout → o Next deduplica o pedido
 function fetchProduct(slug: string) {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const apiUrl = serverApiUrl();
   return fetch(`${apiUrl}/products/${encodeURIComponent(slug)}`, { next: { revalidate: 3600 } });
 }
 

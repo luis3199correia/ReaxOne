@@ -1,3 +1,4 @@
+import { serverApiUrl } from '@/lib/serverApi';
 import { notFound, redirect } from 'next/navigation';
 import { localizePath } from '@/i18n/routing';
 import type { Locale } from '@/i18n/config';
@@ -10,7 +11,7 @@ import type { Locale } from '@/i18n/config';
 const CATEGORIES_REVALIDATE_SECONDS = 60;
 
 async function categoryExists(slug: string): Promise<boolean> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const apiUrl = serverApiUrl();
   try {
     const res = await fetch(`${apiUrl}/categories`, { next: { revalidate: CATEGORIES_REVALIDATE_SECONDS } });
     if (!res.ok) return false;

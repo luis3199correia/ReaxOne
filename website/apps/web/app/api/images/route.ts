@@ -1,3 +1,4 @@
+import { serverApiUrl } from '@/lib/serverApi';
 import { NextResponse } from 'next/server';
 import { readdir, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
@@ -20,7 +21,7 @@ const UPLOAD_TYPES: Record<string, string[]> = {
   '.avif': ['image/avif'],
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = serverApiUrl();
 
 /**
  * Confirma que o pedido vem de um ADMIN autenticado.

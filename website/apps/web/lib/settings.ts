@@ -1,3 +1,4 @@
+import { serverApiUrl } from './serverApi';
 import type { FreeShippingThresholds } from './shippingRates';
 
 export interface PublicSettings {
@@ -91,13 +92,18 @@ export function getFreeShippingThresholds(s: PublicSettings, now: number = Date.
 }
 
 export async function fetchPublicSettings(): Promise<PublicSettings> {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const apiUrl = serverApiUrl();
   try {
     const res = await fetch(`${apiUrl}/settings/public`, { cache: 'no-store' });
-    if (!res.ok) return DEFAULT_SETTINGS;
+    if (!res.ok) {
+      console.error(`[settings] ${apiUrl}/settings/public respondeu ${res.status}; a usar valores por defeito`);
+      return DEFAULT_SETTINGS;
+    }
     const data = await res.json();
     return { ...DEFAULT_SETTINGS, ...data };
-  } catch {
+  } catch (err) {
+    // Sem isto o site mostra em silêncio o WhatsApp/email/banner por defeito
+    console.error(`[settings] Falha ao ler ${apiUrl}/settings/public; a usar valores por defeito:`, err);
     return DEFAULT_SETTINGS;
   }
 }
