@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { useCategoryLabel } from '@/lib/category';
 import { formatEuro, getFreeShippingThresholds } from '@/lib/settings';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import { ShopQuery, readShopQuery } from '@/lib/shopNavigation';
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
@@ -106,6 +107,12 @@ export default function ProductPage({ params: paramsPromise }: Props) {
   const [activeImg, setActiveImg] = useState(0);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  // Lido depois de montar (sessionStorage não existe no servidor)
+  const [shopBackQuery, setShopBackQuery] = useState<ShopQuery | null>(null);
+
+  useEffect(() => {
+    setShopBackQuery(readShopQuery());
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -179,13 +186,27 @@ export default function ProductPage({ params: paramsPromise }: Props) {
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-6 py-10">
 
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-brand-muted mb-8">
-          <Link href="/loja" className="hover:text-brand-primary flex items-center gap-1 transition-colors">
+        {/* Breadcrumb: "Loja" volta ao filtro/ordenação de onde se veio */}
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-sm text-brand-muted mb-8">
+          <Link
+            href={{ pathname: '/loja', query: shopBackQuery ?? {} }}
+            className="hover:text-brand-primary flex items-center gap-1 transition-colors"
+          >
             <ChevronLeft className="w-4 h-4" /> {t('back_to_shop')}
           </Link>
-          <span>/</span>
-          <span className="text-brand-dark font-medium">{getTranslatedName()}</span>
+          {product.categorySlug && product.category && (
+            <>
+              <span aria-hidden="true">/</span>
+              <Link
+                href={{ pathname: '/loja', query: { categoria: product.categorySlug } }}
+                className="hover:text-brand-primary transition-colors"
+              >
+                {categoryLabel(product.category, product.categorySlug, product.categoryEn)}
+              </Link>
+            </>
+          )}
+          <span aria-hidden="true">/</span>
+          <span className="text-brand-dark font-medium" aria-current="page">{getTranslatedName()}</span>
         </nav>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16">

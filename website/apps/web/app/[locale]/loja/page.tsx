@@ -8,8 +8,8 @@ import ProductCard, { Product } from '@/components/shop/ProductCard';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useCategoryLabel } from '@/lib/category';
+import { SortKey, saveShopQuery, shopQuery, sortFromParam } from '@/lib/shopNavigation';
 
-type SortKey = 'newest' | 'price_asc' | 'price_desc';
 
 function toProduct(p: any): Product {
   return {
@@ -50,7 +50,8 @@ export default function ShopPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   // A categoria ativa vive no URL: partilhável e mantida ao trocar de idioma
   const activeCategory = useMemo(() => resolveCategory(categoryParam, categories), [categoryParam, categories]);
-  const [sort, setSort] = useState<SortKey>('newest');
+  // A ordenação também vive no URL, para se manter ao voltar de um produto
+  const sort = sortFromParam(searchParams.get('ordem'));
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -70,10 +71,20 @@ export default function ShopPage() {
     }).finally(() => setLoading(false));
   }, []);
 
-  function selectCategory(slug: string) {
-    const href = slug === ALL_KEY ? { pathname: '/loja' as const } : { pathname: '/loja' as const, query: { categoria: slug } };
-    router.replace(href, { scroll: false });
+  function navigate(category: string, nextSort: SortKey) {
+    const query = shopQuery(category === ALL_KEY ? undefined : category, nextSort);
+    router.replace({ pathname: '/loja', query }, { scroll: false });
   }
+
+  function selectCategory(slug: string) {
+    navigate(slug, sort);
+  }
+
+  // Último filtro/ordenação usados: o breadcrumb da página de produto volta para aqui
+  useEffect(() => {
+    if (loading) return;
+    saveShopQuery(shopQuery(activeCategory === ALL_KEY ? undefined : activeCategory, sort));
+  }, [loading, activeCategory, sort]);
 
   const allCategories = [ALL_KEY, ...categories.map((c) => c.slug)];
 
@@ -151,7 +162,7 @@ export default function ShopPage() {
               <select
                 id="sort"
                 value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
+                onChange={(e) => navigate(activeCategory, e.target.value as SortKey)}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-primary"
               >
                 <option value="newest">{t('sort_newest')}</option>
