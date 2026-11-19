@@ -16,6 +16,7 @@
     "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1172.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.0",
@@ -33,6 +34,7 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
+    "pdf-lib": "^1.17.1",
     "reflect-metadata": "^0.2.0",
     "resend": "^4.8.0",
     "rxjs": "^7.8.0"

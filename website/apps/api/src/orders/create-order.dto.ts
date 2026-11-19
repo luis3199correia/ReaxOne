@@ -105,6 +105,10 @@ export class CreateOrderDto {
   @IsOptional() @IsString() @MaxLength(NOTES_MAX_LENGTH)
   notes?: string;
 
+  // Ebooks pagos: aceita a entrega imediata e a perda do direito de livre resolução
+  @IsOptional() @IsBoolean()
+  digitalWaiver?: boolean;
+
   @IsOptional() @IsArray() @ArrayMaxSize(MAX_GIFTS)
   @ValidateNested({ each: true }) @Type(() => CreateOrderGiftDto)
   gifts?: CreateOrderGiftDto[];

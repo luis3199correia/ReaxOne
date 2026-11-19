@@ -9,6 +9,10 @@ describe('isFreeEbook', () => {
     expect(isFreeEbook({ price: 0, category: { slug: 'ebooks' } })).toBe(true);
   });
 
+  it('is true for an ebook with only the English file and price 0', () => {
+    expect(isFreeEbook({ price: 0, ebookFileEn: 'ebooks/a-en.pdf' })).toBe(true);
+  });
+
   it('is false for a paid ebook', () => {
     expect(isFreeEbook({ price: 9.99, ebookFile: 'ebooks/a.pdf' })).toBe(false);
   });

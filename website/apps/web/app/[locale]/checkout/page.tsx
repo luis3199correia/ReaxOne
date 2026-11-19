@@ -162,6 +162,8 @@ export default function CheckoutPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // Ebooks pagos: aceitação expressa da entrega imediata (perde-se o direito de livre resolução)
+  const [digitalWaiver, setDigitalWaiver] = useState(false);
 
   // Código de desconto (o valor final é sempre recalculado pelo servidor)
   const [discountInput, setDiscountInput] = useState('');
@@ -230,6 +232,7 @@ export default function CheckoutPage() {
 
   // Detetar se todos os itens são ebooks (entrega digital, sem portes)
   const isAllEbooks = items.length > 0 && items.every((i) => i.isEbook);
+  const hasEbooks   = items.some((i) => i.isEbook);
   const isPickup    = !isAllEbooks && deliveryMode === 'pickup';
 
   // Métodos ligados no backoffice; Apple Pay só em dispositivos Apple e
@@ -295,6 +298,10 @@ export default function CheckoutPage() {
       setError('O pagamento em mão só está disponível com levantamento da encomenda.');
       return;
     }
+    if (hasEbooks && !digitalWaiver) {
+      setError(t('digital_waiver_required'));
+      return;
+    }
     if (giftsIncomplete) {
       setShowGiftError(true);
       setError(tGift('must_choose'));
@@ -327,6 +334,7 @@ export default function CheckoutPage() {
         shippingMethod: isAllEbooks ? 'digital' : isPickup ? PICKUP_METHOD_ID : selectedShipping!.id,
         discountCode:   appliedDiscount?.code,
         notes:          data.notes?.trim() || undefined,
+        digitalWaiver:  hasEbooks ? digitalWaiver : undefined,
         gifts: Object.entries(giftSelection).map(([productId, quantity]) => ({ productId, quantity })),
         items: items.map((i) => ({
           productId: i.id,
@@ -864,6 +872,18 @@ export default function CheckoutPage() {
                 <span>€{orderTotal.toFixed(2)}</span>
               </div>
             </div>
+            {hasEbooks && (
+              <label className="flex items-start gap-3 mt-6 text-sm text-gray-700 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={digitalWaiver}
+                  onChange={(e) => setDigitalWaiver(e.target.checked)}
+                  className="w-5 h-5 mt-0.5 flex-shrink-0 accent-brand-primary"
+                  required
+                />
+                <span>{t('digital_waiver')}</span>
+              </label>
+            )}
             <button
               type="submit"
               disabled={submitting || items.length === 0 || (needsShippingQuote && (!shippingCalculated || !selectedShipping))}

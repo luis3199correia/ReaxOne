@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { ChevronDown, ChevronUp, CheckCircle, Loader2, RefreshCw, XCircle, Trash2, AlertCircle, MessageCircle } from 'lucide-react';
 import { PICKUP_ADDRESS, PICKUP_METHOD_ID, PICKUP_PLACE, customerWhatsappUrl } from '@/lib/pickup';
 import OrderInvoice, { InvoiceFields, hasInvoice } from '@/components/admin/OrderInvoice';
+import OrderEbooks, { EbookFields } from '@/components/admin/OrderEbooks';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:   'Pendente',
@@ -64,7 +65,7 @@ type OrderItem = {
   isGift?: boolean;
 };
 
-type Order = InvoiceFields & {
+type Order = InvoiceFields & EbookFields & {
   id: string;
   firstName: string;
   lastName: string;
@@ -149,6 +150,10 @@ export default function AdminEncomendas() {
   }
 
   function updateInvoice(id: string, fields: InvoiceFields) {
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...fields } : o)));
+  }
+
+  function updateEbooks(id: string, fields: EbookFields) {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...fields } : o)));
   }
 
@@ -429,6 +434,13 @@ export default function AdminEncomendas() {
                                   paymentStatus={order.payment?.status}
                                   invoice={order}
                                   onUpdated={(fields) => updateInvoice(order.id, fields)}
+                                />
+
+                                <OrderEbooks
+                                  orderId={order.id}
+                                  paymentStatus={order.payment?.status}
+                                  ebooks={order}
+                                  onUpdated={(fields) => updateEbooks(order.id, fields)}
                                 />
 
                                 <div className="flex flex-col gap-2">

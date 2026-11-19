@@ -26,6 +26,8 @@ interface Product {
   featured: boolean;
   downloadUrl?: string | null;
   downloadUrlEn?: string | null;
+  ebookFile?: string | null;
+  ebookFileEn?: string | null;
 }
 
 interface Category {
@@ -56,6 +58,8 @@ const EMPTY_FORM = {
   featured: false,
   downloadUrl: '',
   downloadUrlEn: '',
+  ebookFile: '',
+  ebookFileEn: '',
 };
 
 /* ─── Image Picker Overlay ─────────────────────────────────────────────── */
@@ -281,6 +285,8 @@ export default function AdminProductsPage() {
       featured: p.featured ?? false,
       downloadUrl: p.downloadUrl ?? '',
       downloadUrlEn: p.downloadUrlEn ?? '',
+      ebookFile: p.ebookFile ?? '',
+      ebookFileEn: p.ebookFileEn ?? '',
     });
     setSaveError('');
     setLangTab('pt');
@@ -353,6 +359,8 @@ export default function AdminProductsPage() {
       // vazio → null, para se poder apagar o link
       downloadUrl: form.downloadUrl.trim() || null,
       downloadUrlEn: form.downloadUrlEn.trim() || null,
+      ebookFile: form.ebookFile.trim() || null,
+      ebookFileEn: form.ebookFileEn.trim() || null,
       ...(form.categoryId ? { categoryId: form.categoryId } : {}),
     };
 
@@ -790,6 +798,14 @@ export default function AdminProductsPage() {
                   <div className="col-span-2">
                     {langTab === 'pt' ? (
                       <>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Ficheiro PDF no R2 — ebook pago <span className="text-gray-400 font-normal">(Português)</span></label>
+                        <input
+                          type="text"
+                          value={form.ebookFile}
+                          onChange={(e) => handleField('ebookFile', e.target.value)}
+                          className="input text-sm font-mono mb-3"
+                          placeholder="ebooks/nome-do-ebook-pt.pdf"
+                        />
                         <label className="block text-sm font-medium text-gray-700 mb-1">Link de download <span className="text-gray-400 font-normal">(Português)</span></label>
                         <input
                           type="url"
@@ -801,6 +817,14 @@ export default function AdminProductsPage() {
                       </>
                     ) : (
                       <>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">PDF file in R2 — paid ebook <span className="text-gray-400 font-normal">(English)</span></label>
+                        <input
+                          type="text"
+                          value={form.ebookFileEn}
+                          onChange={(e) => handleField('ebookFileEn', e.target.value)}
+                          className="input text-sm font-mono mb-3"
+                          placeholder="ebooks/ebook-name-en.pdf"
+                        />
                         <label className="block text-sm font-medium text-gray-700 mb-1">Download link <span className="text-gray-400 font-normal">(English)</span></label>
                         <input
                           type="url"
@@ -812,7 +836,8 @@ export default function AdminProductsPage() {
                       </>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
-                      Só usado quando o ebook é gratuito (preço 0): a loja mostra o botão de download no idioma do cliente em vez de &quot;Adicionar ao carrinho&quot;.
+                      <strong>Ebook pago:</strong> nome do ficheiro no bucket R2 privado. Depois do pagamento, o cliente recebe por email os PDFs dos dois idiomas que existirem, em anexo.<br />
+                      <strong>Ebook gratuito (preço 0):</strong> usa o link de download — a loja mostra o botão de download no idioma do cliente em vez de &quot;Adicionar ao carrinho&quot;.
                     </p>
                   </div>
                 )}

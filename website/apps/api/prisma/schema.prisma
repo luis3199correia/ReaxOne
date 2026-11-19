@@ -82,7 +82,8 @@ model Product {
   stock       Int      @default(0)
   active      Boolean  @default(true)
   featured    Boolean  @default(false)
-  ebookFile   String?  // caminho para o PDF (apenas para produtos da categoria Ebooks)
+  ebookFile   String?  // ebook pago: chave do PDF no bucket R2 privado — PT
+  ebookFileEn String?  // ebook pago: chave do PDF no bucket R2 privado — EN
   downloadUrl   String? // link público de download (ebooks gratuitos) — PT
   downloadUrlEn String? // link público de download (ebooks gratuitos) — EN
   facturalusaItemId Int? // ID do artigo no Facturalusa (criado na primeira fatura)
@@ -153,6 +154,10 @@ model Order {
   invoiceError    String?   // último erro (ou aviso de total diferente)
   invoiceAttempts Int       @default(0)
   invoicedAt      DateTime?
+
+  // Ebooks pagos: aceitação da perda do direito de livre resolução (conteúdo digital) e envio do PDF
+  digitalWaiverAt DateTime?
+  ebooksSentAt    DateTime?
 
   user       User?         @relation(fields: [userId], references: [id])
   items      OrderItem[]

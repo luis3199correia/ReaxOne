@@ -1,14 +1,18 @@
 export const EBOOKS_CATEGORY_SLUG = 'ebooks';
 
-interface EbookLike {
-  price: number;
+interface EbookFields {
   ebookFile?: string | null;
+  ebookFileEn?: string | null;
   category?: { slug?: string | null } | null;
 }
 
-/** Ebook (tem ficheiro ou está na categoria Ebooks). */
-export function isEbookProduct(product: EbookLike): boolean {
-  return !!product.ebookFile || product.category?.slug === EBOOKS_CATEGORY_SLUG;
+interface EbookLike extends EbookFields {
+  price: number;
+}
+
+/** Ebook (tem ficheiro PT/EN ou está na categoria Ebooks). */
+export function isEbookProduct(product: EbookFields): boolean {
+  return !!product.ebookFile || !!product.ebookFileEn || product.category?.slug === EBOOKS_CATEGORY_SLUG;
 }
 
 /**

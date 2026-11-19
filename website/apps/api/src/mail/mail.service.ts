@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Resend } from 'resend';
-import * as fs from 'fs';
-import * as path from 'path';
 import { SettingsService, PublicSettings } from '../settings/settings.service';
 import { PICKUP_ADDRESS, PICKUP_MAPS_URL, PICKUP_METHOD_ID, PICKUP_PLACE, customerWhatsappUrl } from '../orders/pickup';
 
@@ -117,25 +115,13 @@ export class MailService {
     to: string,
     firstName: string,
     orderId: string,
-    ebooks: Array<{ title: string; filePath: string }>,
+    titles: string[],
+    attachments: Array<{ filename: string; content: Buffer }>,
   ): Promise<void> {
     const shortId = orderId.slice(-8).toUpperCase();
     const settings = await this.settingsService.getPublicSettings();
 
-    const attachments: Array<{ filename: string; content: Buffer }> = [];
-    for (const ebook of ebooks) {
-      const absPath = path.isAbsolute(ebook.filePath)
-        ? ebook.filePath
-        : path.join(process.cwd(), ebook.filePath);
-
-      if (!fs.existsSync(absPath)) {
-        this.logger.warn(`Ficheiro ebook não encontrado: ${absPath}`);
-        continue;
-      }
-      attachments.push({ filename: `${ebook.title}.pdf`, content: fs.readFileSync(absPath) });
-    }
-
-    const ebookListHtml = ebooks.map((e) => `<li>${e.title}</li>`).join('');
+    const ebookListHtml = titles.map((title) => `<li>${esc(title)}</li>`).join('');
 
     const { error } = await this.resend.emails.send({
       from:    this.from,

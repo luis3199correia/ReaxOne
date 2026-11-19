@@ -11,7 +11,8 @@ import { PICKUP_METHOD_ID } from './pickup';
 import { OnlinePaymentService, PaymentAction } from './online-payment.service';
 import { IfthenpayClient } from '../payments/ifthenpay.client';
 import { InvoicingService } from '../invoicing/invoicing.service';
-import { isFreeEbook } from '../products/free-ebook';
+import { isEbookProduct, isFreeEbook } from '../products/free-ebook';
+import { EbooksService } from '../ebooks/ebooks.service';
 import {
   OnlineMethod, amountMatches, enabledOnlineMethods, isOnlineMethod, normalizeMbwayPhone,
 } from '../payments/ifthenpay.rules';
@@ -54,6 +55,7 @@ export class OrdersService {
     private onlinePayments: OnlinePaymentService,
     private ifthenpay: IfthenpayClient,
     private invoicing: InvoicingService,
+    private ebooks: EbooksService,
   ) {}
 
   /**
@@ -88,6 +90,7 @@ export class OrdersService {
     shippingMethod?: string;
     discountCode?: string;
     notes?: string;
+    digitalWaiver?: boolean; // obrigatório com ebooks pagos
     // Ofertas escolhidas pelo cliente (cor das meias); validadas no servidor
     gifts?: Array<{ productId: string; quantity: number }>;
     // price, name e shippingCost podem vir no body mas são ignorados — recalculados no servidor
@@ -98,6 +101,12 @@ export class OrdersService {
     }>;
   }) {
     const { items, itemsTotal } = await this.priceItems(data.items);
+
+    // Conteúdo digital (UE): sem a aceitação expressa o cliente mantém os 14 dias de livre resolução
+    const hasEbooks = items.some((i) => i.isEbook);
+    if (hasEbooks && data.digitalWaiver !== true) {
+      throw new BadRequestException('Para comprar ebooks tens de aceitar a entrega imediata do conteúdo digital.');
+    }
     const notes = parseNotes(data.notes);
     const giftLines = await this.promotionsService.resolveOrderGifts(items, data.gifts);
     const isAllDigital = items.every((i) => i.isEbook);
@@ -166,6 +175,7 @@ export class OrdersService {
           discountAmount,
           totalAmount,
           notes,
+          digitalWaiverAt: hasEbooks ? new Date() : null,
           ...(online ? { status: 'AWAITING_PAYMENT' as const } : {}),
           items: {
             create: [
@@ -326,7 +336,7 @@ export class OrdersService {
 
     const products = await this.prisma.product.findMany({
       where:  { id: { in: rawItems.map((i) => i.productId) }, active: true },
-      select: { id: true, name: true, price: true, ebookFile: true, category: { select: { slug: true } } },
+      select: { id: true, name: true, price: true, ebookFile: true, ebookFileEn: true, category: { select: { slug: true } } },
     });
     const byId = new Map(products.map((p) => [p.id, p]));
 
@@ -342,7 +352,7 @@ export class OrdersService {
         price:     product.price,
         quantity:  i.quantity,
         size:      typeof i.size === 'string' ? i.size : undefined,
-        isEbook:   !!product.ebookFile,
+        isEbook:   isEbookProduct(product),
       };
     });
     const itemsTotal = roundCents(items.reduce((acc, i) => acc + i.price * i.quantity, 0));
@@ -354,10 +364,10 @@ export class OrdersService {
     const productIds: string[] = order.items.map((i: any) => i.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, ebookFile: true },
+      select: { id: true, ebookFile: true, ebookFileEn: true, category: { select: { slug: true } } },
     });
     const ebookIds = new Set(
-      products.filter((p) => p.ebookFile).map((p) => p.id),
+      products.filter((p) => isEbookProduct(p)).map((p) => p.id),
     );
 
     // Filtrar apenas os itens físicos para a Batch
@@ -510,7 +520,7 @@ export class OrdersService {
   async confirmOnlinePayment(input: { providerRef: string; methods: OnlineMethod[]; amount: unknown }) {
     const payment = await this.prisma.payment.findUnique({
       where:   { providerRef: input.providerRef },
-      include: { order: { include: { items: { include: { product: { select: { ebookFile: true } } } } } } },
+      include: { order: { include: { items: { include: { product: { select: { ebookFile: true, ebookFileEn: true, category: { select: { slug: true } } } } } } } } },
     });
     if (!payment || !input.methods.includes(payment.method as OnlineMethod)) {
       throw new NotFoundException('Pagamento não encontrado');
@@ -530,7 +540,7 @@ export class OrdersService {
       if (updated.count === 0) return null; // outra notificação chegou primeiro
       if (wasCancelled) {
         for (const item of payment.order.items) {
-          if (item.product?.ebookFile) continue;
+          if (item.product && isEbookProduct(item.product)) continue;
           await tx.product.update({ where: { id: item.productId }, data: { stock: { decrement: item.quantity } } });
         }
       }
@@ -568,7 +578,7 @@ export class OrdersService {
     );
 
     this.fireAndForget(
-      () => this.deliverEbooks(order.id, order.email, order.firstName),
+      () => this.ebooks.deliverForOrder(order.id),
       '[Mail] Erro ao entregar ebooks',
     );
 
@@ -581,32 +591,5 @@ export class OrdersService {
       this.notifyAdminOfOrder(order);
       if (order.shippingMethod !== PICKUP_METHOD_ID && !order.batchOrderNumber) this.sendToBatch(order);
     }
-  }
-
-  private async deliverEbooks(
-    orderId: string,
-    email: string,
-    firstName: string,
-  ): Promise<void> {
-    // Buscar itens da encomenda com os respetivos produtos
-    const items = await this.prisma.orderItem.findMany({
-      where: { orderId },
-      include: {
-        product: {
-          select: { id: true, name: true, ebookFile: true },
-        },
-      },
-    });
-
-    // Filtrar itens que têm ficheiro de ebook
-    const ebookItems = items.filter((i) => i.product?.ebookFile);
-    if (ebookItems.length === 0) return;
-
-    const ebooks = ebookItems.map((i) => ({
-      title:    i.product.name,
-      filePath: i.product.ebookFile as string,
-    }));
-
-    await this.mailService.sendEbookDelivery(email, firstName, orderId, ebooks);
   }
 }

@@ -125,6 +125,8 @@
     "discount": "Discount",
     "discount_invalid": "Invalid discount code.",
     "notes_label": "Order notes (optional)",
+    "digital_waiver": "I agree to receive the ebook immediately by email once payment is confirmed, and I acknowledge that I then lose my right of withdrawal.",
+    "digital_waiver_required": "To buy ebooks you must agree to the immediate delivery of digital content.",
     "notes_placeholder": "Anything we should know about the delivery or your order?"
   },
   "account": {

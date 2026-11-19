@@ -15,12 +15,14 @@ import { RolesGuard } from '../auth/roles.guard';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './create-order.dto';
 import { InvoicingService } from '../invoicing/invoicing.service';
+import { EbooksService } from '../ebooks/ebooks.service';
 
 @Controller('orders')
 export class OrdersController {
   constructor(
     private ordersService: OrdersService,
     private invoicing: InvoicingService,
+    private ebooks: EbooksService,
   ) {}
 
   // Criar encomenda (pode ser guest ou autenticado)
@@ -80,6 +82,13 @@ export class OrdersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   issueInvoice(@Param('id') id: string) {
     return this.invoicing.issueManually(id);
+  }
+
+  // Admin: voltar a enviar o email com os ebooks (PDF em anexo)
+  @Post(':id/ebooks/resend')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  resendEbooks(@Param('id') id: string) {
+    return this.ebooks.resend(id);
   }
 
   // Admin: apagar várias encomendas de uma vez

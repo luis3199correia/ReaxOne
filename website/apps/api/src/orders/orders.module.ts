@@ -11,9 +11,10 @@ import { IfthenpayClient } from '../payments/ifthenpay.client';
 import { OnlinePaymentService } from './online-payment.service';
 import { PaymentsController } from './payments.controller';
 import { InvoicingModule } from '../invoicing/invoicing.module';
+import { EbooksModule } from '../ebooks/ebooks.module';
 
 @Module({
-  imports:     [PrismaModule, BatchModule, MailModule, SettingsModule, DiscountsModule, PromotionsModule, InvoicingModule],
+  imports:     [PrismaModule, BatchModule, MailModule, SettingsModule, DiscountsModule, PromotionsModule, InvoicingModule, EbooksModule],
   providers:   [OrdersService, OnlinePaymentService, IfthenpayClient],
   controllers: [OrdersController, PaymentsController],
   exports:     [OrdersService],

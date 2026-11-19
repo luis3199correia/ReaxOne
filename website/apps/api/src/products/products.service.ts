@@ -10,11 +10,12 @@ import { isEbookProduct, isFreeEbook } from './free-ebook';
 function toPublic<T extends {
   price: number;
   ebookFile?: string | null;
+  ebookFileEn?: string | null;
   downloadUrl?: string | null;
   downloadUrlEn?: string | null;
   category?: { slug: string } | null;
 }>(product: T) {
-  const { ebookFile, downloadUrl, downloadUrlEn, ...rest } = product;
+  const { ebookFile, ebookFileEn, downloadUrl, downloadUrlEn, ...rest } = product;
   const free = isFreeEbook(product);
   // Os links de download só são públicos quando o ebook é gratuito
   const links = free ? { downloadUrl: downloadUrl ?? null, downloadUrlEn: downloadUrlEn ?? null } : {};
