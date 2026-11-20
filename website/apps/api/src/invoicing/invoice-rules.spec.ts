@@ -199,13 +199,9 @@ describe('productArticlePayload', () => {
     expect(payload).toMatchObject({ reference: 'bola-rosa', description: 'Bola Rosa', category: 86996 });
   });
 
-  it('envia o preço sem IVA para a tabela de preços indicada', () => {
+  it('envia o preço da loja (com IVA) para a tabela de preços indicada', () => {
     const payload = productArticlePayload({ slug: 'meias', name: 'Meias', price: 12.3 }, 64520);
-    expect(payload.prices).toEqual([{ id: '64520', price: 10, discount: 0 }]);
-  });
-
-  it('arredonda o preço sem IVA a 4 casas decimais', () => {
-    expect(productArticlePayload({ slug: 'b', name: 'B', price: 19.99 }, 64520).prices?.[0].price).toBe(16.252);
+    expect(payload.prices).toEqual([{ id: '64520', price: 12.3, discount: 0 }]);
   });
 
   it('sem tabela de preços (ou sem preço) não envia preços', () => {

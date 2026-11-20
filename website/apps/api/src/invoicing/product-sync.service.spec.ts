@@ -62,7 +62,7 @@ describe('ProductSyncService.syncProducts', () => {
     await service.syncProducts();
 
     expect(client.updateItem).toHaveBeenCalledWith(10, expect.objectContaining({
-      prices: [{ id: '64520', price: 20, discount: 0 }],
+      prices: [{ id: '64520', price: 24.6, discount: 0 }],
     }));
   });
 

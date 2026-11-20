@@ -18,9 +18,6 @@ const DISCOUNT_DECIMALS = 6;
 const DETAILS_MAX_LENGTH = 255;
 const ARTICLE_REFERENCE_MAX_LENGTH = 60;  // limites SAF-T (changelog 2026-10-18)
 const ARTICLE_DESCRIPTION_MAX_LENGTH = 200;
-const ARTICLE_PRICE_DECIMALS = 4;
-// Os preços dos artigos no Facturalusa são guardados sem IVA (a loja guarda-os com IVA)
-const ARTICLE_PRICES_INCLUDE_VAT = false;
 const CUSTOMER_NAME_MAX_LENGTH = 200;
 const LISBON_TIME_ZONE = 'Europe/Lisbon';
 
@@ -138,11 +135,10 @@ export interface ArticleProduct {
   facturalusaCategoryId?: number | null;
 }
 
-/** Preço do artigo na tabela de preços, ou null se não houver tabela/preço. */
+/** Preço do artigo na tabela de preços (com IVA, como na loja), ou null se não houver tabela/preço. */
 export function articlePrices(price: number | undefined, priceTableId: number | null | undefined): ArticlePrice[] | null {
   if (!priceTableId || price === undefined || !Number.isFinite(price) || price < 0) return null;
-  const value = ARTICLE_PRICES_INCLUDE_VAT ? price : price / (1 + VAT_RATE / 100);
-  return [{ id: String(priceTableId), price: Number(value.toFixed(ARTICLE_PRICE_DECIMALS)), discount: 0 }];
+  return [{ id: String(priceTableId), price: round2(price), discount: 0 }];
 }
 
 export function productArticlePayload(product: ArticleProduct, priceTableId?: number | null) {

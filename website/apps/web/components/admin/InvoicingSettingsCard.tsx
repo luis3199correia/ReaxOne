@@ -197,7 +197,7 @@ export default function InvoicingSettingsCard() {
               }}
             />
             <p className="text-xs text-gray-400 mt-1">
-              Na sincronização, o preço de cada produto vai para esta tabela do Facturalusa (sem IVA).
+              Na sincronização, o preço de cada produto vai para esta tabela do Facturalusa (com IVA).
             </p>
           </div>
 
