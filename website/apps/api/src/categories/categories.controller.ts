@@ -33,7 +33,7 @@ export class CategoriesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  create(@Body() body: { name: string; nameEn?: string; slug: string }) {
+  create(@Body() body: { name: string; nameEn?: string; slug: string; facturalusaCategoryId?: unknown }) {
     return this.categoriesService.create(body);
   }
 
@@ -41,7 +41,7 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   update(
     @Param('id') id: string,
-    @Body() body: { name?: string; nameEn?: string | null; slug?: string; visible?: boolean },
+    @Body() body: { name?: string; nameEn?: string | null; slug?: string; visible?: boolean; facturalusaCategoryId?: unknown },
   ) {
     return this.categoriesService.update(id, body);
   }

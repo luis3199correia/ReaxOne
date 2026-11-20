@@ -8,6 +8,7 @@ interface InvoicingSettings {
   enabled: boolean;
   draft: boolean;
   series: string;
+  priceTableId: number | null;
   keyConfigured: boolean;
 }
 
@@ -104,7 +105,7 @@ export default function InvoicingSettingsCard() {
     setError('');
     try {
       const res = await api.patch<InvoicingSettings>('/invoicing/settings', {
-        enabled: form.enabled, draft: form.draft, series: form.series,
+        enabled: form.enabled, draft: form.draft, series: form.series, priceTableId: form.priceTableId,
       });
       setForm(res.data);
       setSaved(true);
@@ -181,6 +182,23 @@ export default function InvoicingSettingsCard() {
               onChange={(e) => update('series', e.target.value)}
             />
             <p className="text-xs text-gray-400 mt-1">Tem de estar comunicada à AT no Facturalusa para o tipo Factura Recibo.</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">ID da tabela de preços</label>
+            <input
+              className="input font-mono"
+              inputMode="numeric"
+              placeholder="Vazio = artigos sem preço"
+              value={form.priceTableId ?? ''}
+              onChange={(e) => {
+                const digits = e.target.value.replace(/\D/g, '');
+                update('priceTableId', digits ? Number(digits) : null);
+              }}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Na sincronização, o preço de cada produto vai para esta tabela do Facturalusa (sem IVA).
+            </p>
           </div>
 
           <button

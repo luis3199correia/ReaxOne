@@ -7,9 +7,11 @@ interface FakeProduct {
   slug: string;
   name: string;
   facturalusaItemId: number | null;
+  price?: number;
+  category?: { facturalusaCategoryId: number | null } | null;
 }
 
-function setup(products: FakeProduct[], opts: { configured?: boolean } = {}) {
+function setup(products: FakeProduct[], opts: { configured?: boolean; priceTableId?: number | null } = {}) {
   const client = {
     isConfigured: opts.configured ?? true,
     findItemByReference: jest.fn().mockResolvedValue(null),
@@ -22,7 +24,8 @@ function setup(products: FakeProduct[], opts: { configured?: boolean } = {}) {
       update: jest.fn().mockResolvedValue(undefined),
     },
   };
-  const service = new ProductSyncService(prisma as any, client as any);
+  const settings = { getPriceTableId: jest.fn().mockResolvedValue(opts.priceTableId ?? null) };
+  const service = new ProductSyncService(prisma as any, client as any, settings as any);
   return { service, client, prisma };
 }
 
@@ -43,6 +46,24 @@ describe('ProductSyncService.syncProducts', () => {
     expect(client.updateItem).toHaveBeenCalledWith(10, expect.objectContaining({ reference: 't-shirt', description: 'T-shirt' }));
     expect(client.findItemByReference).not.toHaveBeenCalled();
     expect(result).toEqual({ total: 1, created: 0, updated: 1, failed: [], stoppedReason: null });
+  });
+
+  it('envia a categoria do Facturalusa associada à categoria da loja', async () => {
+    const { service, client } = setup([{ ...linked, category: { facturalusaCategoryId: 86995 } }]);
+
+    await service.syncProducts();
+
+    expect(client.updateItem).toHaveBeenCalledWith(10, expect.objectContaining({ category: 86995 }));
+  });
+
+  it('envia o preço para a tabela de preços configurada', async () => {
+    const { service, client } = setup([{ ...linked, price: 24.6 }], { priceTableId: 64520 });
+
+    await service.syncProducts();
+
+    expect(client.updateItem).toHaveBeenCalledWith(10, expect.objectContaining({
+      prices: [{ id: '64520', price: 20, discount: 0 }],
+    }));
   });
 
   it('cria o artigo quando não existe e guarda o ID', async () => {
@@ -77,6 +98,29 @@ describe('ProductSyncService.syncProducts', () => {
     expect(client.findItemByReference).toHaveBeenCalledWith('t-shirt');
     expect(prisma.product.update).toHaveBeenCalledWith({ where: { id: 'p1' }, data: { facturalusaItemId: 500 } });
     expect(result.created).toBe(1);
+  });
+
+  it('volta a ligar pela referência quando o Facturalusa diz que o id é inválido', async () => {
+    const { service, client, prisma } = setup([linked]);
+    client.updateItem.mockRejectedValueOnce(new FacturalusaError('O valor seleccionado para o campo id é inválido.', 422));
+
+    const result = await service.syncProducts();
+
+    expect(client.findItemByReference).toHaveBeenCalledWith('t-shirt');
+    expect(prisma.product.update).toHaveBeenCalledWith({ where: { id: 'p1' }, data: { facturalusaItemId: 500 } });
+    expect(result.created).toBe(1);
+  });
+
+  it('quando a referência aponta para o mesmo id que falhou, indica que o problema é a atualização', async () => {
+    const { service, client } = setup([linked]);
+    client.updateItem.mockRejectedValue(new FacturalusaError('O valor seleccionado para o campo id é inválido.', 422));
+    client.findItemByReference.mockResolvedValue(10);
+
+    const result = await service.syncProducts();
+
+    expect(client.createItem).not.toHaveBeenCalled();
+    expect(result.failed).toHaveLength(1);
+    expect(result.failed[0].error).toMatch(/artigo 10 existe.*não aceitou a atualização/i);
   });
 
   it('regista o erro de um produto e continua com os seguintes', async () => {

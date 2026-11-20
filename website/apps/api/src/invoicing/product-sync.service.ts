@@ -1,8 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FacturalusaClient, FacturalusaError } from './facturalusa.client';
-import { isNotFoundResponse } from './facturalusa.rules';
+import { isInvalidIdResponse, isNotFoundResponse } from './facturalusa.rules';
 import { articleReference, productArticlePayload } from './invoice-rules';
+import { InvoicingSettingsService } from './invoicing-settings.service';
 
 const HTTP_TOO_MANY_REQUESTS = 429;
 const DUPLICATE_REFERENCE_ERROR = 'Referência igual à de outro produto (slug demasiado longo): encurte o slug.';
@@ -12,9 +13,16 @@ interface SyncProduct {
   slug: string;
   name: string;
   facturalusaItemId: number | null;
+  price: number;
+  category: { facturalusaCategoryId: number | null } | null;
 }
 
 type SyncOutcome = 'created' | 'updated';
+
+function isMissingItemError(e: unknown): boolean {
+  return e instanceof FacturalusaError
+    && (isNotFoundResponse(e.status, e.message) || isInvalidIdResponse(e.status, e.message));
+}
 
 /** Referências partilhadas por mais de um produto (o slug é cortado no limite SAF-T). */
 function duplicatedReferences(products: SyncProduct[]): Set<string> {
@@ -48,6 +56,7 @@ export class ProductSyncService {
   constructor(
     private prisma: PrismaService,
     private client: FacturalusaClient,
+    private settings: InvoicingSettingsService,
   ) {}
 
   /** Uma sincronização de cada vez: duas em paralelo podiam criar artigos duplicados. */
@@ -66,9 +75,10 @@ export class ProductSyncService {
 
   private async runSync(): Promise<ProductSyncResult> {
     const products: SyncProduct[] = await this.prisma.product.findMany({
-      select: { id: true, slug: true, name: true, facturalusaItemId: true },
+      select: { id: true, slug: true, name: true, price: true, facturalusaItemId: true, category: { select: { facturalusaCategoryId: true } } },
       orderBy: { name: 'asc' },
     });
+    const priceTableId = await this.settings.getPriceTableId();
     const duplicated = duplicatedReferences(products);
     const result: ProductSyncResult = { total: products.length, created: 0, updated: 0, failed: [], stoppedReason: null };
 
@@ -79,7 +89,7 @@ export class ProductSyncService {
         continue;
       }
       try {
-        result[await this.syncOne(product)] += 1;
+        result[await this.syncOne(product, priceTableId)] += 1;
       } catch (e) {
         const message = e instanceof Error ? e.message : String(e);
         if (e instanceof FacturalusaError && e.status === HTTP_TOO_MANY_REQUESTS) {
@@ -97,19 +107,27 @@ export class ProductSyncService {
     return result;
   }
 
-  private async syncOne(product: SyncProduct): Promise<SyncOutcome> {
-    const payload = productArticlePayload(product);
-    if (product.facturalusaItemId) {
+  private async syncOne(product: SyncProduct, priceTableId: number | null): Promise<SyncOutcome> {
+    const payload = productArticlePayload(
+      { ...product, facturalusaCategoryId: product.category?.facturalusaCategoryId },
+      priceTableId,
+    );
+    const storedId = product.facturalusaItemId;
+    if (storedId) {
       try {
-        await this.client.updateItem(product.facturalusaItemId, payload);
+        await this.client.updateItem(storedId, payload);
         return 'updated';
       } catch (e) {
-        // ID guardado já não existe lá (artigo apagado): volta a ligar pela referência
-        if (!(e instanceof FacturalusaError && isNotFoundResponse(e.status, e.message))) throw e;
+        // ID guardado já não existe nesta conta (apagado, ou de outra chave): volta a ligar pela referência
+        if (!isMissingItemError(e)) throw e;
       }
     }
 
     const found = await this.client.findItemByReference(articleReference(product.slug));
+    if (found && found === storedId) {
+      // O artigo existe com este ID, por isso o problema é a atualização em si
+      throw new Error(`O artigo ${found} existe no Facturalusa, mas não aceitou a atualização.`);
+    }
     if (found) await this.client.updateItem(found, payload);
     const id = found ?? await this.client.createItem(payload);
     await this.prisma.product.update({ where: { id: product.id }, data: { facturalusaItemId: id } });

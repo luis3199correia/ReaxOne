@@ -8,6 +8,7 @@ import {
   externalReference,
   invoiceBlocker,
   lisbonDate,
+  productArticlePayload,
   selectCustomer,
   totalsMatch,
 } from './invoice-rules';
@@ -189,5 +190,31 @@ describe('utilitários', () => {
 
   it('externalReference identifica a encomenda', () => {
     expect(externalReference('abc')).toBe('REAXONE-abc');
+  });
+});
+
+describe('productArticlePayload', () => {
+  it('envia a categoria do Facturalusa quando a categoria da loja a tem', () => {
+    const payload = productArticlePayload({ slug: 'bola-rosa', name: 'Bola Rosa', facturalusaCategoryId: 86996 });
+    expect(payload).toMatchObject({ reference: 'bola-rosa', description: 'Bola Rosa', category: 86996 });
+  });
+
+  it('envia o preço sem IVA para a tabela de preços indicada', () => {
+    const payload = productArticlePayload({ slug: 'meias', name: 'Meias', price: 12.3 }, 64520);
+    expect(payload.prices).toEqual([{ id: '64520', price: 10, discount: 0 }]);
+  });
+
+  it('arredonda o preço sem IVA a 4 casas decimais', () => {
+    expect(productArticlePayload({ slug: 'b', name: 'B', price: 19.99 }, 64520).prices?.[0].price).toBe(16.252);
+  });
+
+  it('sem tabela de preços (ou sem preço) não envia preços', () => {
+    expect(productArticlePayload({ slug: 'x', name: 'X', price: 10 }, null)).not.toHaveProperty('prices');
+    expect(productArticlePayload({ slug: 'x', name: 'X' }, 64520)).not.toHaveProperty('prices');
+  });
+
+  it('omite a categoria quando não está definida', () => {
+    expect(productArticlePayload({ slug: 'x', name: 'X', facturalusaCategoryId: null })).not.toHaveProperty('category');
+    expect(productArticlePayload({ slug: 'x', name: 'X' })).not.toHaveProperty('category');
   });
 });

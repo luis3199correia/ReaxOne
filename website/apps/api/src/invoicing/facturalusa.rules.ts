@@ -1,3 +1,5 @@
+import { BadRequestException } from '@nestjs/common';
+
 export const DEFAULT_FACTURALUSA_API_URL = 'https://facturalusa.pt/api/v2';
 const ERROR_MAX_LENGTH = 500;
 const HTTP_NOT_FOUND = 404;
@@ -19,6 +21,18 @@ export function readFacturalusaConfig(env: NodeJS.ProcessEnv = process.env): Fac
 }
 
 /**
+ * ID do Facturalusa vindo do backoffice.
+ * undefined = não mexer; null/'' = limpar; senão tem de ser um inteiro positivo.
+ */
+export function parseOptionalFacturalusaId(raw: unknown, errorMessage: string): number | null | undefined {
+  if (raw === undefined) return undefined;
+  if (raw === null || (typeof raw === 'string' && raw.trim() === '')) return null;
+  const text = typeof raw === 'number' ? String(raw) : typeof raw === 'string' ? raw.trim() : '';
+  if (!/^[1-9]\d*$/.test(text)) throw new BadRequestException(errorMessage);
+  return Number(text);
+}
+
+/**
  * Mensagem de erro devolvida pela API. O formato do corpo de erro não está
  * documentado: aceita { message }, { error }, { errors: { campo: [..] } } ou texto.
  */
@@ -35,6 +49,15 @@ export function isNotFoundResponse(status: number | null, message: string | null
   if (status === HTTP_NOT_FOUND) return true;
   const isClientError = status === HTTP_BAD_REQUEST || status === HTTP_UNPROCESSABLE;
   return isClientError && /n[aã]o (foi )?encontrad|not found/i.test(message ?? '');
+}
+
+/**
+ * Erro de validação "o valor seleccionado para o campo id é inválido" (ex.: PUT
+ * /items/:id com um ID que não existe nesta conta).
+ */
+export function isInvalidIdResponse(status: number | null, message: string | null): boolean {
+  const isClientError = status === HTTP_BAD_REQUEST || status === HTTP_UNPROCESSABLE;
+  return isClientError && /\bcampo id\b.*inv[aá]lid/i.test(message ?? '');
 }
 
 /**

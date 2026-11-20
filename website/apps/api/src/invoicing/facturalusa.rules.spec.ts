@@ -1,5 +1,6 @@
 import {
-  DEFAULT_FACTURALUSA_API_URL, extractApiError, isNotFoundResponse, isUnknownItemResponse, readFacturalusaConfig,
+  DEFAULT_FACTURALUSA_API_URL, extractApiError, isInvalidIdResponse, isNotFoundResponse, isUnknownItemResponse,
+  readFacturalusaConfig,
 } from './facturalusa.rules';
 
 describe('readFacturalusaConfig', () => {
@@ -50,6 +51,19 @@ describe('isNotFoundResponse', () => {
     expect(isNotFoundResponse(400, 'Introduza pelo menos um artigo')).toBe(false);
     expect(isNotFoundResponse(500, 'não encontrado')).toBe(false);
     expect(isNotFoundResponse(null, null)).toBe(false);
+  });
+});
+
+describe('isInvalidIdResponse', () => {
+  it('reconhece o erro de validação do id do artigo', () => {
+    expect(isInvalidIdResponse(422, 'O valor seleccionado para o campo id é inválido.')).toBe(true);
+    expect(isInvalidIdResponse(400, 'O valor selecionado para o campo id é invalido')).toBe(true);
+  });
+
+  it('não confunde com erros de outros campos ou de servidor', () => {
+    expect(isInvalidIdResponse(422, 'O valor seleccionado para o campo vat é inválido.')).toBe(false);
+    expect(isInvalidIdResponse(422, 'O campo items.0.id é inválido')).toBe(false);
+    expect(isInvalidIdResponse(500, 'O valor seleccionado para o campo id é inválido.')).toBe(false);
   });
 });
 

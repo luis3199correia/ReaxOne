@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios, { AxiosError } from 'axios';
 import { FacturalusaConfig, extractApiError, isNotFoundResponse, readFacturalusaConfig } from './facturalusa.rules';
-import type { CustomerType, SalePayload } from './invoice-rules';
+import type { ArticlePrice, CustomerType, SalePayload } from './invoice-rules';
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const HTTP_NOT_FOUND = 404;
@@ -44,6 +44,8 @@ interface ArticleInput {
   unit: string;
   vat: number;
   type: string;
+  category?: number;
+  prices?: ArticlePrice[];
 }
 
 /**

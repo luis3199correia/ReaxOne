@@ -10,10 +10,11 @@ interface Category {
   nameEn?: string | null;
   slug: string;
   visible: boolean;
+  facturalusaCategoryId?: number | null;
   _count: { products: number };
 }
 
-const EMPTY_FORM = { name: '', nameEn: '', slug: '' };
+const EMPTY_FORM = { name: '', nameEn: '', slug: '', facturalusaCategoryId: '' };
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -45,7 +46,7 @@ export default function AdminCategoriesPage() {
 
   function openEdit(c: Category) {
     setEditing(c);
-    setForm({ name: c.name, nameEn: c.nameEn ?? '', slug: c.slug });
+    setForm({ name: c.name, nameEn: c.nameEn ?? '', slug: c.slug, facturalusaCategoryId: c.facturalusaCategoryId ? String(c.facturalusaCategoryId) : '' });
     setModal('edit');
   }
 
@@ -69,15 +70,22 @@ export default function AdminCategoriesPage() {
   async function handleSave() {
     if (!form.name.trim() || !form.slug.trim()) return;
     setSaving(true);
+    const facturalusaCategoryId = form.facturalusaCategoryId.trim() || null;
     try {
       if (modal === 'create') {
-        await api.post('/categories', { name: form.name, nameEn: form.nameEn.trim() || undefined, slug: form.slug });
+        await api.post('/categories', {
+          name: form.name, nameEn: form.nameEn.trim() || undefined, slug: form.slug, facturalusaCategoryId,
+        });
       } else if (editing) {
-        await api.patch(`/categories/${editing.id}`, { name: form.name, nameEn: form.nameEn.trim() || null, slug: form.slug });
+        await api.patch(`/categories/${editing.id}`, {
+          name: form.name, nameEn: form.nameEn.trim() || null, slug: form.slug, facturalusaCategoryId,
+        });
       }
       setSaved(true);
       setTimeout(() => { closeModal(); fetchCategories(); }, 800);
-    } catch {
+    } catch (e: any) {
+      const msg = e?.response?.data?.message;
+      setError(typeof msg === 'string' ? msg : 'Erro ao gravar a categoria.');
       setSaving(false);
     }
   }
@@ -173,6 +181,9 @@ export default function AdminCategoriesPage() {
                     </td>
                     <td className="px-4 py-4 hidden md:table-cell">
                       <code className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">{c.slug}</code>
+                      {c.facturalusaCategoryId && (
+                        <p className="text-xs text-gray-400 mt-1">Facturalusa: {c.facturalusaCategoryId}</p>
+                      )}
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-1.5 text-sm text-gray-600">
@@ -299,6 +310,20 @@ export default function AdminCategoriesPage() {
                   className="input font-mono text-sm"
                   placeholder="acessorios"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ID da categoria no Facturalusa <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={form.facturalusaCategoryId}
+                  onChange={(e) => setForm((f) => ({ ...f, facturalusaCategoryId: e.target.value.replace(/\D/g, '') }))}
+                  className="input font-mono text-sm"
+                  placeholder="Ex: 86996"
+                />
+                <p className="text-xs text-gray-400 mt-1">Os artigos destes produtos ficam nesta categoria no Facturalusa.</p>
               </div>
             </div>
 

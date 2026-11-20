@@ -17,7 +17,7 @@ const RETRY_BATCH_SIZE = 20;
 const ERROR_MAX_LENGTH = 500;
 
 const ORDER_INCLUDE = {
-  items: { include: { product: { select: { id: true, slug: true, name: true, facturalusaItemId: true } } } },
+  items: { include: { product: { select: { id: true, slug: true, name: true, price: true, facturalusaItemId: true, category: { select: { facturalusaCategoryId: true } } } } } },
 } as const;
 
 /** Campos da fatura devolvidos ao backoffice. */

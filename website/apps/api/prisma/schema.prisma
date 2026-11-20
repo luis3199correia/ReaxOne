@@ -64,6 +64,7 @@ model Category {
   nameEn   String?
   slug     String    @unique
   visible  Boolean   @default(true)
+  facturalusaCategoryId Int? // ID da categoria de artigos no Facturalusa
   products Product[]
 }
 

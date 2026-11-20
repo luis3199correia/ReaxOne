@@ -12,6 +12,8 @@ export interface InvoiceProduct {
   slug: string;
   name: string;
   facturalusaItemId: number | null;
+  price?: number;
+  category?: { facturalusaCategoryId: number | null } | null;
 }
 
 /**
@@ -76,7 +78,12 @@ export class FacturalusaIdsService {
 
   private async productArticle(product: InvoiceProduct): Promise<number> {
     const found = await this.client.findItemByReference(articleReference(product.slug));
-    const id = found ?? await this.client.createItem(productArticlePayload(product));
+    const id = found ?? await this.client.createItem(
+      productArticlePayload(
+        { ...product, facturalusaCategoryId: product.category?.facturalusaCategoryId },
+        await this.settings.getPriceTableId(),
+      ),
+    );
     if (!found) this.logger.log(`[Faturação] Artigo "${product.slug}" criado no Facturalusa`);
     await this.prisma.product.update({ where: { id: product.id }, data: { facturalusaItemId: id } });
     return id;

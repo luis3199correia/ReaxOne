@@ -1,5 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { parseFacturalusaCategoryId } from './categories.rules';
+
+interface CategoryInput {
+  name?: string;
+  nameEn?: string | null;
+  slug?: string;
+  visible?: boolean;
+  facturalusaCategoryId?: unknown;
+}
 
 @Injectable()
 export class CategoriesService {
@@ -21,14 +30,22 @@ export class CategoriesService {
     });
   }
 
-  async create(data: { name: string; nameEn?: string; slug: string }) {
-    return this.prisma.category.create({ data });
+  async create(data: { name: string; nameEn?: string; slug: string; facturalusaCategoryId?: unknown }) {
+    const { facturalusaCategoryId, ...rest } = data;
+    return this.prisma.category.create({
+      data: { ...rest, facturalusaCategoryId: parseFacturalusaCategoryId(facturalusaCategoryId) ?? null },
+    });
   }
 
-  async update(id: string, data: { name?: string; nameEn?: string | null; slug?: string; visible?: boolean }) {
+  async update(id: string, data: CategoryInput) {
+    const { facturalusaCategoryId, ...rest } = data;
+    const parsedFacturalusaId = parseFacturalusaCategoryId(facturalusaCategoryId);
     const cat = await this.prisma.category.findUnique({ where: { id } });
     if (!cat) throw new NotFoundException('Categoria não encontrada');
-    return this.prisma.category.update({ where: { id }, data });
+    return this.prisma.category.update({
+      where: { id },
+      data: { ...rest, ...(parsedFacturalusaId !== undefined ? { facturalusaCategoryId: parsedFacturalusaId } : {}) },
+    });
   }
 
   async remove(id: string) {

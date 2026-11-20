@@ -21,7 +21,7 @@ export class InvoicingController {
   }
 
   @Patch('settings')
-  async updateSettings(@Body() body: { enabled?: unknown; draft?: unknown; series?: unknown }) {
+  async updateSettings(@Body() body: { enabled?: unknown; draft?: unknown; series?: unknown; priceTableId?: unknown }) {
     return this.view(await this.settings.update(body ?? {}));
   }
 
@@ -32,7 +32,10 @@ export class InvoicingController {
     return this.productSync.syncProducts();
   }
 
-  private view(s: { enabled: boolean; draft: boolean; series: string }) {
-    return { enabled: s.enabled, draft: s.draft, series: s.series, keyConfigured: this.invoicing.keyConfigured };
+  private view(s: { enabled: boolean; draft: boolean; series: string; priceTableId: number | null }) {
+    return {
+      enabled: s.enabled, draft: s.draft, series: s.series, priceTableId: s.priceTableId,
+      keyConfigured: this.invoicing.keyConfigured,
+    };
   }
 }
