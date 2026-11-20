@@ -46,6 +46,7 @@ interface ArticleInput {
   type: string;
   category?: number;
   prices?: ArticlePrice[];
+  cost_price?: number; // preço sem IVA
 }
 
 /**

@@ -50,8 +50,8 @@ function ProductSyncSection() {
     <div className="border-t pt-4">
       <h3 className="text-sm font-semibold mb-1">Artigos no Facturalusa</h3>
       <p className="text-xs text-gray-400 mb-3">
-        Cria os artigos em falta e atualiza nome e IVA dos existentes (referência = slug do produto). Os preços vão em
-        cada fatura, não no artigo.
+        Cria os artigos em falta e atualiza nome, IVA, categoria e preços dos existentes (referência = slug do
+        produto). O preço de custo leva o preço sem IVA.
       </p>
       <button
         type="button"
@@ -197,7 +197,8 @@ export default function InvoicingSettingsCard() {
               }}
             />
             <p className="text-xs text-gray-400 mt-1">
-              Na sincronização, o preço de cada produto vai para esta tabela do Facturalusa (com IVA).
+              Na sincronização, o preço de cada produto vai para esta tabela do Facturalusa (com IVA); o preço de
+              custo do artigo leva o valor sem IVA.
             </p>
           </div>
 

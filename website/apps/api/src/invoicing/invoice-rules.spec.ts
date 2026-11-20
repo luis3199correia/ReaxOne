@@ -204,6 +204,15 @@ describe('productArticlePayload', () => {
     expect(payload.prices).toEqual([{ id: '64520', price: 12.3, discount: 0 }]);
   });
 
+  it('envia o preço sem IVA como preço de custo, mesmo sem tabela de preços', () => {
+    expect(productArticlePayload({ slug: 'm', name: 'M', price: 12.3 }, 64520).cost_price).toBe(10);
+    expect(productArticlePayload({ slug: 'm', name: 'M', price: 19.99 }, null).cost_price).toBe(16.25);
+  });
+
+  it('sem preço não envia preço de custo', () => {
+    expect(productArticlePayload({ slug: 'x', name: 'X' }, 64520)).not.toHaveProperty('cost_price');
+  });
+
   it('sem tabela de preços (ou sem preço) não envia preços', () => {
     expect(productArticlePayload({ slug: 'x', name: 'X', price: 10 }, null)).not.toHaveProperty('prices');
     expect(productArticlePayload({ slug: 'x', name: 'X' }, 64520)).not.toHaveProperty('prices');
