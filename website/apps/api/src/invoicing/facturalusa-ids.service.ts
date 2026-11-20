@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { isEbookProduct } from '../products/free-ebook';
 import { FacturalusaClient } from './facturalusa.client';
 import { InvoicingSettingsService } from './invoicing-settings.service';
 import {
@@ -13,7 +14,9 @@ export interface InvoiceProduct {
   name: string;
   facturalusaItemId: number | null;
   price?: number;
-  category?: { facturalusaCategoryId: number | null } | null;
+  ebookFile?: string | null;
+  ebookFileEn?: string | null;
+  category?: { facturalusaCategoryId: number | null; slug?: string | null } | null;
 }
 
 /**
@@ -80,7 +83,7 @@ export class FacturalusaIdsService {
     const found = await this.client.findItemByReference(articleReference(product.slug));
     const id = found ?? await this.client.createItem(
       productArticlePayload(
-        { ...product, facturalusaCategoryId: product.category?.facturalusaCategoryId },
+        { ...product, facturalusaCategoryId: product.category?.facturalusaCategoryId, isEbook: isEbookProduct(product) },
         await this.settings.getPriceTableId(),
       ),
     );

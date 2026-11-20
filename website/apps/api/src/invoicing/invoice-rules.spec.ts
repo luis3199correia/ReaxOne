@@ -133,6 +133,19 @@ describe('buildSalePayload', () => {
     expect(gift).toEqual({ id: 102, price: 0, quantity: 1, vat: 23, details: 'Tamanho: M · Oferta' });
   });
 
+  it('ebooks vão com IVA a 6%, os restantes produtos com 23%', () => {
+    const order = makeOrder({
+      items: [
+        { productId: 'p1', name: 'Bola', price: 14.99, quantity: 1, size: null, isGift: false },
+        { productId: 'p2', name: 'Ebook', price: 10.6, quantity: 1, size: null, isGift: false, isEbook: true },
+      ],
+      totalAmount: 25.59,
+    });
+    const [ball, ebook] = build(order).items;
+    expect(ball.vat).toBe(23);
+    expect(ebook.vat).toBe(6);
+  });
+
   it('portes vão numa linha própria só quando há custo de envio', () => {
     expect(build(makeOrder()).items).toHaveLength(1);
     const payload = build(makeOrder({ shippingCost: 4.5, totalAmount: 34.48 }));
@@ -211,6 +224,15 @@ describe('productArticlePayload', () => {
   it('envia o preço sem IVA como preço de custo, mesmo sem tabela de preços', () => {
     expect(productArticlePayload({ slug: 'm', name: 'M', price: 12.3 }, 64520).cost_price).toBe(10);
     expect(productArticlePayload({ slug: 'm', name: 'M', price: 19.99 }, null).cost_price).toBe(16.25);
+  });
+
+  it('ebooks levam IVA a 6% e os preços sem IVA calculados a 6%', () => {
+    const payload = productArticlePayload({ slug: 'e', name: 'E', price: 10.6, isEbook: true }, 64520);
+    expect(payload).toMatchObject({ vat: 6, cost_price: 10, prices: [{ id: '64520', price: 10, discount: 0 }] });
+  });
+
+  it('produtos que não são ebooks levam IVA a 23%', () => {
+    expect(productArticlePayload({ slug: 'm', name: 'M', price: 12.3 }).vat).toBe(23);
   });
 
   it('sem preço não envia preço de custo', () => {

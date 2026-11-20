@@ -8,7 +8,8 @@ interface FakeProduct {
   name: string;
   facturalusaItemId: number | null;
   price?: number;
-  category?: { facturalusaCategoryId: number | null } | null;
+  ebookFile?: string | null;
+  category?: { facturalusaCategoryId: number | null; slug?: string } | null;
 }
 
 function setup(products: FakeProduct[], opts: { configured?: boolean; priceTableId?: number | null } = {}) {
@@ -67,6 +68,18 @@ describe('ProductSyncService.syncProducts', () => {
       prices: [{ id: '64520', price: 20, discount: 0 }],
       cost_price: 20,
     }));
+  });
+
+  it('envia os ebooks com IVA a 6% (pelo ficheiro ou pela categoria Ebooks)', async () => {
+    const { service, client } = setup([
+      { ...linked, ebookFile: 'ebooks/guia.pdf' },
+      { ...unlinked, category: { facturalusaCategoryId: null, slug: 'ebooks' } },
+    ]);
+
+    await service.syncProducts();
+
+    expect(client.updateItem).toHaveBeenCalledWith(10, expect.objectContaining({ vat: 6 }));
+    expect(client.createItem).toHaveBeenCalledWith(expect.objectContaining({ vat: 6 }));
   });
 
   it('cria o artigo quando não existe e guarda o ID', async () => {

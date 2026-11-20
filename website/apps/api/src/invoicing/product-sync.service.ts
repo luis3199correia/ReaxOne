@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { isEbookProduct } from '../products/free-ebook';
 import { FacturalusaClient, FacturalusaError } from './facturalusa.client';
 import { isInvalidIdResponse, isNotFoundResponse } from './facturalusa.rules';
 import { articleReference, productArticlePayload } from './invoice-rules';
@@ -14,7 +15,9 @@ interface SyncProduct {
   name: string;
   facturalusaItemId: number | null;
   price: number;
-  category: { facturalusaCategoryId: number | null } | null;
+  ebookFile?: string | null;
+  ebookFileEn?: string | null;
+  category: { facturalusaCategoryId: number | null; slug?: string | null } | null;
 }
 
 type SyncOutcome = 'created' | 'updated';
@@ -75,7 +78,10 @@ export class ProductSyncService {
 
   private async runSync(): Promise<ProductSyncResult> {
     const products: SyncProduct[] = await this.prisma.product.findMany({
-      select: { id: true, slug: true, name: true, price: true, facturalusaItemId: true, category: { select: { facturalusaCategoryId: true } } },
+      select: {
+        id: true, slug: true, name: true, price: true, facturalusaItemId: true, ebookFile: true, ebookFileEn: true,
+        category: { select: { facturalusaCategoryId: true, slug: true } },
+      },
       orderBy: { name: 'asc' },
     });
     const priceTableId = await this.settings.getPriceTableId();
@@ -109,7 +115,7 @@ export class ProductSyncService {
 
   private async syncOne(product: SyncProduct, priceTableId: number | null): Promise<SyncOutcome> {
     const payload = productArticlePayload(
-      { ...product, facturalusaCategoryId: product.category?.facturalusaCategoryId },
+      { ...product, facturalusaCategoryId: product.category?.facturalusaCategoryId, isEbook: isEbookProduct(product) },
       priceTableId,
     );
     // Na atualização volta a ativar o artigo (a criação é sempre activa e não aceita o campo)

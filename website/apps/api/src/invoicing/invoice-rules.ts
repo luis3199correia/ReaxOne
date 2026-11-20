@@ -8,6 +8,7 @@ export const GENERIC_CUSTOMER_NAME = 'Consumidor final';
 export const DOCUMENT_TYPE = 'Factura Recibo';
 export const VAT_TYPE = 'IVA incluído';
 export const VAT_RATE = 23;
+export const EBOOK_VAT_RATE = 6; // livros (incluindo em formato eletrónico): taxa reduzida
 export const EXTERNAL_REFERENCE_PREFIX = 'REAXONE-';
 export const SHIPPING_ARTICLE = { reference: 'PORTES', description: 'Portes de envio', type: 'Serviços' } as const;
 export const PRODUCT_ARTICLE_TYPE = 'Mercadorias';
@@ -31,6 +32,7 @@ export interface InvoiceOrderLine {
   quantity: number;
   size: string | null;
   isGift: boolean;
+  isEbook?: boolean;  // IVA a 6%
 }
 
 export interface InvoiceOrder {
@@ -86,6 +88,11 @@ export interface InvoiceSettingsInput {
   series: string; // '' = série por omissão
 }
 
+/** Taxa de IVA do produto: 6% nos ebooks, 23% nos restantes. */
+export function vatRateFor(isEbook: boolean | undefined): number {
+  return isEbook ? EBOOK_VAT_RATE : VAT_RATE;
+}
+
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -133,12 +140,15 @@ export interface ArticleProduct {
   name: string;
   price?: number;   // com IVA, como na loja
   facturalusaCategoryId?: number | null;
+  isEbook?: boolean; // IVA a 6%
 }
 
 /** Preço do artigo na tabela de preços (sem IVA), ou null se não houver tabela/preço. */
-export function articlePrices(price: number | undefined, priceTableId: number | null | undefined): ArticlePrice[] | null {
+export function articlePrices(
+  price: number | undefined, priceTableId: number | null | undefined, vatRate = VAT_RATE,
+): ArticlePrice[] | null {
   if (!priceTableId || !isValidPrice(price)) return null;
-  return [{ id: String(priceTableId), price: priceWithoutVat(price), discount: 0 }];
+  return [{ id: String(priceTableId), price: priceWithoutVat(price, vatRate), discount: 0 }];
 }
 
 function isValidPrice(price: number | undefined): price is number {
@@ -146,18 +156,19 @@ function isValidPrice(price: number | undefined): price is number {
 }
 
 /** Preço da loja (com IVA) sem IVA, para a tabela de preços e o preço de custo do artigo. */
-export function priceWithoutVat(price: number): number {
-  return round2(price / (1 + VAT_RATE / 100));
+export function priceWithoutVat(price: number, vatRate = VAT_RATE): number {
+  return round2(price / (1 + vatRate / 100));
 }
 
 export function productArticlePayload(product: ArticleProduct, priceTableId?: number | null) {
-  const prices = articlePrices(product.price, priceTableId);
-  const costPrice = isValidPrice(product.price) ? priceWithoutVat(product.price) : null;
+  const vatRate = vatRateFor(product.isEbook);
+  const prices = articlePrices(product.price, priceTableId, vatRate);
+  const costPrice = isValidPrice(product.price) ? priceWithoutVat(product.price, vatRate) : null;
   return {
     reference:   articleReference(product.slug),
     description: product.name.slice(0, ARTICLE_DESCRIPTION_MAX_LENGTH),
     unit:        ARTICLE_UNIT,
-    vat:         VAT_RATE,
+    vat:         vatRate,
     type:        PRODUCT_ARTICLE_TYPE,
     ...(product.facturalusaCategoryId ? { category: product.facturalusaCategoryId } : {}),
     ...(prices ? { prices } : {}),
@@ -217,7 +228,7 @@ function buildLine(line: InvoiceOrderLine, articleId: number | undefined, discou
     id:       articleId,
     price:    line.isGift ? 0 : line.price,
     quantity: line.quantity,
-    vat:      VAT_RATE,
+    vat:      vatRateFor(line.isEbook),
     ...(!line.isGift && discount > 0 ? { discount } : {}),
     ...(details ? { details } : {}),
   };

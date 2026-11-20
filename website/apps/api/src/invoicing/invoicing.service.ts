@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FacturalusaClient, FacturalusaError, FacturalusaSale } from './facturalusa.client';
+import { isEbookProduct } from '../products/free-ebook';
 import { isUnknownItemResponse } from './facturalusa.rules';
 import { FacturalusaIdsService } from './facturalusa-ids.service';
 import { InvoicingSettings, InvoicingSettingsService } from './invoicing-settings.service';
@@ -17,7 +18,10 @@ const RETRY_BATCH_SIZE = 20;
 const ERROR_MAX_LENGTH = 500;
 
 const ORDER_INCLUDE = {
-  items: { include: { product: { select: { id: true, slug: true, name: true, price: true, facturalusaItemId: true, category: { select: { facturalusaCategoryId: true } } } } } },
+  items: { include: { product: { select: {
+    id: true, slug: true, name: true, price: true, facturalusaItemId: true, ebookFile: true, ebookFileEn: true,
+    category: { select: { facturalusaCategoryId: true, slug: true } },
+  } } } },
 } as const;
 
 /** Campos da fatura devolvidos ao backoffice. */
@@ -196,7 +200,7 @@ function saleTotalNote(sale: FacturalusaSale, orderTotal: number): string | null
   return totalMismatchNote(total, orderTotal);
 }
 
-function toInvoiceOrder(order: any): InvoiceOrder {
+export function toInvoiceOrder(order: any): InvoiceOrder {
   return {
     id:             order.id,
     totalAmount:    order.totalAmount,
@@ -219,6 +223,7 @@ function toInvoiceOrder(order: any): InvoiceOrder {
       quantity:  i.quantity,
       size:      i.size ?? null,
       isGift:    i.isGift,
+      isEbook:   !!i.product && isEbookProduct(i.product),
     })),
   };
 }
