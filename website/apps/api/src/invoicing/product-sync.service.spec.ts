@@ -43,7 +43,9 @@ describe('ProductSyncService.syncProducts', () => {
 
     const result = await service.syncProducts();
 
-    expect(client.updateItem).toHaveBeenCalledWith(10, expect.objectContaining({ reference: 't-shirt', description: 'T-shirt' }));
+    expect(client.updateItem).toHaveBeenCalledWith(10, expect.objectContaining({
+      reference: 't-shirt', description: 'T-shirt', active: true,
+    }));
     expect(client.findItemByReference).not.toHaveBeenCalled();
     expect(result).toEqual({ total: 1, created: 0, updated: 1, failed: [], stoppedReason: null });
   });
@@ -62,7 +64,7 @@ describe('ProductSyncService.syncProducts', () => {
     await service.syncProducts();
 
     expect(client.updateItem).toHaveBeenCalledWith(10, expect.objectContaining({
-      prices: [{ id: '64520', price: 24.6, discount: 0 }],
+      prices: [{ id: '64520', price: 20, discount: 0 }],
       cost_price: 20,
     }));
   });
@@ -74,6 +76,7 @@ describe('ProductSyncService.syncProducts', () => {
 
     expect(client.findItemByReference).toHaveBeenCalledWith('bone');
     expect(client.createItem).toHaveBeenCalled();
+    expect(client.createItem.mock.calls[0][0]).not.toHaveProperty('active'); // a criação fica sempre activa
     expect(prisma.product.update).toHaveBeenCalledWith({ where: { id: 'p2' }, data: { facturalusaItemId: 500 } });
     expect(result.created).toBe(1);
   });
@@ -85,7 +88,7 @@ describe('ProductSyncService.syncProducts', () => {
     const result = await service.syncProducts();
 
     expect(client.createItem).not.toHaveBeenCalled();
-    expect(client.updateItem).toHaveBeenCalledWith(77, expect.any(Object));
+    expect(client.updateItem).toHaveBeenCalledWith(77, expect.objectContaining({ active: true }));
     expect(prisma.product.update).toHaveBeenCalledWith({ where: { id: 'p2' }, data: { facturalusaItemId: 77 } });
     expect(result.updated).toBe(1);
   });

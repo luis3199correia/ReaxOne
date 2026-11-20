@@ -135,17 +135,17 @@ export interface ArticleProduct {
   facturalusaCategoryId?: number | null;
 }
 
-/** Preço do artigo na tabela de preços (com IVA, como na loja), ou null se não houver tabela/preço. */
+/** Preço do artigo na tabela de preços (sem IVA), ou null se não houver tabela/preço. */
 export function articlePrices(price: number | undefined, priceTableId: number | null | undefined): ArticlePrice[] | null {
   if (!priceTableId || !isValidPrice(price)) return null;
-  return [{ id: String(priceTableId), price: round2(price), discount: 0 }];
+  return [{ id: String(priceTableId), price: priceWithoutVat(price), discount: 0 }];
 }
 
 function isValidPrice(price: number | undefined): price is number {
   return price !== undefined && Number.isFinite(price) && price >= 0;
 }
 
-/** Preço da loja (com IVA) sem IVA, para o preço de custo do artigo. */
+/** Preço da loja (com IVA) sem IVA, para a tabela de preços e o preço de custo do artigo. */
 export function priceWithoutVat(price: number): number {
   return round2(price / (1 + VAT_RATE / 100));
 }

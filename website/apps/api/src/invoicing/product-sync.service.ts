@@ -112,10 +112,12 @@ export class ProductSyncService {
       { ...product, facturalusaCategoryId: product.category?.facturalusaCategoryId },
       priceTableId,
     );
+    // Na atualização volta a ativar o artigo (a criação é sempre activa e não aceita o campo)
+    const updatePayload = { ...payload, active: true };
     const storedId = product.facturalusaItemId;
     if (storedId) {
       try {
-        await this.client.updateItem(storedId, payload);
+        await this.client.updateItem(storedId, updatePayload);
         return 'updated';
       } catch (e) {
         // ID guardado já não existe nesta conta (apagado, ou de outra chave): volta a ligar pela referência
@@ -128,7 +130,7 @@ export class ProductSyncService {
       // O artigo existe com este ID, por isso o problema é a atualização em si
       throw new Error(`O artigo ${found} existe no Facturalusa, mas não aceitou a atualização.`);
     }
-    if (found) await this.client.updateItem(found, payload);
+    if (found) await this.client.updateItem(found, updatePayload);
     const id = found ?? await this.client.createItem(payload);
     await this.prisma.product.update({ where: { id: product.id }, data: { facturalusaItemId: id } });
     return found ? 'updated' : 'created';

@@ -47,6 +47,7 @@ interface ArticleInput {
   category?: number;
   prices?: ArticlePrice[];
   cost_price?: number; // preço sem IVA
+  active?: boolean;    // só na atualização
 }
 
 /**
