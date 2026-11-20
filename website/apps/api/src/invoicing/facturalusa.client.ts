@@ -81,6 +81,11 @@ export class FacturalusaClient {
     return this.requireId(await this.request('/items', input), 'artigo');
   }
 
+  /** Atualiza o artigo (PUT /items/:id). Os campos obrigatórios vão sempre. */
+  async updateItem(itemId: number, input: ArticleInput): Promise<void> {
+    await this.request(`/items/${itemId}`, input, 'put');
+  }
+
   /** Cria a venda. Com external_reference repetida, o Facturalusa devolve a venda já existente. */
   async createSale(payload: SalePayload): Promise<FacturalusaSale> {
     const data = await this.request('/sales', payload);
@@ -109,11 +114,14 @@ export class FacturalusaClient {
     return data.id;
   }
 
-  private async request(path: string, body: unknown): Promise<any> {
+  private async request(path: string, body: unknown, method: 'post' | 'put' = 'post'): Promise<any> {
     const { apiKey, apiUrl } = this.config;
     if (!apiKey) throw new FacturalusaError('FACTURALUSA_API_KEY não configurada.', null);
     try {
-      const res = await axios.post(`${apiUrl}${path}`, body, {
+      const res = await axios.request({
+        method,
+        url: `${apiUrl}${path}`,
+        data: body,
         timeout: REQUEST_TIMEOUT_MS,
         headers: {
           Authorization:  `Bearer ${apiKey}`,
@@ -123,11 +131,11 @@ export class FacturalusaClient {
       });
       return res.data;
     } catch (e) {
-      throw this.toError(e, path);
+      throw this.toError(e, path, method);
     }
   }
 
-  private toError(e: unknown, path: string): FacturalusaError {
+  private toError(e: unknown, path: string, method: string): FacturalusaError {
     const err = e as AxiosError;
     const status = err?.response?.status ?? null;
     const apiMessage = extractApiError(err?.response?.data);
@@ -135,7 +143,7 @@ export class FacturalusaClient {
       ? 'Limite diário de pedidos à API do Facturalusa atingido.'
       : apiMessage ?? `Erro na API do Facturalusa (${status ?? err?.code ?? 'sem resposta'}).`;
     // Nunca registar cabeçalhos: levam a chave
-    if (status !== HTTP_NOT_FOUND) this.logger.warn(`[Faturação] POST ${path} falhou (${status ?? err?.code ?? 'sem resposta'}): ${message}`);
+    if (status !== HTTP_NOT_FOUND) this.logger.warn(`[Faturação] ${method.toUpperCase()} ${path} falhou (${status ?? err?.code ?? 'sem resposta'}): ${message}`);
     return new FacturalusaError(message, status);
   }
 }

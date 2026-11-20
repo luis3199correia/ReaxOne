@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { AlertCircle, Check, Loader2, ToggleLeft, ToggleRight } from 'lucide-react';
+import { AlertCircle, Check, Loader2, RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface InvoicingSettings {
@@ -9,6 +9,73 @@ interface InvoicingSettings {
   draft: boolean;
   series: string;
   keyConfigured: boolean;
+}
+
+interface ProductSyncResult {
+  total: number;
+  created: number;
+  updated: number;
+  failed: Array<{ slug: string; name: string; error: string }>;
+  stoppedReason: string | null;
+}
+
+function apiErrorMessage(err: any, fallback: string): string {
+  const msg = err?.response?.data?.message;
+  return typeof msg === 'string' ? msg : fallback;
+}
+
+/** Botão para criar/atualizar no Facturalusa os artigos de todos os produtos. */
+function ProductSyncSection() {
+  const [syncing, setSyncing] = useState(false);
+  const [result, setResult] = useState<ProductSyncResult | null>(null);
+  const [error, setError] = useState('');
+
+  async function handleSync() {
+    if (!window.confirm('Sincronizar todos os produtos com o Facturalusa? Gasta 1 a 2 pedidos à API por produto.')) return;
+    setSyncing(true);
+    setError('');
+    setResult(null);
+    try {
+      const res = await api.post<ProductSyncResult>('/invoicing/sync-products');
+      setResult(res.data);
+    } catch (err: any) {
+      setError(apiErrorMessage(err, 'Erro ao sincronizar os produtos.'));
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  return (
+    <div className="border-t pt-4">
+      <h3 className="text-sm font-semibold mb-1">Artigos no Facturalusa</h3>
+      <p className="text-xs text-gray-400 mb-3">
+        Cria os artigos em falta e atualiza nome e IVA dos existentes (referência = slug do produto). Os preços vão em
+        cada fatura, não no artigo.
+      </p>
+      <button
+        type="button"
+        onClick={handleSync}
+        disabled={syncing}
+        className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border border-gray-300 hover:bg-gray-50 disabled:opacity-50"
+      >
+        {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+        {syncing ? 'A sincronizar…' : 'Sincronizar produtos'}
+      </button>
+
+      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+      {result && (
+        <div className="text-sm mt-3 space-y-1">
+          <p>{result.created} criados · {result.updated} atualizados · {result.failed.length} com erro (de {result.total})</p>
+          {result.stoppedReason && <p className="text-amber-700">Parou a meio: {result.stoppedReason}</p>}
+          {result.failed.length > 0 && (
+            <ul className="text-xs text-red-600 list-disc pl-5">
+              {result.failed.map((f) => <li key={f.slug}>{f.name}: {f.error}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 const SERIES_MAX_LENGTH = 30;
@@ -127,6 +194,8 @@ export default function InvoicingSettingsCard() {
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             {saved ? <><Check className="w-4 h-4" /> Guardado!</> : 'Guardar faturação'}
           </button>
+
+          {form.keyConfigured && <ProductSyncSection />}
         </div>
       )}
     </div>
