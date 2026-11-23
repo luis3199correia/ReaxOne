@@ -1,5 +1,7 @@
 import { PartialType } from '@nestjs/mapped-types';
 import {
+  ArrayMaxSize,
+  ArrayUnique,
   IsArray,
   IsBoolean,
   IsInt,
@@ -14,7 +16,9 @@ import {
 } from 'class-validator';
 import { isValidEbookKey } from '../ebooks/ebook-files';
 
-const DOWNLOAD_URL_OPTIONS = { protocols: ['http', 'https'], require_protocol: true };
+const MAX_FEATURED_REORDER = 200;
+
+const DOWNLOAD_URL_OPTIONS ={ protocols: ['http', 'https'], require_protocol: true };
 
 /** Chave do PDF no bucket R2 privado, ex: ebooks/padel-pt.pdf */
 function IsEbookKey() {
@@ -116,3 +120,13 @@ export class CreateProductDto {
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}
+
+/** Nova ordem dos produtos em destaque: ids pela ordem pretendida. */
+export class ReorderFeaturedDto {
+  @IsArray()
+  @ArrayMaxSize(MAX_FEATURED_REORDER)
+  @ArrayUnique()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  ids: string[];
+}

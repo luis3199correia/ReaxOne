@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { ProductsService } from './products.service';
-import { CreateProductDto, UpdateProductDto } from './product.dto';
+import { CreateProductDto, UpdateProductDto, ReorderFeaturedDto } from './product.dto';
 
 function isAdmin(req: Request) {
   return (req.user as { role?: string } | null)?.role === 'ADMIN';
@@ -53,6 +53,13 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   create(@Body() body: CreateProductDto) {
     return this.productsService.create(body);
+  }
+
+  // Ordem dos destaques na página inicial (antes de :id)
+  @Patch('featured/order')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  reorderFeatured(@Body() body: ReorderFeaturedDto) {
+    return this.productsService.reorderFeatured(body.ids);
   }
 
   @Patch(':id')

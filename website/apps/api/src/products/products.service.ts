@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
 import { isEbookProduct, isFreeEbook } from './free-ebook';
@@ -44,8 +44,34 @@ export class ProductsService {
         ...(featured !== undefined ? { featured } : {}),
       },
       include: { category: true },
-      orderBy: { createdAt: 'desc' },
+      // Destaques seguem a ordem definida no backoffice
+      orderBy: featured
+        ? [{ featuredOrder: 'asc' }, { createdAt: 'desc' }]
+        : { createdAt: 'desc' },
     });
+  }
+
+  /** Grava a ordem dos destaques: a posição no array passa a ser o featuredOrder. */
+  async reorderFeatured(ids: string[]) {
+    const count = await this.prisma.product.count({ where: { id: { in: ids }, featured: true } });
+    if (count !== ids.length) {
+      throw new BadRequestException('A lista contém produtos inexistentes ou que não estão em destaque.');
+    }
+    await this.prisma.$transaction(
+      ids.map((id, index) =>
+        this.prisma.product.update({ where: { id }, data: { featuredOrder: index } }),
+      ),
+    );
+    return { ok: true };
+  }
+
+  /** Posição para um novo destaque: vai para o fim da lista. */
+  private async nextFeaturedOrder() {
+    const { _max } = await this.prisma.product.aggregate({
+      where: { featured: true },
+      _max: { featuredOrder: true },
+    });
+    return (_max.featuredOrder ?? -1) + 1;
   }
 
   async findBySlug(slug: string) {
@@ -67,11 +93,17 @@ export class ProductsService {
   }
 
   async create(data: CreateProductDto) {
-    return this.prisma.product.create({ data });
+    const order = data.featured ? { featuredOrder: await this.nextFeaturedOrder() } : {};
+    return this.prisma.product.create({ data: { ...data, ...order } });
   }
 
   async update(id: string, data: UpdateProductDto) {
-    return this.prisma.product.update({ where: { id }, data });
+    let order = {};
+    if (data.featured === true) {
+      const current = await this.prisma.product.findUnique({ where: { id }, select: { featured: true } });
+      if (current && !current.featured) order = { featuredOrder: await this.nextFeaturedOrder() };
+    }
+    return this.prisma.product.update({ where: { id }, data: { ...data, ...order } });
   }
 
   async delete(id: string) {

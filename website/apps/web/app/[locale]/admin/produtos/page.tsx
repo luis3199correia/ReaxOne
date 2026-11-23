@@ -7,6 +7,7 @@ import {
   AlertCircle, Trash2, ImagePlus, Upload, Star,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import FeaturedOrderCard, { type FeaturedItem } from '@/components/admin/FeaturedOrderCard';
 
 interface Product {
   id: string;
@@ -24,6 +25,7 @@ interface Product {
   images: string[];
   active: boolean;
   featured: boolean;
+  featuredOrder: number;
   downloadUrl?: string | null;
   downloadUrlEn?: string | null;
   ebookFile?: string | null;
@@ -401,8 +403,14 @@ export default function AdminProductsPage() {
   /* ── Toggle featured ── */
 
   async function toggleFeatured(p: Product) {
+    // Um novo destaque vai para o fim da lista (o backend faz o mesmo)
+    const lastOrder = Math.max(-1, ...products.filter((x) => x.featured).map((x) => x.featuredOrder));
     setProducts((prev) =>
-      prev.map((x) => (x.id === p.id ? { ...x, featured: !x.featured } : x)),
+      prev.map((x) =>
+        x.id === p.id
+          ? { ...x, featured: !x.featured, featuredOrder: x.featured ? x.featuredOrder : lastOrder + 1 }
+          : x,
+      ),
     );
     try {
       await api.patch(`/products/${p.id}`, { featured: !p.featured });
@@ -410,6 +418,34 @@ export default function AdminProductsPage() {
       setProducts((prev) =>
         prev.map((x) => (x.id === p.id ? { ...x, featured: p.featured } : x)),
       );
+    }
+  }
+
+  /* ── Featured order ── */
+
+  const [orderSaving, setOrderSaving] = useState(false);
+  const [orderError, setOrderError] = useState('');
+
+  // sort estável: empates mantêm a ordem da API (mais recentes primeiro), como no backend
+  const featuredItems: FeaturedItem[] = products
+    .filter((p) => p.featured)
+    .sort((a, b) => a.featuredOrder - b.featuredOrder);
+
+  async function reorderFeatured(next: FeaturedItem[]) {
+    const previous = products;
+    const orderById = new Map(next.map((p, i) => [p.id, i]));
+    setProducts((prev) =>
+      prev.map((x) => (orderById.has(x.id) ? { ...x, featuredOrder: orderById.get(x.id)! } : x)),
+    );
+    setOrderSaving(true);
+    setOrderError('');
+    try {
+      await api.patch('/products/featured/order', { ids: next.map((p) => p.id) });
+    } catch (err: any) {
+      setProducts(previous);
+      setOrderError(err?.response?.data?.message ?? 'Erro ao guardar a ordem.');
+    } finally {
+      setOrderSaving(false);
     }
   }
 
@@ -460,6 +496,15 @@ export default function AdminProductsPage() {
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           A carregar...
         </div>
+      )}
+
+      {!loading && (
+        <FeaturedOrderCard
+          items={featuredItems}
+          saving={orderSaving}
+          error={orderError}
+          onReorder={reorderFeatured}
+        />
       )}
 
       {/* Table */}

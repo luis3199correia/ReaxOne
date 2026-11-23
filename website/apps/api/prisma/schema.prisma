@@ -83,6 +83,7 @@ model Product {
   stock       Int      @default(0)
   active      Boolean  @default(true)
   featured    Boolean  @default(false)
+  featuredOrder Int    @default(0) // ordem na página inicial (menor = primeiro)
   ebookFile   String?  // ebook pago: chave do PDF no bucket R2 privado — PT
   ebookFileEn String?  // ebook pago: chave do PDF no bucket R2 privado — EN
   downloadUrl   String? // link público de download (ebooks gratuitos) — PT
