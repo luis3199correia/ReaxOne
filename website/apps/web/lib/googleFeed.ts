@@ -1,7 +1,7 @@
 import { serverApiUrl } from './serverApi';
 import type { Locale } from '@/i18n/config';
 import { localizePath } from '@/i18n/routing';
-import { BASE_URL } from '@/lib/seo';
+import { BASE_URL, absoluteUrl } from '@/lib/seo';
 
 // Feed de produtos para o Google Merchant Center (RSS 2.0 + namespace g:)
 // https://support.google.com/merchants/answer/7052112
@@ -56,11 +56,6 @@ function escapeXml(value: string): string {
 function plainText(text: string, max: number): string {
   const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   return clean.length <= max ? clean : clean.slice(0, max - 1).trimEnd() + '…';
-}
-
-function absoluteUrl(path: string): string {
-  if (/^https?:\/\//i.test(path)) return encodeURI(path);
-  return encodeURI(`${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`);
 }
 
 function isSocks(p: FeedProduct): boolean {

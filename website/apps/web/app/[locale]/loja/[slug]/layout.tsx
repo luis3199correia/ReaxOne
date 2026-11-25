@@ -2,6 +2,8 @@ import { serverApiUrl } from '@/lib/serverApi';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { localeAlternates } from '@/lib/seo';
+import { buildProductJsonLd, jsonLdScript, type JsonLdProduct } from '@/lib/productJsonLd';
+import type { Locale } from '@/i18n/config';
 
 interface Props {
   params: Promise<{ locale: string; slug: string }>;
@@ -59,7 +61,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title: `${name} | ReaxOne`,
         description,
         images: p.images?.[0]
-          ? [{ url: p.images[0], width: 800, height: 800, alt: name }]
+          // sem width/height: as fotos têm tamanhos variados e dimensões erradas confundem os crawlers
+          ? [{ url: p.images[0], alt: name }]
           : [{ url: '/images/og/og-default.jpg', width: 1200, height: 630, alt: name }],
       },
     };
@@ -72,8 +75,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // que o Google tratava como página duplicada). Só com 404 explícito da API: se a API
 // estiver em baixo, a página continua a renderizar em vez de desindexar produtos válidos.
 export default async function ProductLayout({ children, params }: Props & { children: React.ReactNode }) {
-  const { slug } = await params;
+  const { locale, slug } = await params;
   const res = await fetchProduct(slug).catch(() => null);
   if (res?.status === HTTP_NOT_FOUND) notFound();
-  return <>{children}</>;
+
+  // Dados estruturados (imagens, preço, stock) no HTML do servidor — a página é client-side
+  const product: JsonLdProduct | null = res?.ok ? await res.json().catch(() => null) : null;
+  const jsonLd = product ? buildProductJsonLd(product, locale as Locale) : null;
+
+  return (
+    <>
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(jsonLd) }} />
+      )}
+      {children}
+    </>
+  );
 }

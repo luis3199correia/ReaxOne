@@ -4,6 +4,12 @@ import { localizePath } from '@/i18n/routing';
 
 export const BASE_URL = 'https://reaxone.com';
 
+// URL absoluto (codificado) para um caminho do site, ex.: imagens de produto
+export function absoluteUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return encodeURI(path);
+  return encodeURI(`${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`);
+}
+
 // Mapa hreflang → URL absoluto (traduzido) para uma rota interna, incluindo x-default
 export function hreflangLanguages(path = ''): Record<string, string> {
   return {
