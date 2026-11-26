@@ -1,4 +1,4 @@
-import { BATCH_CSV_HEADER, buildBatchCatalogCsv, nextSku } from './batch-catalog';
+import { BATCH_CSV_HEADER, buildBatchCatalogCsv, nextSku, plainCatalogText } from './batch-catalog';
 
 describe('nextSku', () => {
   it('começa em RX-0001', () => {
@@ -32,12 +32,25 @@ describe('buildBatchCatalogCsv', () => {
 
     expect(lines).toHaveLength(2);
     expect(lines[1]).toBe(
-      ',"Meias ReaxOne, Branco/Preto",RX-0001,RX-0001,c1,7.50,https://reaxone.com/api/images/serve/images/fotos/meia%20branca.jpeg,0',
+      'RX-0001,Meias ReaxOne Branco Preto,RX-0001,RX-0001,c1,7.50,https://reaxone.com/api/images/serve/images/fotos/meia%20branca.jpeg,0',
     );
   });
 
-  it('escapa aspas e aceita produto sem imagem nem SKU', () => {
+  it('limpa o nome e aceita produto sem imagem nem SKU', () => {
     const line = buildBatchCatalogCsv([{ ...sock, name: 'Bola "Pro"', sku: null, images: [] }]).trim().split('\n')[1];
-    expect(line).toBe(',"Bola ""Pro""",,,c1,7.50,,0');
+    expect(line).toBe(',Bola Pro,,,c1,7.50,,0');
+  });
+});
+
+describe('plainCatalogText', () => {
+  it('tira acentos, troca & por e e remove travessões e símbolos', () => {
+    expect(plainCatalogText('Meias ReaxOne Performance & Casual – Rosa & Branco'))
+      .toBe('Meias ReaxOne Performance e Casual Rosa e Branco');
+    expect(plainCatalogText('Bola de Reação ReaxOne – Rosa Choque')).toBe('Bola de Reacao ReaxOne Rosa Choque');
+    expect(plainCatalogText('  Meias-Verde/Preto (nº 1)!  ')).toBe('Meias Verde Preto n 1');
+  });
+
+  it('o resultado só tem letras, números e espaços', () => {
+    expect(plainCatalogText('Ação & Ñandú – 100% «Pro»')).toMatch(/^[A-Za-z0-9 ]+$/);
   });
 });

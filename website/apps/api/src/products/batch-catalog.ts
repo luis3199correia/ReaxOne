@@ -32,6 +32,20 @@ export interface CatalogProduct {
   category?: { slug?: string | null } | null;
 }
 
+/**
+ * Texto só com letras sem acento, números e espaços (o importador/Excel da Batch
+ * mostra caracteres estranhos com acentos, "&", "–", etc.). "&" passa a "e".
+ */
+export function plainCatalogText(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')   // acentos e cedilha (ç → c)
+    .replace(/&/g, ' e ')
+    .replace(/[^A-Za-z0-9 ]+/g, ' ')    // hífens, travessões, barras, aspas, …
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /** Campo CSV: entre aspas quando tem vírgula, aspas ou quebra de linha. */
 function csvField(value: string): string {
   return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
@@ -52,8 +66,8 @@ export function buildBatchCatalogCsv(products: CatalogProduct[], siteUrl = DEFAU
   const rows = products
     .filter((p) => !isEbookProduct(p))
     .map((p) => [
-      '',                              // BARCODE: ainda sem EAN
-      p.name,
+      p.sku ?? '',                     // BARCODE: o SKU, enquanto não houver EAN
+      plainCatalogText(p.name),
       p.sku ?? '',
       p.sku ?? '',
       p.id,

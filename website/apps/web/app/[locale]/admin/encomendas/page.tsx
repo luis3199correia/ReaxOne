@@ -78,6 +78,7 @@ type Order = InvoiceFields & EbookFields & {
   status: string;
   totalAmount: number;
   shippingMethod?: string;
+  shippingMethodName?: string | null; // descrição da Batch (ex.: ponto de recolha)
   shippingCost?: number;
   discountCode?: string | null;
   discountAmount?: number;
@@ -397,7 +398,7 @@ export default function AdminEncomendas() {
                                   )}
                                   {order.shippingMethod && (
                                     <div className="flex justify-between text-sm text-gray-500 pt-1 border-t">
-                                      <span>{order.shippingMethod === PICKUP_METHOD_ID ? 'Levantamento' : order.shippingMethod}</span>
+                                      <span>{order.shippingMethod === PICKUP_METHOD_ID ? 'Levantamento' : order.shippingMethodName || order.shippingMethod}</span>
                                       <span>€{(order.shippingCost ?? 0).toFixed(2)}</span>
                                     </div>
                                   )}

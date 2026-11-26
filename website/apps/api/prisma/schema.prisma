@@ -140,6 +140,7 @@ model Order {
   // Batch Logistics
   batchOrderNumber String?
   shippingMethod   String?
+  shippingMethodName String? // descrição do método (ex.: ponto de recolha da Batch)
   shippingCost     Float    @default(0)
 
   // Código de desconto aplicado (snapshot do código e do valor descontado)

@@ -9,7 +9,7 @@ import { useCartStore } from '@/store/cart';
 import { api } from '@/lib/api';
 import {
   detectZone,
-  getShippingOptions,
+  applyFreeShipping,
   COUNTRY_OPTIONS,
   ZONE_LABELS,
   ShippingOption,
@@ -135,6 +135,32 @@ function CountrySelect({ value, onChange, error }: {
 }
 
 /* ── Main Page ──────────────────────────────────────────────────────────── */
+/** Uma opção de envio da Batch: descrição (service_name) e preço com IVA. */
+function ShippingOptionRow({ option, selected, onSelect }: {
+  option: ShippingOption;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <label
+      className={`flex items-center justify-between gap-3 p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+        selected ? 'border-brand-primary bg-red-50' : 'border-gray-200 hover:border-gray-300'
+      }`}
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <input type="radio" name="shipping" checked={selected} onChange={onSelect} className="accent-brand-primary flex-shrink-0" />
+        <div className="min-w-0">
+          <p className="font-medium text-sm break-words">{option.name}</p>
+          <p className="text-xs text-gray-500">IVA incluído</p>
+        </div>
+      </div>
+      <span className="font-bold text-brand-dark whitespace-nowrap">
+        {option.price === 0 ? <span className="text-brand-green">Grátis</span> : `€${option.price.toFixed(2)}`}
+      </span>
+    </label>
+  );
+}
+
 export default function CheckoutPage() {
   const t = useTranslations('checkout');
   const tGift = useTranslations('gift');
@@ -156,6 +182,10 @@ export default function CheckoutPage() {
   const [selectedShippingId, setSelectedShippingId] = useState<string | null>(null);
   const [shippingZone, setShippingZone] = useState<ShippingZone | null>(null);
   const [shippingCalculated, setShippingCalculated] = useState(false);
+  // Opções devolvidas pela Batch (via API), com IVA e sem portes grátis
+  const [quotedOptions, setQuotedOptions] = useState<ShippingOption[]>([]);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState('');
 
   // País (controlado fora do react-hook-form para reagir aos dropdowns)
   const [country, setCountry] = useState('PT');
@@ -203,25 +233,45 @@ export default function CheckoutPage() {
   const activeZip     = differentAddress ? shipPostalCode : postalCode;
   const canCalculate  = !!activeCountry && activeZip.replace(/\D/g, '').length >= 4;
 
-  // As opções são sempre derivadas da zona, do subtotal atual e dos limites de
-  // portes grátis por zona (backoffice) — nunca ficam com valores desatualizados.
+  // Opções da Batch com os portes grátis da zona aplicados ao subtotal atual
+  // (limites do backoffice) — o servidor volta a calcular ao criar a encomenda.
   const shippingOptions: ShippingOption[] = useMemo(
-    () => (shippingZone ? getShippingOptions(shippingZone, total, getFreeShippingThresholds(settings)) : []),
-    [shippingZone, total, settings],
+    () => (shippingZone ? applyFreeShipping(quotedOptions, shippingZone, total, getFreeShippingThresholds(settings)) : []),
+    [quotedOptions, shippingZone, total, settings],
   );
-  const selectedShipping = shippingOptions.find((o) => o.id === selectedShippingId) ?? shippingOptions[0] ?? null;
+  const homeOptions = shippingOptions.filter((o) => !o.isPickupPoint);
+  const pickupPointOptions = shippingOptions.filter((o) => o.isPickupPoint);
+  // Por omissão, entrega ao domicílio (a Batch lista primeiro os pontos de recolha)
+  const selectedShipping =
+    shippingOptions.find((o) => o.id === selectedShippingId) ?? homeOptions[0] ?? shippingOptions[0] ?? null;
 
-  /* ── Calcular portes ── */
-  function calculateShipping() {
-    setShippingZone(detectZone(activeCountry, activeZip));
+  /* ── Calcular portes (opções e preços da Batch) ── */
+  async function calculateShipping() {
+    const zone = detectZone(activeCountry, activeZip);
+    setShippingZone(zone);
     setSelectedShippingId(null);
+    setQuotedOptions([]);
+    setShippingError('');
     setShippingCalculated(true);
+    if (zone === 'BLOCKED') return;
+
+    setShippingLoading(true);
+    try {
+      const res = await api.post('/shipping/options', { country: activeCountry, zipcode: activeZip.trim() });
+      setQuotedOptions(res.data?.options ?? []);
+    } catch (err: any) {
+      setShippingError(err.response?.data?.message || 'Não foi possível calcular os portes. Tenta novamente.');
+    } finally {
+      setShippingLoading(false);
+    }
   }
 
   // Resetar portes quando morada muda
   function resetShipping() {
     setSelectedShippingId(null);
     setShippingZone(null);
+    setQuotedOptions([]);
+    setShippingError('');
     setShippingCalculated(false);
   }
 
@@ -287,7 +337,7 @@ export default function CheckoutPage() {
       setError('Calcula os portes antes de finalizar a encomenda.');
       return;
     }
-    if (needsShippingQuote && (shippingZone === 'PT_ILHAS' || shippingZone === 'BLOCKED' || !selectedShipping)) {
+    if (needsShippingQuote && (shippingZone === 'BLOCKED' || !selectedShipping)) {
       setError('Não é possível enviar para esta localização. Entra em contacto connosco.');
       return;
     }
@@ -588,7 +638,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={calculateShipping}
-                    disabled={!canCalculate}
+                    disabled={!canCalculate || shippingLoading}
                     className="flex items-center gap-2 text-sm font-semibold text-brand-primary hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed transition-colors"
                   >
                     <Calculator className="w-4 h-4" />
@@ -614,24 +664,23 @@ export default function CheckoutPage() {
                     </button>
                   </div>
 
-                  {/* Ilhas PT — sem opções */}
-                  {shippingZone === 'PT_ILHAS' && (
+                  {shippingLoading && (
+                    <p className="flex items-center gap-2 text-sm text-gray-500 py-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> A obter as opções de envio…
+                    </p>
+                  )}
+
+                  {/* Batch indisponível ou sem opções para a morada */}
+                  {!shippingLoading && shippingZone !== 'BLOCKED' && (shippingError || shippingOptions.length === 0) && (
                     <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4">
                       <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-semibold text-amber-800">Envio para as ilhas não disponível online</p>
-                        <p className="text-sm text-amber-700 mt-1">
-                          Para encomendas para os Açores ou Madeira, entra em contacto connosco para calcular os portes manualmente.
+                        <p className="text-sm font-semibold text-amber-800">
+                          {shippingError || 'Não há opções de envio para esta morada.'}
                         </p>
-                        <a
-                          href={settings.whatsappEnabled ? whatsappUrl(settings.whatsappNumber) : `mailto:${settings.contactEmail}`}
-                          target={settings.whatsappEnabled ? '_blank' : undefined}
-                          rel={settings.whatsappEnabled ? 'noopener noreferrer' : undefined}
-                          className="inline-flex items-center gap-1.5 mt-2 text-sm font-semibold text-amber-800 hover:underline"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          {settings.whatsappEnabled ? formatWhatsappDisplay(settings.whatsappNumber) : settings.contactEmail}
-                        </a>
+                        <button type="button" onClick={calculateShipping} className="mt-2 text-sm font-semibold text-amber-800 hover:underline">
+                          Tentar novamente
+                        </button>
                       </div>
                     </div>
                   )}
@@ -658,38 +707,32 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
-                  {/* Opções de envio */}
-                  {shippingOptions.length > 0 && (
+                  {/* Opções de envio da Batch: domicílio e pontos de recolha (service_name como descrição) */}
+                  {!shippingLoading && homeOptions.length > 0 && (
                     <div className="space-y-3">
-                      {shippingOptions.map((opt) => (
-                        <label
+                      {homeOptions.map((opt) => (
+                        <ShippingOptionRow
                           key={opt.id}
-                          className={`flex items-center justify-between p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-                            selectedShipping?.id === opt.id
-                              ? 'border-brand-primary bg-red-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="radio"
-                              name="shipping"
-                              checked={selectedShipping?.id === opt.id}
-                              onChange={() => setSelectedShippingId(opt.id)}
-                              className="accent-brand-primary"
-                            />
-                            <div>
-                              <p className="font-medium text-sm">{opt.name}</p>
-                              <p className="text-xs text-gray-500">{opt.deliveryDays} dia{opt.deliveryDays !== '1' ? 's' : ''} útil{opt.deliveryDays !== '1' ? 'eis' : ''} · IVA incluído</p>
-                            </div>
-                          </div>
-                          <span className="font-bold text-brand-dark whitespace-nowrap">
-                            {opt.price === 0
-                              ? <span className="text-brand-green">Grátis</span>
-                              : `€${opt.price.toFixed(2)}`}
-                          </span>
-                        </label>
+                          option={opt}
+                          selected={selectedShipping?.id === opt.id}
+                          onSelect={() => setSelectedShippingId(opt.id)}
+                        />
                       ))}
+                    </div>
+                  )}
+                  {!shippingLoading && pickupPointOptions.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-2">Pontos de recolha</p>
+                      <div className="space-y-3">
+                        {pickupPointOptions.map((opt) => (
+                          <ShippingOptionRow
+                            key={opt.id}
+                            option={opt}
+                            selected={selectedShipping?.id === opt.id}
+                            onSelect={() => setSelectedShippingId(opt.id)}
+                          />
+                        ))}
+                      </div>
                     </div>
                   )}
                 </>

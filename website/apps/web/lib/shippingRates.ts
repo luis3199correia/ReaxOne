@@ -1,8 +1,6 @@
-// Tabela de preços derivada de tabela_precos.csv
-// A API recalcula os portes em apps/api/src/orders/shipping-rates.ts — manter em sincronia.
-// Preços base sem IVA — IVA (23%) adicionado em getShippingOptions()
-
-export const IVA_RATE = 0.23;
+// Portes: as opções e os preços vêm da Batch (POST /shipping/options na API, que chama
+// dispatch/availability e soma o IVA). Aqui ficam só as zonas (países e portes grátis).
+// A API recalcula os portes ao criar a encomenda (apps/api/src/orders/shipping-rates.ts).
 
 export type ShippingZone =
   | 'PT_CONTINENTAL'
@@ -13,42 +11,12 @@ export type ShippingZone =
   | 'ZONA3'
   | 'BLOCKED';
 
+/** Opção de envio da Batch, como vem da API (preço com IVA, sem portes grátis). */
 export interface ShippingOption {
-  id: string;
-  name: string;
-  priceBase: number; // sem IVA
-  price: number;     // com IVA (23%)
-  deliveryDays: string;
-}
-
-// Apenas entradas NÃO desativadas no CSV
-const RAW: Record<Exclude<ShippingZone, 'BLOCKED'>, Omit<ShippingOption, 'price'>[]> = {
-  PT_CONTINENTAL: [
-    { id: 'pt_2d_1t', name: 'Envio 2 dias — 1 Tentativa de Entrega', priceBase: 4.01, deliveryDays: '2' },
-  ],
-  PT_ILHAS: [
-    { id: 'pt_ilhas_59', name: 'Envio Ilhas — 5 a 9 dias', priceBase: 8.91, deliveryDays: '5-9' },
-  ],
-  ES_CONTINENTAL: [
-    { id: 'es_std', name: 'Envio para Espanha', priceBase: 5.96, deliveryDays: '3-5' },
-  ],
-  ES_ILHAS: [
-    { id: 'es_ilhas_610', name: 'Ilhas Espanholas — 6 a 10 dias', priceBase: 10.96, deliveryDays: '6-10' },
-    { id: 'es_ilhas_35',  name: 'Ilhas Espanholas — 3 a 5 dias',  priceBase: 11.78, deliveryDays: '3-5' },
-  ],
-  ZONA2: [
-    { id: 'eu_z2', name: 'Europa Zona 2 — Economy', priceBase: 12.53, deliveryDays: '5-8' },
-  ],
-  ZONA3: [
-    { id: 'eu_z3', name: 'Europa Zona 3 — Economy', priceBase: 13.35, deliveryDays: '7-10' },
-  ],
-};
-
-function addIVA(opts: Omit<ShippingOption, 'price'>[]): ShippingOption[] {
-  return opts.map((o) => ({
-    ...o,
-    price: Math.round(o.priceBase * (1 + IVA_RATE) * 100) / 100,
-  }));
+  id: string;            // service_code da Batch (ex.: BL-14, BL-12-8810769)
+  name: string;          // service_name da Batch
+  price: number;         // com IVA
+  isPickupPoint: boolean;
 }
 
 // Subtotais (configurados no backoffice) a partir dos quais os portes são grátis; 0 desativa
@@ -58,9 +26,7 @@ export interface FreeShippingThresholds {
   eu: number; // Restantes países da UE
 }
 
-const NO_FREE_SHIPPING: FreeShippingThresholds = { pt: 0, es: 0, eu: 0 };
-
-// Açores e Madeira não têm portes grátis (envio sob consulta)
+// Açores e Madeira não têm portes grátis
 export function freeShippingThresholdFor(zone: ShippingZone, thresholds: FreeShippingThresholds): number {
   switch (zone) {
     case 'PT_CONTINENTAL': return thresholds.pt;
@@ -72,18 +38,16 @@ export function freeShippingThresholdFor(zone: ShippingZone, thresholds: FreeShi
   }
 }
 
-export function getShippingOptions(
+/** Aplica os portes grátis da zona (o subtotal conta antes do desconto, como na API). */
+export function applyFreeShipping(
+  options: ShippingOption[],
   zone: ShippingZone,
-  subtotal = 0,
-  thresholds: FreeShippingThresholds = NO_FREE_SHIPPING,
+  subtotal: number,
+  thresholds: FreeShippingThresholds,
 ): ShippingOption[] {
-  if (zone === 'BLOCKED') return [];
-  const opts = addIVA(RAW[zone]);
   const freeAbove = freeShippingThresholdFor(zone, thresholds);
-  if (freeAbove > 0 && subtotal >= freeAbove) {
-    return opts.map((o) => ({ ...o, price: 0 }));
-  }
-  return opts;
+  if (freeAbove > 0 && subtotal >= freeAbove) return options.map((o) => ({ ...o, price: 0 }));
+  return options;
 }
 
 // Países por zona

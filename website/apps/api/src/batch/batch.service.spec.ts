@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { BatchService } from './batch.service';
+import { BatchService, parseAvailability } from './batch.service';
 
 jest.mock('axios');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -18,7 +18,10 @@ function authHeaderOf(call: number): string {
 }
 
 describe('BatchService — token e erros', () => {
-  beforeEach(() => jest.resetAllMocks());
+  beforeEach(() => {
+    jest.resetAllMocks();
+    process.env.BATCH_STORE_ID = '9258';
+  });
 
   it('reutiliza o token sem gerar outro (cada geração invalida o anterior)', async () => {
     tokens('t1');
@@ -85,6 +88,61 @@ describe('BatchService — token e erros', () => {
     expect(req.url).toBe('https://mybatch.itsabatch.com/api/dispatch/order/create');
     const body = req.data.getBuffer().toString();
     expect(body).toContain('name="zipcode"\r\n\r\n1050-227');
-    expect(body).toContain('name="cart[Meias // M]"\r\n\r\n1');
+    expect(body).toContain('name="cart"\r\n\r\n{"Meias // M":1}');
+    expect(body).toContain('name="store"\r\n\r\n9258');
+  });
+});
+
+describe('BatchService — loja e opções de envio', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    delete process.env.BATCH_STORE_ID;
+  });
+
+  it('sem BATCH_STORE_ID usa a loja da conta (uma vez) em vez de "1"', async () => {
+    tokens('t1');
+    mockedAxios.request.mockImplementation(async (req: any) => (
+      req.url.endsWith('/stores/get')
+        ? { status: 200, data: { error: false, stores: [{ id: 9258, name: 'ReaxOne' }] } }
+        : { status: 200, data: { error: false, order_number: '017-1' } }
+    ));
+    const service = new BatchService();
+
+    await service.createOrder(ORDER);
+    await service.createOrder(ORDER);
+
+    const stores = mockedAxios.request.mock.calls.filter(([r]: any) => r.url.endsWith('/stores/get'));
+    expect(stores).toHaveLength(1);
+    const create = mockedAxios.request.mock.calls.find(([r]: any) => r.url.endsWith('/order/create'))![0] as any;
+    expect(create.data.getBuffer().toString()).toContain('name="store"\r\n\r\n9258');
+  });
+
+  it('guarda as opções por destino durante uns minutos', async () => {
+    tokens('t1');
+    mockedAxios.request.mockResolvedValue({ status: 200, data: { error: false, available: true, methods: [
+      { service_code: 'BL-14', service_name: 'BATCH - Entrega ao Domicílio', price: '4.01' },
+    ] } });
+    const service = new BatchService();
+
+    const first = await service.getAvailability('pt', '1050-227');
+    await service.getAvailability('PT', '1050-227 ');
+
+    expect(first).toEqual([{ serviceCode: 'BL-14', serviceName: 'BATCH - Entrega ao Domicílio', priceBase: 4.01, isPickupPoint: false }]);
+    expect(mockedAxios.request).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('parseAvailability', () => {
+  it('converte o preço em texto, marca pontos de recolha e ignora entradas inválidas', () => {
+    expect(parseAvailability([
+      { service_code: 'BL-12-8810769', service_name: 'Ponto CTT', price: '3.61' },
+      { service_code: 'BL-7', service_name: 'Ilhas', price: 8.91 },
+      { service_code: '', service_name: 'x', price: '1' },
+      { service_code: 'BL-1', service_name: 'x', price: 'abc' },
+    ])).toEqual([
+      { serviceCode: 'BL-12-8810769', serviceName: 'Ponto CTT', priceBase: 3.61, isPickupPoint: true },
+      { serviceCode: 'BL-7', serviceName: 'Ilhas', priceBase: 8.91, isPickupPoint: false },
+    ]);
+    expect(parseAvailability(null)).toEqual([]);
   });
 });

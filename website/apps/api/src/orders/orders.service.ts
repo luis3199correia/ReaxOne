@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
@@ -6,7 +6,8 @@ import { PublicSettings, SettingsService, activeFreeShippingThresholds } from '.
 import { paymentAvailability } from '../payments/payment-availability';
 import { DiscountsService } from '../discounts/discounts.service';
 import { PromotionsService } from '../promotions/promotions.service';
-import { detectZone, shippingPrice } from './shipping-rates';
+import { ShippingQuote, batchServiceCode, detectZone, quoteShipping } from './shipping-rates';
+import { batchCart, batchCountryName } from './batch-shipment';
 import { PICKUP_METHOD_ID } from './pickup';
 import { OnlinePaymentService, PaymentAction } from './online-payment.service';
 import { IfthenpayClient } from '../payments/ifthenpay.client';
@@ -18,6 +19,8 @@ import {
 } from '../payments/ifthenpay.rules';
 
 export const MAX_QUANTITY_PER_ITEM = 100;
+const BATCH_ORDER_WEIGHT_GRAMS = 900; // peso fixo de cada envio na Batch, qualquer que seja o conteúdo
+const BATCH_ORDER_VOLUMES = 1;        // cada encomenda segue numa só caixa
 export const NOTES_MAX_LENGTH = 500;
 
 export const PAYMENT_METHODS = ['MBWAY', 'BANK_TRANSFER', 'CASH', 'MULTIBANCO', 'CARD', 'APPLE_PAY', 'GOOGLE_PAY'] as const;
@@ -125,13 +128,11 @@ export class OrdersService {
     // Levantamento não tem portes. Os limites de portes grátis contam o subtotal
     // dos produtos antes do desconto.
     let shippingCost = 0;
+    let shippingMethodName: string | null = null;
     if (!isAllDigital && !isPickup) {
-      const zone = detectZone(country, data.postalCode);
-      const price = shippingPrice(zone, data.shippingMethod, itemsTotal, activeFreeShippingThresholds(settings));
-      if (price === null) {
-        throw new BadRequestException('Método de envio indisponível para esta morada.');
-      }
-      shippingCost = price;
+      const quote = await this.quoteShipping(country, data.postalCode, data.shippingMethod, itemsTotal, settings);
+      shippingCost = quote.price;
+      shippingMethodName = quote.serviceName;
     }
     const shippingMethod = isAllDigital ? 'digital' : data.shippingMethod;
 
@@ -170,6 +171,7 @@ export class OrdersService {
           nif:           data.nif,
           companyName:   data.companyName,
           shippingMethod,
+          shippingMethodName,
           shippingCost,
           discountCode:   discount?.code ?? null,
           discountAmount,
@@ -283,7 +285,8 @@ export class OrdersService {
       discountCode:   order.discountCode,
       discountAmount: order.discountAmount,
       notes:          order.notes,
-      shippingMethod: order.shippingMethod,
+      // Nome do método (ex.: ponto de recolha) para os emails; encomendas antigas só têm o id
+      shippingMethod: order.shippingMethodName || order.shippingMethod,
       street:         order.street,
       city:           order.city,
       postalCode:     order.postalCode,
@@ -359,36 +362,58 @@ export class OrdersService {
     return { items, itemsTotal };
   }
 
+  /**
+   * Portes do método escolhido, a partir das opções da Batch para a morada.
+   * Sem resposta da Batch a encomenda não é criada (portes por confirmar).
+   */
+  private async quoteShipping(
+    country: string, postalCode: string, serviceCode: string | undefined, itemsTotal: number, settings: PublicSettings,
+  ): Promise<ShippingQuote> {
+    const zone = detectZone(country, postalCode);
+    if (zone === 'BLOCKED') throw new BadRequestException('Ainda não enviamos para este país.');
+    let options;
+    try {
+      options = await this.batchService.getAvailability(country, postalCode);
+    } catch (e) {
+      this.logger.error(`[Batch] Opções de envio indisponíveis (${country} ${postalCode}): ${(e as Error).message}`);
+      throw new ServiceUnavailableException('Não foi possível calcular os portes. Tenta novamente dentro de momentos.');
+    }
+    const quote = quoteShipping(options, serviceCode, zone, itemsTotal, activeFreeShippingThresholds(settings));
+    if (!quote) throw new BadRequestException('Método de envio indisponível para esta morada. Escolhe outra opção.');
+    return quote;
+  }
+
   private async createBatchOrder(order: any) {
     // Buscar os produtos para verificar quais são ebooks (digitais)
     const productIds: string[] = order.items.map((i: any) => i.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, ebookFile: true, ebookFileEn: true, category: { select: { slug: true } } },
+      select: { id: true, sku: true, ebookFile: true, ebookFileEn: true, category: { select: { slug: true } } },
     });
-    const ebookIds = new Set(
-      products.filter((p) => isEbookProduct(p)).map((p) => p.id),
-    );
+    const byId = new Map(products.map((p) => [p.id, p]));
 
-    // Filtrar apenas os itens físicos para a Batch
-    const physicalItems = order.items.filter(
-      (i: any) => !ebookIds.has(i.productId),
-    );
-
-    // Se todos os itens são ebooks, não há envio físico
+    // Só os itens físicos vão para a Batch; se todos forem ebooks não há envio
+    const physicalItems = order.items.filter((i: any) => {
+      const product = byId.get(i.productId);
+      return product && !isEbookProduct(product);
+    });
     if (physicalItems.length === 0) return;
 
-    const cart: Record<string, number> = {};
-    for (const item of physicalItems) {
-      const key = item.size ? `${item.name} // ${item.size}` : item.name;
-      // A mesma meia pode vir comprada e de oferta — soma as quantidades
-      cart[key] = (cart[key] ?? 0) + item.quantity;
+    const cart = batchCart(physicalItems.map((i: any) => ({ ...i, sku: byId.get(i.productId)?.sku ?? null })));
+    if (cart.missingSku.length > 0) {
+      this.logger.error(`[Batch] Encomenda ${order.id}: produtos sem SKU (${cart.missingSku.join(', ')}) — a Batch vai recusar o envio`);
     }
 
-    const weightGrams = physicalItems.reduce(
-      (acc: number, i: any) => acc + i.quantity * 300,
-      0
-    );
+    // Método da Batch escolhido no checkout (BL-…); encomendas antigas usam a entrega ao domicílio
+    let platform: string | null = order.shippingMethod;
+    if (!/^BL-/.test(order.shippingMethod ?? '')) {
+      const options = await this.batchService.getAvailability(order.country, order.postalCode).catch(() => []);
+      platform = batchServiceCode(order.shippingMethod, options);
+    }
+    if (!platform) {
+      this.logger.error(`[Batch] Encomenda ${order.id}: sem método de envio da Batch para ${order.country} ${order.postalCode}`);
+      return;
+    }
 
     const batchOrderNumber = await this.batchService.createOrder({
       phone:       order.phone,
@@ -397,14 +422,14 @@ export class OrdersService {
       address:     order.street,
       zipcode:     order.postalCode,
       city:        order.city,
-      country:     'Portugal',
+      country:     batchCountryName(order.country),
       external_id: order.id,
-      weight:      weightGrams,
-      volumes:     physicalItems.reduce((acc: number, i: any) => acc + i.quantity, 0),
+      weight:      BATCH_ORDER_WEIGHT_GRAMS,
+      volumes:     BATCH_ORDER_VOLUMES,
       total:       order.totalAmount,
-      platform:    order.shippingMethod || undefined,
+      platform,
       obs:         order.notes || undefined,
-      cart,
+      cart:        cart.items,
     });
 
     if (batchOrderNumber) {

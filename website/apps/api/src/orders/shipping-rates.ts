@@ -1,5 +1,9 @@
-// Cópia server-side de apps/web/lib/shippingRates.ts — os portes são recalculados
-// aqui para não confiar no valor enviado pelo browser. Manter as duas em sincronia.
+// Regras de portes no servidor. Os métodos e preços vêm da Batch (dispatch/availability,
+// sem IVA); aqui só se decide a zona (países permitidos e portes grátis), o IVA e o
+// preço final, para nunca confiar no valor enviado pelo browser.
+// Manter em sincronia com apps/web/lib/shippingRates.ts.
+
+import type { BatchAvailabilityOption } from '../batch/batch.service';
 
 const IVA_RATE = 0.23;
 
@@ -11,16 +15,6 @@ export type ShippingZone =
   | 'ZONA2'
   | 'ZONA3'
   | 'BLOCKED';
-
-// Preços base sem IVA
-const RATES: Record<Exclude<ShippingZone, 'BLOCKED'>, { id: string; priceBase: number }[]> = {
-  PT_CONTINENTAL: [{ id: 'pt_2d_1t', priceBase: 4.01 }],
-  PT_ILHAS:       [{ id: 'pt_ilhas_59', priceBase: 8.91 }],
-  ES_CONTINENTAL: [{ id: 'es_std', priceBase: 5.96 }],
-  ES_ILHAS:       [{ id: 'es_ilhas_610', priceBase: 10.96 }, { id: 'es_ilhas_35', priceBase: 11.78 }],
-  ZONA2:          [{ id: 'eu_z2', priceBase: 12.53 }],
-  ZONA3:          [{ id: 'eu_z3', priceBase: 13.35 }],
-};
 
 const ZONA2 = new Set(['AT', 'BE', 'CZ', 'FR', 'DE', 'GR', 'HU', 'IE', 'IT', 'LT', 'NL', 'SI', 'SK']);
 const ZONA3 = new Set(['DK', 'EE', 'FI', 'LV', 'MT', 'PL', 'SE']);
@@ -47,7 +41,7 @@ export interface FreeShippingThresholds {
   eu: number; // Restantes países da UE
 }
 
-// Açores e Madeira não têm portes grátis (envio sob consulta)
+// Açores e Madeira não têm portes grátis
 export function freeShippingThresholdFor(zone: ShippingZone, thresholds: FreeShippingThresholds): number {
   switch (zone) {
     case 'PT_CONTINENTAL': return thresholds.pt;
@@ -59,20 +53,41 @@ export function freeShippingThresholdFor(zone: ShippingZone, thresholds: FreeShi
   }
 }
 
+/** Preço da Batch (sem IVA) com IVA, arredondado ao cêntimo. */
+export function priceWithVat(priceBase: number): number {
+  return Math.round(priceBase * (1 + IVA_RATE) * 100) / 100;
+}
+
+export interface ShippingQuote {
+  serviceCode: string;
+  serviceName: string;
+  price: number; // com IVA, já com portes grátis aplicados
+}
+
 /**
- * Preço (IVA incluído) do método de envio escolhido, ou null se o método não
- * existir para a zona. Ilhas portuguesas e países bloqueados não têm envio online.
+ * Preço final do método escolhido, ou null se não existir para este destino.
+ * Portes grátis quando o subtotal dos produtos atinge o limite da zona.
  */
-export function shippingPrice(
+export function quoteShipping(
+  options: BatchAvailabilityOption[],
+  serviceCode: string | undefined,
   zone: ShippingZone,
-  methodId: string,
   subtotal: number,
   thresholds: FreeShippingThresholds,
-): number | null {
-  if (zone === 'BLOCKED' || zone === 'PT_ILHAS') return null;
-  const rate = RATES[zone].find((r) => r.id === methodId);
-  if (!rate) return null;
+): ShippingQuote | null {
+  if (zone === 'BLOCKED' || !serviceCode) return null;
+  const option = options.find((o) => o.serviceCode === serviceCode);
+  if (!option) return null;
   const freeAbove = freeShippingThresholdFor(zone, thresholds);
-  if (freeAbove > 0 && subtotal >= freeAbove) return 0;
-  return Math.round(rate.priceBase * (1 + IVA_RATE) * 100) / 100;
+  const price = freeAbove > 0 && subtotal >= freeAbove ? 0 : priceWithVat(option.priceBase);
+  return { serviceCode: option.serviceCode, serviceName: option.serviceName, price };
+}
+
+/**
+ * Método a usar na Batch. Encomendas antigas (antes dos portes da Batch) guardaram
+ * o id da nossa tabela (ex.: pt_2d_1t): usa a entrega ao domicílio do destino.
+ */
+export function batchServiceCode(shippingMethod: string | null | undefined, options: BatchAvailabilityOption[]): string | null {
+  if (shippingMethod && /^BL-/.test(shippingMethod)) return shippingMethod;
+  return options.find((o) => !o.isPickupPoint)?.serviceCode ?? null;
 }

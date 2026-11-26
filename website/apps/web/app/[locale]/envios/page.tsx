@@ -1,6 +1,5 @@
 import { getLocale } from 'next-intl/server';
 import { Link } from '@/i18n/navigation';
-import ShippingRatesTable from '@/components/shop/ShippingRatesTable';
 import FreeShippingList from '@/components/shop/FreeShippingList';
 import { PICKUP_ADDRESS, PICKUP_MAPS_URL, PICKUP_PLACE } from '@/lib/pickup';
 import type { FreeShippingThresholds } from '@/lib/shippingRates';
@@ -18,8 +17,7 @@ function EnviosPt({ thresholds }: { thresholds: FreeShippingThresholds }) {
       <section>
         <h2 className={h2Class}>Envios</h2>
         <p>Processamos as encomendas em 1 a 2 dias úteis após a confirmação do pagamento. A entrega em Portugal Continental demora <strong>2 a 4 dias úteis</strong>. Também enviamos para Espanha e para vários países da União Europeia.</p>
-        <p className="mt-3">Portes para Portugal Continental: <strong>4,93 €</strong> (IVA incluído). Os portes para os restantes destinos constam da tabela abaixo.</p>
-        <ShippingRatesTable locale="pt" />
+        <p className="mt-3">Os portes (IVA incluído) são calculados no checkout, a partir do país e do código postal de entrega. Pode escolher a <strong>entrega ao domicílio</strong> ou, em Portugal Continental, a entrega num <strong>ponto de recolha</strong> perto da morada. Também enviamos para os Açores e a Madeira.</p>
         <p className="mt-4"><strong>Portes grátis</strong> (subtotal da encomenda):</p>
         <FreeShippingList thresholds={thresholds} locale="pt" />
         <p className="mt-4"><strong>Levantamento (sem portes):</strong> pode levantar a encomenda no <strong>{PICKUP_PLACE}</strong>, {PICKUP_ADDRESS} (<a href={PICKUP_MAPS_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>ver no mapa</a>). O levantamento é feito <strong>apenas mediante marcação</strong>: após a encomenda, contactamo-lo por WhatsApp, para o telefone indicado, para combinar o dia e a hora. Por favor, não se desloque ao clube sem marcação. Nas encomendas com levantamento pode pagar em mão no momento da entrega.</p>
@@ -50,8 +48,7 @@ function EnviosEn({ thresholds }: { thresholds: FreeShippingThresholds }) {
       <section>
         <h2 className={h2Class}>Shipping</h2>
         <p>We process orders within 1 to 2 business days after payment confirmation. Delivery in mainland Portugal takes <strong>2 to 4 business days</strong>. We also ship to Spain and to several European Union countries.</p>
-        <p className="mt-3">Shipping to mainland Portugal: <strong>€4.93</strong> (VAT included). Shipping costs for other destinations are listed in the table below.</p>
-        <ShippingRatesTable locale="en" />
+        <p className="mt-3">Shipping costs (VAT included) are calculated at checkout from the delivery country and postal code. You can choose <strong>home delivery</strong> or, in mainland Portugal, delivery to a <strong>pickup point</strong> near your address. We also ship to the Azores and Madeira.</p>
         <p className="mt-4"><strong>Free shipping</strong> (order subtotal):</p>
         <FreeShippingList thresholds={thresholds} locale="en" />
         <p className="mt-4"><strong>Pickup (free):</strong> you can collect your order at <strong>{PICKUP_PLACE}</strong>, {PICKUP_ADDRESS} (<a href={PICKUP_MAPS_URL} target="_blank" rel="noopener noreferrer" className={linkClass}>view on map</a>). Pickup is <strong>by appointment only</strong>: after you place your order, we will contact you on WhatsApp, at the phone number provided, to arrange the day and time. Please do not go to the club without an appointment. Pickup orders can be paid in person on collection.</p>
