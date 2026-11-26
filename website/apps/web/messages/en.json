@@ -359,6 +359,6 @@
     "analytics": "Statistics",
     "analytics_desc": "Google Analytics: visits, page views and purchases, in aggregate.",
     "ads": "Marketing",
-    "ads_desc": "Measurement of Google campaigns and ads (Google Ads / Shopping)."
+    "ads_desc": "Measurement of Google campaigns and ads (Google Ads / Shopping) and the Google Customer Reviews invitation after purchase."
   }
 }

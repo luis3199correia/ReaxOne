@@ -11,6 +11,7 @@ import { useSettings } from '@/components/providers/SettingsProvider';
 import PickupInfo from '@/components/shop/PickupInfo';
 import { GatewayPayment, MbwayPayment, MultibancoPayment } from '@/components/checkout/OnlinePaymentStatus';
 import { useCartStore } from '@/store/cart';
+import CustomerReviewsOptIn from '@/components/checkout/CustomerReviewsOptIn';
 
 function ConfirmacaoContent() {
   const params   = useSearchParams();
@@ -140,6 +141,9 @@ function ConfirmacaoContent() {
           </>
         )}
       </div>
+
+      {/* Avaliações do Consumidor da Google — não em pagamentos falhados */}
+      {!gatewayFailed && <CustomerReviewsOptIn orderId={orderId} />}
 
       {email && (
         <p className="text-sm text-gray-500 mb-8">

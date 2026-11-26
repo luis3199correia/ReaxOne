@@ -29,6 +29,7 @@ import {
 } from '@/lib/giftPromotion';
 import { PaymentAction, useApplePayAvailable, useAvailablePaymentMethods } from '@/lib/payments';
 import { savePendingPurchase } from '@/lib/analytics';
+import { buildSurveyOptIn, savePendingSurvey } from '@/lib/customerReviews';
 
 const NOTES_MAX_LENGTH = 500;
 
@@ -356,6 +357,15 @@ export default function CheckoutPage() {
           slug: i.slug ?? '', name: i.name, price: i.price, quantity: i.quantity, size: i.size,
         })),
       });
+      // Avaliações do Consumidor da Google: só encomendas com envio (sem levantamento nem só-ebooks)
+      if (!isAllEbooks && !isPickup) {
+        const survey = buildSurveyOptIn({
+          orderId: res.data.id,
+          email:   data.email,
+          country: orderCountry,
+        });
+        if (survey) savePendingSurvey(survey);
+      }
       // Cartão / Apple Pay: o carrinho só é limpo quando o pagamento for concluído
       if (action?.type === 'redirect') {
         window.location.assign(action.url);

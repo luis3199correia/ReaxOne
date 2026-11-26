@@ -11,6 +11,8 @@ export const CONSENT_STORAGE_KEY = 'reaxone_consent';
 export const CONSENT_VERSION = 1;
 /** Evento para reabrir o aviso de cookies (ex.: link no rodapé). */
 export const OPEN_CONSENT_EVENT = 'reaxone:open-cookie-settings';
+/** Evento disparado quando o visitante grava a escolha (detail: ConsentChoice). */
+export const CONSENT_CHANGED_EVENT = 'reaxone:consent-changed';
 
 const PURCHASE_KEY_PREFIX = 'reaxone_purchase_';
 const CURRENCY = 'EUR';
@@ -71,6 +73,7 @@ export function saveConsent(choice: ConsentChoice) {
   }
   gtag('consent', 'update', consentState(choice));
   dataLayer()?.push({ event: 'consent_update', consent_analytics: choice.analytics, consent_ads: choice.ads });
+  window.dispatchEvent(new CustomEvent<ConsentChoice>(CONSENT_CHANGED_EVENT, { detail: choice }));
 }
 
 /**
