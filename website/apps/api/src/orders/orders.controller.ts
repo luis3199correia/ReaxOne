@@ -84,6 +84,13 @@ export class OrdersController {
     return this.invoicing.issueManually(id);
   }
 
+  // Admin: encomenda embalada — passa a "pronta para recolha" na Batch
+  @Post(':id/batch/ready')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  markReadyForPickup(@Param('id') id: string) {
+    return this.ordersService.markReadyForPickup(id);
+  }
+
   // Admin: voltar a enviar o email com os ebooks (PDF em anexo)
   @Post(':id/ebooks/resend')
   @UseGuards(JwtAuthGuard, RolesGuard)

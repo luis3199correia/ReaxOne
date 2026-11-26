@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp, CheckCircle, Loader2, RefreshCw, XCircle, Trash
 import { PICKUP_ADDRESS, PICKUP_METHOD_ID, PICKUP_PLACE, customerWhatsappUrl } from '@/lib/pickup';
 import OrderInvoice, { InvoiceFields, hasInvoice } from '@/components/admin/OrderInvoice';
 import OrderEbooks, { EbookFields } from '@/components/admin/OrderEbooks';
+import OrderShipment, { ShipmentFields } from '@/components/admin/OrderShipment';
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING:   'Pendente',
@@ -65,7 +66,7 @@ type OrderItem = {
   isGift?: boolean;
 };
 
-type Order = InvoiceFields & EbookFields & {
+type Order = InvoiceFields & EbookFields & ShipmentFields & {
   id: string;
   firstName: string;
   lastName: string;
@@ -155,6 +156,10 @@ export default function AdminEncomendas() {
   }
 
   function updateEbooks(id: string, fields: EbookFields) {
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...fields } : o)));
+  }
+
+  function updateShipment(id: string, fields: ShipmentFields) {
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, ...fields } : o)));
   }
 
@@ -427,6 +432,16 @@ export default function AdminEncomendas() {
 
                                 {order.shippingMethod === PICKUP_METHOD_ID && (
                                   <PickupScheduling order={order} />
+                                )}
+
+                                {order.shippingMethod && order.shippingMethod !== PICKUP_METHOD_ID && (
+                                  <OrderShipment
+                                    orderId={order.id}
+                                    orderStatus={order.status}
+                                    paymentStatus={order.payment?.status}
+                                    shipment={order}
+                                    onUpdated={(fields) => updateShipment(order.id, fields)}
+                                  />
                                 )}
 
                                 <OrderInvoice

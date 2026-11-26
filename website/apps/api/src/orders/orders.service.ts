@@ -1,13 +1,13 @@
 import { Injectable, Logger, NotFoundException, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { BatchService } from '../batch/batch.service';
+import { BATCH_STATUS, BatchService } from '../batch/batch.service';
 import { MailService } from '../mail/mail.service';
 import { PublicSettings, SettingsService, activeFreeShippingThresholds } from '../settings/settings.service';
 import { paymentAvailability } from '../payments/payment-availability';
 import { DiscountsService } from '../discounts/discounts.service';
 import { PromotionsService } from '../promotions/promotions.service';
 import { ShippingQuote, batchServiceCode, detectZone, quoteShipping } from './shipping-rates';
-import { batchCart, batchCountryName } from './batch-shipment';
+import { batchCart, batchCountryName, canMarkReadyForPickup, needsBatchShipment } from './batch-shipment';
 import { PICKUP_METHOD_ID } from './pickup';
 import { OnlinePaymentService, PaymentAction } from './online-payment.service';
 import { IfthenpayClient } from '../payments/ifthenpay.client';
@@ -238,11 +238,9 @@ export class OrdersService {
       );
     }
 
-    // Admin e Batch: nos pagamentos online só depois de pago (ver confirmOnlinePayment)
-    if (!online) {
-      this.notifyAdminOfOrder(order);
-      if (!isPickup) this.sendToBatch(order);
-    }
+    // Admin: nos pagamentos online só depois de pago (ver confirmOnlinePayment).
+    // A Batch recebe a encomenda sempre só depois de paga (ver afterPaid).
+    if (!online) this.notifyAdminOfOrder(order);
 
     // Avisar o admin dos produtos que esgotaram com esta encomenda
     const physicalIds = [...new Set([...items.filter((i) => !i.isEbook), ...giftLines].map((i) => i.productId))];
@@ -435,9 +433,35 @@ export class OrdersService {
     if (batchOrderNumber) {
       await this.prisma.order.update({
         where: { id: order.id },
-        data:  { batchOrderNumber },
+        data:  { batchOrderNumber, batchStatus: BATCH_STATUS.ON_HOLD },
       });
     }
+  }
+
+  /** Backoffice: a encomenda está embalada — passa a "pronta para recolha" na Batch. */
+  async markReadyForPickup(id: string) {
+    const order = await this.prisma.order.findUnique({
+      where:  { id },
+      select: { status: true, batchOrderNumber: true, batchStatus: true },
+    });
+    if (!order) throw new NotFoundException('Encomenda não encontrada');
+    if (!canMarkReadyForPickup(order)) {
+      throw new BadRequestException('Esta encomenda não está em espera na Batch.');
+    }
+
+    let batchStatus: string;
+    try {
+      batchStatus = await this.batchService.changeOrderStatus(order.batchOrderNumber!, BATCH_STATUS.READY);
+    } catch (e) {
+      this.logger.error(`[Batch] Encomenda ${id}: falhou a passagem a pronta para recolha — ${(e as Error).message}`);
+      throw new ServiceUnavailableException(`A Batch não aceitou a mudança de estado: ${(e as Error).message}`);
+    }
+
+    return this.prisma.order.update({
+      where:  { id },
+      data:   { batchStatus },
+      select: { batchOrderNumber: true, batchStatus: true },
+    });
   }
 
   async findByUser(userId: string) {
@@ -584,7 +608,7 @@ export class OrdersService {
     return { ok: true };
   }
 
-  /** Emails, ebooks, fatura e (nos pagamentos online) aviso ao admin e envio para a Batch. */
+  /** Emails, ebooks, fatura, envio para a Batch e (nos pagamentos online) aviso ao admin. */
   private afterPaid(order: any, { isOnline }: { isOnline: boolean }) {
     this.fireAndForget(
       () => this.mailService.sendPaymentConfirmed({
@@ -612,9 +636,8 @@ export class OrdersService {
       '[Faturação] Erro ao emitir fatura',
     );
 
-    if (isOnline) {
-      this.notifyAdminOfOrder(order);
-      if (order.shippingMethod !== PICKUP_METHOD_ID && !order.batchOrderNumber) this.sendToBatch(order);
-    }
+    if (isOnline) this.notifyAdminOfOrder(order);
+    // Transferência e MB WAY manual também só vão para a Batch quando confirmadas
+    if (needsBatchShipment(order)) this.sendToBatch(order);
   }
 }

@@ -1,4 +1,6 @@
 // Dados do envio no formato da Batch (dispatch/order/create).
+import { PICKUP_METHOD_ID } from './pickup';
+import { BATCH_STATUS } from '../batch/batch.service';
 
 // A Batch espera o país em inglês (por omissão assume Portugal).
 const COUNTRY_NAMES: Record<string, string> = {
@@ -33,4 +35,19 @@ export function batchCart(lines: CartLine[]): { items: Record<string, number>; m
     items[key] = (items[key] ?? 0) + line.quantity;
   }
   return { items, missingSku: [...new Set(missingSku)] };
+}
+
+/**
+ * Encomenda paga que ainda tem de ir para a Batch: entrega por transportadora
+ * (o levantamento no clube não) e ainda sem número da Batch.
+ */
+export function needsBatchShipment(order: { shippingMethod?: string | null; batchOrderNumber?: string | null }): boolean {
+  return order.shippingMethod !== PICKUP_METHOD_ID && !order.batchOrderNumber;
+}
+
+/** Encomenda na Batch à espera de ser marcada no backoffice como pronta para recolha. */
+export function canMarkReadyForPickup(order: {
+  status?: string | null; batchOrderNumber?: string | null; batchStatus?: string | null;
+}): boolean {
+  return !!order.batchOrderNumber && order.batchStatus === BATCH_STATUS.ON_HOLD && order.status !== 'CANCELLED';
 }

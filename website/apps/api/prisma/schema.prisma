@@ -139,6 +139,7 @@ model Order {
 
   // Batch Logistics
   batchOrderNumber String?
+  batchStatus      String? // estado na Batch (em espera, pronta para recolha, …)
   shippingMethod   String?
   shippingMethodName String? // descrição do método (ex.: ponto de recolha da Batch)
   shippingCost     Float    @default(0)

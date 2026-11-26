@@ -11,6 +11,12 @@ const AVAILABILITY_CACHE_MAX = 500;
 /** Prefixo dos códigos de pontos de recolha (BL-12-<ponto>). */
 const PICKUP_POINT_CODE = /^BL-\d+-.+$/;
 
+/** Estados da Batch usados pelo site (a API só aceita estes ao criar e ao mudar o estado). */
+export const BATCH_STATUS = {
+  ON_HOLD: 'em espera',            // criada depois de paga, a aguardar o admin
+  READY:   'pronta para recolha',  // o admin marcou-a no backoffice; a transportadora recolhe
+} as const;
+
 export interface BatchAvailabilityOption {
   serviceCode: string;   // ex.: BL-14 (domicílio) ou BL-12-8810769 (ponto de recolha)
   serviceName: string;   // descrição mostrada ao cliente
@@ -211,7 +217,7 @@ export class BatchService {
         weight:      String(payload.weight),
         volumes:     String(payload.volumes),
         total:       String(payload.total),
-        status:      'pronta para recolha',
+        status:      BATCH_STATUS.ON_HOLD,   // pronta para recolha só pela ação do backoffice
       };
       const store = await this.storeId();
       if (store) fields.store = store;
@@ -251,13 +257,10 @@ export class BatchService {
   }
 
   // ─── Mudar estado ─────────────────────────────────────────────────────────
-  async changeOrderStatus(orderNumber: string, status: string) {
-    try {
-      return await this.call('post', '/order/status/change', { order_number: orderNumber, status });
-    } catch (err) {
-      this.logger.warn(`Batch changeOrderStatus error: ${err.message}`);
-      return null;
-    }
+  /** Muda o estado na Batch e devolve o estado com que ficou. Lança erro com a mensagem da Batch. */
+  async changeOrderStatus(orderNumber: string, status: string): Promise<string> {
+    const data = await this.call('post', '/order/status/change', { order_number: orderNumber, status });
+    return typeof data?.status === 'string' ? data.status : status;
   }
 
   // ─── Listar lojas ─────────────────────────────────────────────────────────
