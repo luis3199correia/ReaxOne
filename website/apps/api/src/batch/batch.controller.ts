@@ -18,16 +18,8 @@ export class BatchController {
   // Debug — resposta em bruto do zipcode/methods (admin apenas)
   @Post('methods/raw')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async getMethodsRaw(@Body() body: { zipcode: string }) {
-    const headers = await (this as any).batchService.authHeader();
-    const FormData = require('form-data');
-    const axios = require('axios');
-    const form = new FormData();
-    form.append('zipcode', body.zipcode);
-    const res = await axios.post('https://mybatch.itsabatch.com/api/dispatch/zipcode/methods', form, {
-      headers: { ...form.getHeaders(), ...headers },
-    });
-    return res.data;
+  getMethodsRaw(@Body() body: { zipcode: string }) {
+    return this.batchService.postRaw('/zipcode/methods', { zipcode: body.zipcode ?? '' });
   }
 
   // Admin — listar lojas Batch
