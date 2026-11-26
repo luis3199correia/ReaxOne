@@ -70,6 +70,12 @@ export class FacturalusaIdsService {
     this.logger.warn('[Faturação] IDs de artigos do Facturalusa inválidos: vão ser procurados de novo');
   }
 
+  /** Esquece o ID guardado do cliente genérico, para voltar a ser procurado/criado. */
+  async forgetGenericCustomer(): Promise<void> {
+    await this.settings.clearCachedId('genericCustomerId');
+    this.logger.warn('[Faturação] ID do cliente genérico do Facturalusa inválido: vai ser procurado de novo');
+  }
+
   private async genericCustomer(): Promise<number> {
     const cached = await this.settings.getCachedId('genericCustomerId');
     if (cached) return cached;

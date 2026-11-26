@@ -1,5 +1,5 @@
 import {
-  DEFAULT_FACTURALUSA_API_URL, extractApiError, isInvalidIdResponse, isNotFoundResponse, isUnknownItemResponse,
+  DEFAULT_FACTURALUSA_API_URL, extractApiError, isInvalidIdResponse, isNotFoundResponse, isUnknownItemResponse, isUnknownCustomerResponse,
   readFacturalusaConfig,
 } from './facturalusa.rules';
 
@@ -77,5 +77,19 @@ describe('isUnknownItemResponse', () => {
     expect(isUnknownItemResponse(400, 'É obrigatória a indicação de um valor para o campo to_name')).toBe(false);
     expect(isUnknownItemResponse(500, 'campo item id')).toBe(false);
     expect(isUnknownItemResponse(400, null)).toBe(false);
+  });
+});
+
+describe('isUnknownCustomerResponse', () => {
+  it('reconhece o erro de cliente que o Facturalusa não encontra', () => {
+    expect(isUnknownCustomerResponse(400, 'É obrigatória a indicação de um valor para o campo customer_id.')).toBe(true);
+    expect(isUnknownCustomerResponse(422, 'O valor seleccionado para o campo customer é inválido')).toBe(true);
+  });
+
+  it('ignora outros erros', () => {
+    expect(isUnknownCustomerResponse(400, 'É obrigatória a indicação de um valor para o campo item id')).toBe(false);
+    expect(isUnknownCustomerResponse(400, 'campo customers_count')).toBe(false);
+    expect(isUnknownCustomerResponse(500, 'campo customer_id')).toBe(false);
+    expect(isUnknownCustomerResponse(400, null)).toBe(false);
   });
 });

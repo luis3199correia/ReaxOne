@@ -69,6 +69,16 @@ export function isUnknownItemResponse(status: number | null, message: string | n
   return isClientError && /\bitems?(\.\d+\.|\s)id\b/i.test(message ?? '');
 }
 
+/**
+ * Venda com um cliente que o Facturalusa não reconhece (ex.: cliente apagado lá,
+ * ou de outra conta, mas com o ID ainda guardado do nosso lado). A API responde
+ * "É obrigatória a indicação de um valor para o campo customer_id".
+ */
+export function isUnknownCustomerResponse(status: number | null, message: string | null): boolean {
+  const isClientError = status === HTTP_BAD_REQUEST || status === HTTP_UNPROCESSABLE;
+  return isClientError && /\bcustomer(_id)?\b/i.test(message ?? '');
+}
+
 function rawApiError(data: unknown): string | null {
   if (typeof data === 'string') return data.trim() || null;
   if (!data || typeof data !== 'object') return null;

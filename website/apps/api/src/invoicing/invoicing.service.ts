@@ -4,8 +4,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { FacturalusaClient, FacturalusaError, FacturalusaSale } from './facturalusa.client';
 import { isEbookProduct } from '../products/free-ebook';
-import { isUnknownItemResponse } from './facturalusa.rules';
-import { FacturalusaIdsService } from './facturalusa-ids.service';
+import { isUnknownCustomerResponse, isUnknownItemResponse } from './facturalusa.rules';
+import { FacturalusaIdsService, InvoiceProduct } from './facturalusa-ids.service';
 import { InvoicingSettings, InvoicingSettingsService } from './invoicing-settings.service';
 import {
   InvoiceOrder, buildSalePayload, invoiceBlocker, invoiceStatusFromSale, lisbonDate, selectCustomer, totalMismatchNote,
@@ -134,25 +134,7 @@ export class InvoicingService implements OnModuleInit, OnModuleDestroy {
     const blocker = invoiceBlocker(invoiceOrder);
     if (blocker) throw new Error(blocker);
 
-    const customerId = await this.ids.customerFor(selectCustomer(invoiceOrder), invoiceOrder);
-    const products = order.items.map((i) => i.product);
-    const createSale = async (freshProducts: typeof products) => {
-      const articleIds = await this.ids.articlesFor(freshProducts);
-      const shippingArticleId = invoiceOrder.shippingCost > 0 ? await this.ids.shippingArticle() : null;
-      return this.client.createSale(buildSalePayload({
-        order: invoiceOrder, customerId, articleIds, shippingArticleId, settings, issueDate: lisbonDate(new Date()),
-      }));
-    };
-
-    let sale: FacturalusaSale;
-    try {
-      sale = await createSale(products);
-    } catch (e) {
-      // Artigo apagado no Facturalusa com o ID ainda guardado: esquece os IDs e tenta uma vez
-      if (!(e instanceof FacturalusaError && isUnknownItemResponse(e.status, e.message))) throw e;
-      await this.ids.forgetItemIds(products.map((p) => p.id));
-      sale = await createSale(products.map((p) => ({ ...p, facturalusaItemId: null })));
-    }
+    const sale = await this.createSaleWithRecovery(invoiceOrder, order.items.map((i) => i.product), settings);
     const status = invoiceStatusFromSale(sale.status);
     const notes = [
       saleTotalNote(sale, order.totalAmount),
@@ -173,6 +155,47 @@ export class InvoicingService implements OnModuleInit, OnModuleDestroy {
       },
     });
     this.logger.log(`[Faturação] Encomenda ${orderId}: ${status === 'DRAFT' ? 'rascunho criado' : `fatura ${sale.document_full_number} emitida`}`);
+  }
+
+  /**
+   * Cria a venda. Se o Facturalusa não reconhecer um ID guardado do nosso lado
+   * (cliente genérico ou artigos apagados lá, ou de outra conta), esquece-o,
+   * volta a procurá-lo/criá-lo e tenta de novo — uma vez por tipo de ID.
+   */
+  private async createSaleWithRecovery(
+    invoiceOrder: InvoiceOrder, products: InvoiceProduct[], settings: InvoicingSettings,
+  ): Promise<FacturalusaSale> {
+    const spec = selectCustomer(invoiceOrder);
+    let customerId = await this.ids.customerFor(spec, invoiceOrder);
+    let currentProducts = products;
+    let customerRecovered = false;
+    let itemsRecovered = false;
+
+    for (;;) {
+      try {
+        const articleIds = await this.ids.articlesFor(currentProducts);
+        const shippingArticleId = invoiceOrder.shippingCost > 0 ? await this.ids.shippingArticle() : null;
+        return await this.client.createSale(buildSalePayload({
+          order: invoiceOrder, customerId, articleIds, shippingArticleId, settings, issueDate: lisbonDate(new Date()),
+        }));
+      } catch (e) {
+        if (!(e instanceof FacturalusaError)) throw e;
+        // O NIF é sempre procurado de novo; só o cliente genérico fica guardado
+        if (!customerRecovered && spec.kind === 'generic' && isUnknownCustomerResponse(e.status, e.message)) {
+          customerRecovered = true;
+          await this.ids.forgetGenericCustomer();
+          customerId = await this.ids.customerFor(spec, invoiceOrder);
+          continue;
+        }
+        if (!itemsRecovered && isUnknownItemResponse(e.status, e.message)) {
+          itemsRecovered = true;
+          await this.ids.forgetItemIds(products.map((p) => p.id));
+          currentProducts = products.map((p) => ({ ...p, facturalusaItemId: null }));
+          continue;
+        }
+        throw e;
+      }
+    }
   }
 
   /** O Facturalusa envia o documento ao comprador; uma falha aqui não invalida a fatura. */
