@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   Plus, Pencil, ToggleLeft, ToggleRight, X, Check, Loader2,
-  AlertCircle, Trash2, ImagePlus, Upload, Star,
+  AlertCircle, Trash2, ImagePlus, Upload, Star, Download,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 import FeaturedOrderCard, { type FeaturedItem } from '@/components/admin/FeaturedOrderCard';
@@ -14,6 +14,7 @@ interface Product {
   name: string;
   nameEn?: string;
   slug: string;
+  sku?: string | null;
   description: string;
   descriptionEn?: string;
   color?: string;
@@ -47,6 +48,7 @@ const EMPTY_FORM = {
   name: '',
   nameEn: '',
   slug: '',
+  sku: '',
   description: '',
   descriptionEn: '',
   color: '',
@@ -274,6 +276,7 @@ export default function AdminProductsPage() {
       name: p.name,
       nameEn: p.nameEn ?? '',
       slug: p.slug,
+      sku: p.sku ?? '',
       description: p.description ?? '',
       descriptionEn: p.descriptionEn ?? '',
       color: p.color ?? '',
@@ -348,6 +351,8 @@ export default function AdminProductsPage() {
       name: form.name,
       nameEn: form.nameEn || undefined,
       slug: form.slug,
+      // vazio na edição mantém o SKU atual; na criação é gerado automaticamente
+      ...(form.sku.trim() ? { sku: form.sku.trim() } : {}),
       description: form.description,
       descriptionEn: form.descriptionEn || undefined,
       color: form.color.trim(),
@@ -421,6 +426,29 @@ export default function AdminProductsPage() {
     }
   }
 
+  /* ── Exportar catálogo para a Batch ── */
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+
+  async function exportBatchCsv() {
+    setExporting(true);
+    setExportError('');
+    try {
+      const res = await api.get('/products/export/batch', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data as Blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'reaxone-produtos-batch.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError('Erro ao exportar o catálogo. Tenta novamente.');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   /* ── Featured order ── */
 
   const [orderSaving, setOrderSaving] = useState(false);
@@ -478,11 +506,27 @@ export default function AdminProductsPage() {
             {loading ? '...' : `${products.length} produto${products.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
-          <Plus className="w-4 h-4" />
-          Novo produto
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row w-full sm:w-auto">
+          <button
+            onClick={exportBatchCsv}
+            disabled={exporting}
+            className="btn-secondary flex items-center justify-center gap-2 w-full sm:w-auto"
+            title="CSV no formato do template da Batch (só produtos físicos)"
+          >
+            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Exportar para a Batch (CSV)
+          </button>
+          <button onClick={openCreate} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
+            <Plus className="w-4 h-4" />
+            Novo produto
+          </button>
+        </div>
       </div>
+      {exportError && (
+        <p className="text-red-500 text-sm flex items-center gap-1 -mt-6 mb-6">
+          <AlertCircle className="w-4 h-4" /> {exportError}
+        </p>
+      )}
 
       {error && (
         <div className="flex items-center gap-2 text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-6 text-sm">
@@ -541,7 +585,9 @@ export default function AdminProductsPage() {
                         </div>
                         <div>
                           <p className="text-sm font-semibold text-brand-dark leading-tight">{p.name}</p>
-                          <p className="text-xs text-gray-400">{p.slug}</p>
+                          <p className="text-xs text-gray-400">
+                            {p.slug}{p.sku && <span className="font-mono"> · {p.sku}</span>}
+                          </p>
                         </div>
                       </div>
                     </td>
@@ -734,6 +780,19 @@ export default function AdminProductsPage() {
                     className="input text-sm font-mono"
                     placeholder="bola-reacao-verde"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">SKU (Batch)</label>
+                  <input
+                    type="text"
+                    value={form.sku}
+                    onChange={(e) => handleField('sku', e.target.value)}
+                    className="input text-sm font-mono"
+                    placeholder={modal === 'create' ? 'Automático (RX-0001…)' : ''}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Referência do artigo no armazém da Batch. Se mudares, atualiza também na Batch.
+                  </p>
                 </div>
 
                 <div>

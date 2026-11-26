@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './product.dto';
 import { isEbookProduct, isFreeEbook } from './free-ebook';
+import { buildBatchCatalogCsv, nextSku } from './batch-catalog';
 
 /**
  * Versão pública do produto: nunca expõe o caminho do ficheiro do ebook
@@ -94,7 +95,8 @@ export class ProductsService {
 
   async create(data: CreateProductDto) {
     const order = data.featured ? { featuredOrder: await this.nextFeaturedOrder() } : {};
-    return this.prisma.product.create({ data: { ...data, ...order } });
+    const sku = data.sku?.trim() || await this.generateSku();
+    return this.withSkuConflict(() => this.prisma.product.create({ data: { ...data, sku, ...order } }));
   }
 
   async update(id: string, data: UpdateProductDto) {
@@ -103,7 +105,39 @@ export class ProductsService {
       const current = await this.prisma.product.findUnique({ where: { id }, select: { featured: true } });
       if (current && !current.featured) order = { featuredOrder: await this.nextFeaturedOrder() };
     }
-    return this.prisma.product.update({ where: { id }, data: { ...data, ...order } });
+    // SKU vazio na edição = manter o atual (a Batch identifica o artigo por ele)
+    const { sku, ...rest } = data;
+    const skuData = sku?.trim() ? { sku: sku.trim() } : {};
+    return this.withSkuConflict(() => this.prisma.product.update({ where: { id }, data: { ...rest, ...skuData, ...order } }));
+  }
+
+  /** CSV do catálogo (produtos físicos) para importar na Batch. */
+  async exportBatchCsv(): Promise<string> {
+    const products = await this.prisma.product.findMany({
+      select: {
+        id: true, name: true, sku: true, price: true, images: true, ebookFile: true, ebookFileEn: true,
+        category: { select: { slug: true } },
+      },
+      orderBy: { sku: 'asc' },
+    });
+    return buildBatchCatalogCsv(products, process.env.FRONTEND_URL);
+  }
+
+  private async generateSku(): Promise<string> {
+    const rows = await this.prisma.product.findMany({ where: { sku: { not: null } }, select: { sku: true } });
+    return nextSku(rows.map((r) => r.sku));
+  }
+
+  /** SKU repetido (P2002 no campo sku) → 409 com mensagem clara. */
+  private async withSkuConflict<T>(run: () => Promise<T>): Promise<T> {
+    try {
+      return await run();
+    } catch (error: any) {
+      if (error?.code === 'P2002' && String(error?.meta?.target ?? '').includes('sku')) {
+        throw new ConflictException('Já existe um produto com este SKU.');
+      }
+      throw error;
+    }
   }
 
   async delete(id: string) {

@@ -73,6 +73,7 @@ model Product {
   name          String
   nameEn        String?
   slug          String   @unique
+  sku           String?  @unique // referência do artigo na Batch (ex.: RX-0001)
   description   String?
   descriptionEn String?
   color         String?  // cor (PT), ex.: "Branco/Preto" — feed Google Merchant

@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  Matches,
   MaxLength,
   Min,
   ValidateBy,
@@ -17,6 +18,7 @@ import {
 import { isValidEbookKey } from '../ebooks/ebook-files';
 
 const MAX_FEATURED_REORDER = 200;
+const SKU_FORMAT = /^[A-Za-z0-9._-]{1,64}$/;
 
 const DOWNLOAD_URL_OPTIONS ={ protocols: ['http', 'https'], require_protocol: true };
 
@@ -48,6 +50,12 @@ export class CreateProductDto {
   @IsNotEmpty()
   @MaxLength(200)
   slug: string;
+
+  // Referência do artigo na Batch; vazio na criação → gerado automaticamente (RX-0001…)
+  @IsOptional()
+  @IsString()
+  @Matches(SKU_FORMAT, { message: 'SKU inválido: usa só letras, números, ponto, hífen ou underscore (máx. 64).' })
+  sku?: string;
 
   @IsOptional()
   @IsString()

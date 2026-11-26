@@ -9,6 +9,7 @@ import {
   UseGuards,
   Query,
   Req,
+  Header,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -40,6 +41,15 @@ export class ProductsController {
       return this.productsService.findAll(false, featuredFilter);
     }
     return this.productsService.findAllPublic(featuredFilter);
+  }
+
+  // Admin — catálogo em CSV para importar na Batch (antes de :slug)
+  @Get('export/batch')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Header('Content-Type', 'text/csv; charset=utf-8')
+  @Header('Content-Disposition', 'attachment; filename="reaxone-produtos-batch.csv"')
+  exportBatch() {
+    return this.productsService.exportBatchCsv();
   }
 
   // Público — produto por slug (sem ebookFile)
